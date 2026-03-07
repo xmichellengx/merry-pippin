@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Syringe,
   Bug,
@@ -50,11 +50,14 @@ function VetSelector({
   onSelect: (name: string, mapsUrl?: string) => void;
 }) {
   const [nearbyVets, setNearbyVets] = useState<NearbyVet[]>([]);
+  const [searchResults, setSearchResults] = useState<NearbyVet[]>([]);
   const [loadingVets, setLoadingVets] = useState(false);
+  const [loadingSearch, setLoadingSearch] = useState(false);
   const [vetError, setVetError] = useState("");
   const [showResults, setShowResults] = useState(false);
   const [manualEntry, setManualEntry] = useState(false);
   const [customVet, setCustomVet] = useState("");
+  const searchTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const findNearbyVets = useCallback(async () => {
     setLoadingVets(true);
@@ -96,6 +99,29 @@ function VetSelector({
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
+  }, []);
+
+  const searchVets = useCallback((query: string) => {
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    if (query.length < 2) {
+      setSearchResults([]);
+      setLoadingSearch(false);
+      return;
+    }
+    setLoadingSearch(true);
+    searchTimeout.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/search-vets?q=${encodeURIComponent(query)}`);
+        const data = await res.json();
+        if (res.ok) {
+          setSearchResults(data.vets || []);
+        }
+      } catch {
+        // silently fail, user can still type manually
+      } finally {
+        setLoadingSearch(false);
+      }
+    }, 400);
   }, []);
 
   if (selectedVet && !manualEntry) {
@@ -144,27 +170,76 @@ function VetSelector({
       )}
 
       {manualEntry && (
-        <div className="flex gap-2">
-          <input
-            type="text"
-            placeholder="Enter vet clinic name..."
-            value={customVet}
-            onChange={(e) => setCustomVet(e.target.value)}
-            className="flex-1"
-          />
-          <button
-            type="button"
-            onClick={() => {
-              if (customVet.trim()) {
-                onSelect(customVet.trim());
-                setManualEntry(false);
-                setCustomVet("");
-              }
-            }}
-            className="px-3 py-2 rounded-lg golden-gradient text-white text-xs font-medium"
-          >
-            Add
-          </button>
+        <div className="space-y-1">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Start typing vet clinic name..."
+              value={customVet}
+              onChange={(e) => {
+                setCustomVet(e.target.value);
+                searchVets(e.target.value);
+              }}
+              className="flex-1"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                if (customVet.trim()) {
+                  onSelect(customVet.trim());
+                  setManualEntry(false);
+                  setCustomVet("");
+                  setSearchResults([]);
+                }
+              }}
+              className="px-3 py-2 rounded-lg golden-gradient text-white text-xs font-medium"
+            >
+              Add
+            </button>
+          </div>
+          {loadingSearch && (
+            <div className="flex items-center gap-1.5 px-2 py-1">
+              <Loader2 size={11} className="animate-spin text-golden-500" />
+              <span className="text-[11px] text-muted">Searching clinics...</span>
+            </div>
+          )}
+          {searchResults.length > 0 && (
+            <div className="max-h-48 overflow-y-auto rounded-lg border border-card-border bg-white">
+              {searchResults.map((vet) => (
+                <button
+                  key={vet.placeId}
+                  type="button"
+                  onClick={() => {
+                    onSelect(vet.name, vet.mapsUrl);
+                    setManualEntry(false);
+                    setCustomVet("");
+                    setSearchResults([]);
+                  }}
+                  className="w-full text-left px-3 py-2.5 hover:bg-golden-50 border-b border-card-border last:border-0 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <span className="text-xs font-semibold block">{vet.name}</span>
+                      <span className="text-[11px] text-muted block mt-0.5">{vet.address}</span>
+                    </div>
+                    <div className="text-right shrink-0">
+                      {vet.rating !== null && (
+                        <span className="flex items-center gap-0.5 text-[11px] text-amber-600">
+                          <Star size={10} className="fill-amber-400 text-amber-400" />
+                          {vet.rating}
+                        </span>
+                      )}
+                      {vet.openNow !== null && (
+                        <span className={`text-[10px] font-medium ${vet.openNow ? "text-green-600" : "text-red-500"}`}>
+                          {vet.openNow ? "Open" : "Closed"}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
