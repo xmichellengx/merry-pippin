@@ -12,6 +12,12 @@ export async function getCats(): Promise<Cat[]> {
   return data ?? []
 }
 
+export async function updateCat(id: string, updates: { name?: string; breed?: string; color?: string; date_of_birth?: string | null; photo_url?: string | null }) {
+  const { data, error } = await supabase.from('cats').update(updates).eq('id', id).select().single()
+  if (error) throw error
+  return data
+}
+
 // ── Weight Records ──
 
 export async function getWeightRecords(catId?: string): Promise<WeightRecord[]> {

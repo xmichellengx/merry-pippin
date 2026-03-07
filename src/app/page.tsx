@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Heart,
   UtensilsCrossed,
@@ -11,14 +11,18 @@ import {
   ChevronRight,
   Cat as CatIcon,
   Loader2,
+  Pencil,
+  Camera,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { format, differenceInDays, differenceInMonths } from "date-fns";
-import { getCats, getWeightRecords, getHealthRecords, getFoodLogs } from "@/lib/data";
+import { getCats, getWeightRecords, getHealthRecords, getFoodLogs, updateCat } from "@/lib/data";
+import { supabase } from "@/lib/supabase";
 import type { Cat, WeightRecord, HealthRecord, FoodLog } from "@/lib/supabase";
 
 function getAge(dob: string | null) {
-  if (!dob) return "Unknown";
+  if (!dob) return "Unknown age";
   const months = differenceInMonths(new Date(), new Date(dob));
   if (months < 12) return `${months} months`;
   const years = Math.floor(months / 12);
@@ -63,20 +67,148 @@ function buildSuggestions(cats: Cat[], weights: WeightRecord[], health: HealthRe
   return suggestions;
 }
 
+function EditCatModal({ cat, onClose, onSaved }: { cat: Cat; onClose: () => void; onSaved: () => void }) {
+  const [name, setName] = useState(cat.name);
+  const [breed, setBreed] = useState(cat.breed);
+  const [color, setColor] = useState(cat.color);
+  const [dob, setDob] = useState(cat.date_of_birth ?? "");
+  const [photoUrl, setPhotoUrl] = useState(cat.photo_url ?? "");
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `cat-${cat.id}-${Date.now()}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage.from('photos').upload(fileName, file);
+
+    if (uploadError) {
+      // Fallback to data URL if storage not set up
+      const reader = new FileReader();
+      reader.onload = () => {
+        setPhotoUrl(reader.result as string);
+        setUploading(false);
+      };
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    const { data: { publicUrl } } = supabase.storage.from('photos').getPublicUrl(fileName);
+    setPhotoUrl(publicUrl);
+    setUploading(false);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await updateCat(cat.id, {
+        name,
+        breed,
+        color,
+        date_of_birth: dob || null,
+        photo_url: photoUrl || null,
+      });
+      onSaved();
+      onClose();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 overlay z-50 flex items-end justify-center" onClick={onClose}>
+      <div
+        className="bg-white rounded-t-2xl w-full max-w-lg p-5 space-y-4 max-h-[85vh] overflow-y-auto"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold">Edit Profile</h2>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-golden-50 flex items-center justify-center">
+            <X size={16} className="text-muted" />
+          </button>
+        </div>
+
+        {/* Photo */}
+        <div className="flex justify-center">
+          <button onClick={() => fileRef.current?.click()} className="relative group">
+            {photoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={photoUrl} alt={name} className="w-24 h-24 rounded-full object-cover border-4 border-golden-200" />
+            ) : (
+              <div className="w-24 h-24 rounded-full golden-gradient flex items-center justify-center border-4 border-golden-200">
+                <span className="text-white font-bold text-3xl">{name[0] || "?"}</span>
+              </div>
+            )}
+            <div className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-golden-500 flex items-center justify-center shadow-md border-2 border-white">
+              {uploading ? <Loader2 size={14} className="text-white animate-spin" /> : <Camera size={14} className="text-white" />}
+            </div>
+          </button>
+          <input ref={fileRef} type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
+        </div>
+
+        {/* Name */}
+        <div>
+          <label className="text-xs text-muted block mb-1">Name</label>
+          <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Cat name" />
+        </div>
+
+        {/* Breed & Color */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs text-muted block mb-1">Breed</label>
+            <input type="text" value={breed} onChange={e => setBreed(e.target.value)} />
+          </div>
+          <div>
+            <label className="text-xs text-muted block mb-1">Color</label>
+            <input type="text" value={color} onChange={e => setColor(e.target.value)} />
+          </div>
+        </div>
+
+        {/* Date of Birth */}
+        <div>
+          <label className="text-xs text-muted block mb-1">Date of Birth</label>
+          <input type="date" value={dob} onChange={e => setDob(e.target.value)} />
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-2 pt-2">
+          <button
+            onClick={handleSave}
+            disabled={saving || !name}
+            className="flex-1 py-3 rounded-xl golden-gradient text-white text-sm font-semibold shadow-md disabled:opacity-50"
+          >
+            {saving ? "Saving..." : "Save Changes"}
+          </button>
+          <button onClick={onClose} className="px-5 py-3 rounded-xl bg-golden-50 text-golden-700 text-sm font-medium">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const [cats, setCats] = useState<Cat[]>([]);
   const [weights, setWeights] = useState<WeightRecord[]>([]);
   const [health, setHealth] = useState<HealthRecord[]>([]);
   const [todayFood, setTodayFood] = useState<FoodLog[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeCat, setActiveCat] = useState<string | null>(null);
+  const [editingCat, setEditingCat] = useState<Cat | null>(null);
 
-  useEffect(() => {
+  const loadData = () => {
     const todayStr = format(new Date(), "yyyy-MM-dd");
     Promise.all([getCats(), getWeightRecords(), getHealthRecords(), getFoodLogs(todayStr)])
       .then(([c, w, h, f]) => { setCats(c); setWeights(w); setHealth(h); setTodayFood(f); })
       .finally(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { loadData(); }, []);
 
   if (loading) {
     return (
@@ -106,16 +238,25 @@ export default function Dashboard() {
         {cats.map((cat) => {
           const catWeights = weights.filter(w => w.cat_id === cat.id).sort((a, b) => a.recorded_at.localeCompare(b.recorded_at));
           const latestWeight = catWeights.length > 0 ? catWeights[catWeights.length - 1].weight_kg : null;
-          const isActive = activeCat === cat.id;
 
           return (
             <button
               key={cat.id}
-              onClick={() => setActiveCat(isActive ? null : cat.id)}
-              className={`card p-4 text-left transition-all ${isActive ? "ring-2 ring-golden-400 shadow-md" : ""}`}
+              onClick={() => setEditingCat(cat)}
+              className="card p-4 text-left transition-all active:scale-[0.98]"
             >
-              <div className="w-10 h-10 rounded-full golden-gradient flex items-center justify-center mb-2">
-                <span className="text-white font-bold text-sm">{cat.name[0]}</span>
+              <div className="relative">
+                {cat.photo_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={cat.photo_url} alt={cat.name} className="w-12 h-12 rounded-full object-cover mb-2 border-2 border-golden-200" />
+                ) : (
+                  <div className="w-12 h-12 rounded-full golden-gradient flex items-center justify-center mb-2">
+                    <span className="text-white font-bold text-sm">{cat.name[0]}</span>
+                  </div>
+                )}
+                <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-golden-100 flex items-center justify-center">
+                  <Pencil size={10} className="text-golden-600" />
+                </div>
               </div>
               <h3 className="font-semibold text-sm">{cat.name}</h3>
               <p className="text-muted text-xs">{cat.color} {cat.breed}</p>
@@ -127,6 +268,15 @@ export default function Dashboard() {
           );
         })}
       </div>
+
+      {/* Edit Cat Modal */}
+      {editingCat && (
+        <EditCatModal
+          cat={editingCat}
+          onClose={() => setEditingCat(null)}
+          onSaved={loadData}
+        />
+      )}
 
       {/* AI Suggestions */}
       <div className="card p-4">
