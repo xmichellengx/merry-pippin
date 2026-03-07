@@ -58,6 +58,15 @@ export async function addHealthRecord(record: {
   return data
 }
 
+export async function addHealthRecords(records: {
+  cat_id: string; record_type: string; title: string;
+  description?: string; date: string; next_due_date?: string; vet_name?: string;
+}[]) {
+  const { data, error } = await supabase.from('health_records').insert(records).select()
+  if (error) throw error
+  return data
+}
+
 export async function deleteHealthRecord(id: string) {
   const { error } = await supabase.from('health_records').delete().eq('id', id)
   if (error) throw error

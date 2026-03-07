@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { format, differenceInDays } from "date-fns";
-import { getCats, getHealthRecords, addHealthRecord, deleteHealthRecord } from "@/lib/data";
+import { getCats, getHealthRecords, addHealthRecords, deleteHealthRecord } from "@/lib/data";
 import type { Cat, HealthRecord } from "@/lib/supabase";
 
 const typeConfig: Record<string, { icon: typeof Syringe; color: string; bg: string }> = {
@@ -346,12 +346,17 @@ export default function HealthPage() {
 
   // Form state
   const [formCatId, setFormCatId] = useState("");
-  const [formType, setFormType] = useState("vaccine");
   const [formTitle, setFormTitle] = useState("");
   const [formDate, setFormDate] = useState(format(new Date(), "yyyy-MM-dd"));
-  const [formDueDate, setFormDueDate] = useState("");
   const [formNotes, setFormNotes] = useState("");
   const [formVet, setFormVet] = useState("");
+  const [formTypes, setFormTypes] = useState<Record<string, { checked: boolean; dueDate: string }>>({
+    vaccine: { checked: false, dueDate: "" },
+    deworm: { checked: false, dueDate: "" },
+    vet_visit: { checked: false, dueDate: "" },
+    medication: { checked: false, dueDate: "" },
+    other: { checked: false, dueDate: "" },
+  });
 
   const loadData = () => {
     Promise.all([getCats(), getHealthRecords()])
@@ -361,19 +366,31 @@ export default function HealthPage() {
 
   useEffect(() => { loadData(); }, []);
 
+  const checkedTypes = Object.entries(formTypes).filter(([, v]) => v.checked);
+
   const handleSave = async () => {
-    if (!formCatId || !formTitle) return;
+    if (!formCatId || !formTitle || checkedTypes.length === 0) return;
     setSaving(true);
     try {
-      await addHealthRecord({
-        cat_id: formCatId, record_type: formType, title: formTitle,
+      const records = checkedTypes.map(([type, { dueDate }]) => ({
+        cat_id: formCatId,
+        record_type: type,
+        title: formTitle,
         date: formDate,
-        ...(formDueDate ? { next_due_date: formDueDate } : {}),
+        ...(dueDate ? { next_due_date: dueDate } : {}),
         ...(formNotes ? { description: formNotes } : {}),
         ...(formVet ? { vet_name: formVet } : {}),
-      });
+      }));
+      await addHealthRecords(records);
       setShowAddForm(false);
-      setFormCatId(""); setFormTitle(""); setFormDueDate(""); setFormNotes(""); setFormVet("");
+      setFormCatId(""); setFormTitle(""); setFormNotes(""); setFormVet("");
+      setFormTypes({
+        vaccine: { checked: false, dueDate: "" },
+        deworm: { checked: false, dueDate: "" },
+        vet_visit: { checked: false, dueDate: "" },
+        medication: { checked: false, dueDate: "" },
+        other: { checked: false, dueDate: "" },
+      });
       loadData();
     } finally { setSaving(false); }
   };
@@ -431,26 +448,57 @@ export default function HealthPage() {
             </select>
           </div>
           <div>
-            <label className="text-xs text-muted block mb-1">Type</label>
-            <select value={formType} onChange={e => setFormType(e.target.value)}>
-              <option value="vaccine">Vaccine</option>
-              <option value="deworm">Deworming</option>
-              <option value="vet_visit">Vet Visit</option>
-              <option value="medication">Medication</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-          <div>
             <label className="text-xs text-muted block mb-1">Title</label>
-            <input type="text" placeholder="e.g., FVRCP Vaccine" value={formTitle} onChange={e => setFormTitle(e.target.value)} />
+            <input type="text" placeholder="e.g., Annual Checkup" value={formTitle} onChange={e => setFormTitle(e.target.value)} />
           </div>
           <div>
             <label className="text-xs text-muted block mb-1">Date</label>
             <input type="date" value={formDate} onChange={e => setFormDate(e.target.value)} />
           </div>
+
+          {/* Type checkboxes with per-type due dates */}
           <div>
-            <label className="text-xs text-muted block mb-1">Next Due Date</label>
-            <input type="date" value={formDueDate} onChange={e => setFormDueDate(e.target.value)} />
+            <label className="text-xs text-muted block mb-2">What was done? (tick all that apply)</label>
+            <div className="space-y-2">
+              {Object.entries(formTypes).map(([type, { checked, dueDate }]) => {
+                const config = typeConfig[type];
+                const Icon = config.icon;
+                const label = type === "vet_visit" ? "Vet Visit" : type === "other" ? "Other" : type.charAt(0).toUpperCase() + type.slice(1);
+                return (
+                  <div key={type} className="space-y-1">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(e) => setFormTypes(prev => ({
+                          ...prev,
+                          [type]: { ...prev[type], checked: e.target.checked },
+                        }))}
+                        className="w-4 h-4 rounded border-gray-300 text-golden-500 focus:ring-golden-500"
+                      />
+                      <div className={`w-6 h-6 rounded-lg ${config.bg} flex items-center justify-center`}>
+                        <Icon size={13} className={config.color} />
+                      </div>
+                      <span className="text-xs font-medium">{label}</span>
+                    </label>
+                    {checked && (
+                      <div className="ml-12">
+                        <label className="text-[11px] text-muted block mb-0.5">Next due date for {label.toLowerCase()}</label>
+                        <input
+                          type="date"
+                          value={dueDate}
+                          onChange={(e) => setFormTypes(prev => ({
+                            ...prev,
+                            [type]: { ...prev[type], dueDate: e.target.value },
+                          }))}
+                          className="text-xs"
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           {/* Vet Selector - Google Places Nearby Search */}
@@ -470,7 +518,7 @@ export default function HealthPage() {
             <textarea rows={2} placeholder="Optional notes..." value={formNotes} onChange={e => setFormNotes(e.target.value)} />
           </div>
           <div className="flex gap-2">
-            <button onClick={handleSave} disabled={saving || !formCatId || !formTitle} className="flex-1 py-2.5 rounded-xl golden-gradient text-white text-sm font-semibold shadow-md disabled:opacity-50">
+            <button onClick={handleSave} disabled={saving || !formCatId || !formTitle || checkedTypes.length === 0} className="flex-1 py-2.5 rounded-xl golden-gradient text-white text-sm font-semibold shadow-md disabled:opacity-50">
               {saving ? "Saving..." : "Save Record"}
             </button>
             <button onClick={() => setShowAddForm(false)} className="px-4 py-2.5 rounded-xl bg-golden-50 text-golden-700 text-sm font-medium">Cancel</button>
