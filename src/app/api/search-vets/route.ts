@@ -15,8 +15,9 @@ export async function GET(request: NextRequest) {
 
   try {
     const url = new URL('https://maps.googleapis.com/maps/api/place/textsearch/json')
-    url.searchParams.set('query', `${query} veterinary clinic`)
+    url.searchParams.set('query', `${query} veterinary clinic Malaysia`)
     url.searchParams.set('type', 'veterinary_care')
+    url.searchParams.set('region', 'my')
     url.searchParams.set('key', apiKey)
 
     const res = await fetch(url.toString())
