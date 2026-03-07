@@ -31,6 +31,7 @@ create table health_records (
   description text,
   date date not null default current_date,
   next_due_date date,
+  vet_name text,
   created_at timestamptz default now()
 );
 

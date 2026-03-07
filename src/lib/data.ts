@@ -51,7 +51,7 @@ export async function getHealthRecords(catId?: string): Promise<HealthRecord[]> 
 
 export async function addHealthRecord(record: {
   cat_id: string; record_type: string; title: string;
-  description?: string; date: string; next_due_date?: string;
+  description?: string; date: string; next_due_date?: string; vet_name?: string;
 }) {
   const { data, error } = await supabase.from('health_records').insert(record).select().single()
   if (error) throw error

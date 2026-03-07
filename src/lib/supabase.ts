@@ -31,7 +31,15 @@ export type HealthRecord = {
   description: string | null
   date: string
   next_due_date: string | null
+  vet_name: string | null
   created_at: string
+}
+
+export type Vet = {
+  name: string
+  area: string
+  state: string
+  maps_url: string
 }
 
 export type FoodLog = {

@@ -10,10 +10,13 @@ import {
   ArrowLeft,
   Loader2,
   Trash2,
+  MapPin,
+  ExternalLink,
 } from "lucide-react";
 import Link from "next/link";
 import { format, differenceInDays } from "date-fns";
 import { getCats, getHealthRecords, addHealthRecord, deleteHealthRecord } from "@/lib/data";
+import { malaysianVets, getVetsByState } from "@/lib/vets-malaysia";
 import type { Cat, HealthRecord } from "@/lib/supabase";
 
 const typeConfig: Record<string, { icon: typeof Syringe; color: string; bg: string }> = {
@@ -30,6 +33,8 @@ function RecordCard({ record, onDelete }: { record: HealthRecord; onDelete: (id:
   const dueIn = record.next_due_date
     ? differenceInDays(new Date(record.next_due_date), new Date())
     : null;
+
+  const vet = record.vet_name ? malaysianVets.find(v => v.name === record.vet_name) : null;
 
   return (
     <div className="card p-4">
@@ -49,6 +54,24 @@ function RecordCard({ record, onDelete }: { record: HealthRecord; onDelete: (id:
           </div>
           {record.description && (
             <p className="text-xs text-muted mt-0.5">{record.description}</p>
+          )}
+          {record.vet_name && (
+            <div className="flex items-center gap-1 mt-1.5">
+              <MapPin size={11} className="text-golden-500 shrink-0" />
+              {vet ? (
+                <a
+                  href={vet.maps_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] text-golden-600 font-medium flex items-center gap-0.5 hover:underline"
+                >
+                  {record.vet_name} <span className="text-muted font-normal">({vet.area})</span>
+                  <ExternalLink size={9} className="text-muted" />
+                </a>
+              ) : (
+                <span className="text-[11px] text-golden-600 font-medium">{record.vet_name}</span>
+              )}
+            </div>
           )}
           {record.next_due_date && dueIn !== null && (
             <div className="mt-2">
@@ -83,6 +106,9 @@ export default function HealthPage() {
   const [formDate, setFormDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [formDueDate, setFormDueDate] = useState("");
   const [formNotes, setFormNotes] = useState("");
+  const [formVet, setFormVet] = useState("");
+  const [customVet, setCustomVet] = useState("");
+  const [vetSearch, setVetSearch] = useState("");
 
   const loadData = () => {
     Promise.all([getCats(), getHealthRecords()])
@@ -94,6 +120,7 @@ export default function HealthPage() {
 
   const handleSave = async () => {
     if (!formCatId || !formTitle) return;
+    const vetName = formVet === "__custom" ? customVet : formVet;
     setSaving(true);
     try {
       await addHealthRecord({
@@ -101,9 +128,10 @@ export default function HealthPage() {
         date: formDate,
         ...(formDueDate ? { next_due_date: formDueDate } : {}),
         ...(formNotes ? { description: formNotes } : {}),
+        ...(vetName ? { vet_name: vetName } : {}),
       });
       setShowAddForm(false);
-      setFormCatId(""); setFormTitle(""); setFormDueDate(""); setFormNotes("");
+      setFormCatId(""); setFormTitle(""); setFormDueDate(""); setFormNotes(""); setFormVet(""); setCustomVet(""); setVetSearch("");
       loadData();
     } finally { setSaving(false); }
   };
@@ -120,6 +148,15 @@ export default function HealthPage() {
   const filtered = records
     .filter(r => selectedCat === "all" || r.cat_id === selectedCat)
     .filter(r => filterType === "all" || r.record_type === filterType);
+
+  const vetsByState = getVetsByState();
+  const filteredVets = vetSearch
+    ? malaysianVets.filter(v =>
+        v.name.toLowerCase().includes(vetSearch.toLowerCase()) ||
+        v.area.toLowerCase().includes(vetSearch.toLowerCase()) ||
+        v.state.toLowerCase().includes(vetSearch.toLowerCase())
+      )
+    : [];
 
   return (
     <div className="px-4 pt-12 space-y-4">
@@ -182,6 +219,70 @@ export default function HealthPage() {
             <label className="text-xs text-muted block mb-1">Next Due Date</label>
             <input type="date" value={formDueDate} onChange={e => setFormDueDate(e.target.value)} />
           </div>
+
+          {/* Vet Selector */}
+          <div>
+            <label className="text-xs text-muted block mb-1">
+              <MapPin size={11} className="inline mr-0.5" />
+              Vet Clinic (optional)
+            </label>
+            <input
+              type="text"
+              placeholder="Search vet clinics in Malaysia..."
+              value={vetSearch}
+              onChange={e => { setVetSearch(e.target.value); if (formVet !== "__custom") setFormVet(""); }}
+              className="mb-1"
+            />
+            {vetSearch && filteredVets.length > 0 && (
+              <div className="max-h-36 overflow-y-auto rounded-lg border border-card-border bg-white">
+                {filteredVets.map(vet => (
+                  <button
+                    key={vet.name}
+                    type="button"
+                    onClick={() => { setFormVet(vet.name); setVetSearch(""); }}
+                    className={`w-full text-left px-3 py-2 text-xs hover:bg-golden-50 border-b border-card-border last:border-0 ${formVet === vet.name ? "bg-golden-50 font-semibold" : ""}`}
+                  >
+                    <span className="font-medium">{vet.name}</span>
+                    <span className="text-muted ml-1">- {vet.area}, {vet.state}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {!vetSearch && (
+              <select value={formVet} onChange={e => { setFormVet(e.target.value); setCustomVet(""); }}>
+                <option value="">No vet selected</option>
+                {Object.entries(vetsByState).map(([state, vets]) => (
+                  <optgroup key={state} label={state}>
+                    {vets.map(v => (
+                      <option key={v.name} value={v.name}>{v.name} ({v.area})</option>
+                    ))}
+                  </optgroup>
+                ))}
+                <option value="__custom">Other (type manually)</option>
+              </select>
+            )}
+            {formVet && formVet !== "__custom" && (
+              <div className="flex items-center gap-1 mt-1">
+                <MapPin size={11} className="text-golden-500" />
+                <span className="text-[11px] text-golden-600 font-medium">{formVet}</span>
+                {(() => { const v = malaysianVets.find(v => v.name === formVet); return v ? (
+                  <a href={v.maps_url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-muted flex items-center gap-0.5 ml-1 hover:underline">
+                    Open in Maps <ExternalLink size={9} />
+                  </a>
+                ) : null; })()}
+              </div>
+            )}
+            {formVet === "__custom" && (
+              <input
+                type="text"
+                placeholder="Enter vet clinic name..."
+                value={customVet}
+                onChange={e => setCustomVet(e.target.value)}
+                className="mt-1"
+              />
+            )}
+          </div>
+
           <div>
             <label className="text-xs text-muted block mb-1">Notes</label>
             <textarea rows={2} placeholder="Optional notes..." value={formNotes} onChange={e => setFormNotes(e.target.value)} />

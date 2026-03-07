@@ -45,37 +45,37 @@ export const mockHealthRecords: HealthRecord[] = [
   {
     id: '1', cat_id: '1', record_type: 'vaccine', title: 'FVRCP (Core Vaccine)',
     description: 'First dose of feline distemper combo vaccine',
-    date: '2024-08-15', next_due_date: '2025-08-15', created_at: '2024-08-15T00:00:00Z',
+    date: '2024-08-15', next_due_date: '2025-08-15', created_at: '2024-08-15T00:00:00Z', vet_name: null,
   },
   {
     id: '2', cat_id: '1', record_type: 'vaccine', title: 'Rabies Vaccine',
     description: 'Annual rabies vaccination',
-    date: '2024-10-01', next_due_date: '2025-10-01', created_at: '2024-10-01T00:00:00Z',
+    date: '2024-10-01', next_due_date: '2025-10-01', created_at: '2024-10-01T00:00:00Z', vet_name: null,
   },
   {
     id: '3', cat_id: '1', record_type: 'deworm', title: 'Deworming Treatment',
     description: 'Broad-spectrum deworming',
-    date: '2025-01-15', next_due_date: '2025-04-15', created_at: '2025-01-15T00:00:00Z',
+    date: '2025-01-15', next_due_date: '2025-04-15', created_at: '2025-01-15T00:00:00Z', vet_name: null,
   },
   {
     id: '4', cat_id: '2', record_type: 'vaccine', title: 'FVRCP (Core Vaccine)',
     description: 'First dose of feline distemper combo vaccine',
-    date: '2024-08-15', next_due_date: '2025-08-15', created_at: '2024-08-15T00:00:00Z',
+    date: '2024-08-15', next_due_date: '2025-08-15', created_at: '2024-08-15T00:00:00Z', vet_name: null,
   },
   {
     id: '5', cat_id: '2', record_type: 'vaccine', title: 'Rabies Vaccine',
     description: 'Annual rabies vaccination',
-    date: '2024-10-01', next_due_date: '2025-10-01', created_at: '2024-10-01T00:00:00Z',
+    date: '2024-10-01', next_due_date: '2025-10-01', created_at: '2024-10-01T00:00:00Z', vet_name: null,
   },
   {
     id: '6', cat_id: '2', record_type: 'deworm', title: 'Deworming Treatment',
     description: 'Broad-spectrum deworming',
-    date: '2025-01-15', next_due_date: '2025-04-15', created_at: '2025-01-15T00:00:00Z',
+    date: '2025-01-15', next_due_date: '2025-04-15', created_at: '2025-01-15T00:00:00Z', vet_name: null,
   },
   {
     id: '7', cat_id: '1', record_type: 'vet_visit', title: 'Annual Checkup',
     description: 'General health examination, all clear',
-    date: '2025-02-01', next_due_date: '2026-02-01', created_at: '2025-02-01T00:00:00Z',
+    date: '2025-02-01', next_due_date: '2026-02-01', created_at: '2025-02-01T00:00:00Z', vet_name: 'Gasing Veterinary Hospital',
   },
 ]
 
