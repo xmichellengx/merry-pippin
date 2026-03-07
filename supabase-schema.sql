@@ -1,4 +1,4 @@
--- Paw Palace: Database schema for Supabase
+-- Merry and Pippin Growth Tracker: Database schema for Supabase
 -- Run this in your Supabase SQL Editor
 
 -- Cats table

@@ -1,21 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Heart,
-  Scale,
   UtensilsCrossed,
   Calendar,
   TrendingUp,
-  TrendingDown,
   AlertCircle,
   Sparkles,
   ChevronRight,
   Cat as CatIcon,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
-import { mockCats, getCatWeights, getUpcomingRecords, mockFoodLogs } from "@/lib/mock-data";
 import { format, differenceInDays, differenceInMonths } from "date-fns";
+import { getCats, getWeightRecords, getHealthRecords, getFoodLogs } from "@/lib/data";
+import type { Cat, WeightRecord, HealthRecord, FoodLog } from "@/lib/supabase";
 
 function getAge(dob: string | null) {
   if (!dob) return "Unknown";
@@ -26,15 +26,14 @@ function getAge(dob: string | null) {
   return rem > 0 ? `${years}y ${rem}m` : `${years}y`;
 }
 
-function getHealthSuggestions() {
-  const upcoming = getUpcomingRecords();
+function buildSuggestions(cats: Cat[], weights: WeightRecord[], health: HealthRecord[]) {
   const suggestions: string[] = [];
   const today = new Date();
 
-  for (const rec of upcoming) {
+  for (const rec of health) {
     if (!rec.next_due_date) continue;
     const daysUntil = differenceInDays(new Date(rec.next_due_date), today);
-    const catName = mockCats.find(c => c.id === rec.cat_id)?.name ?? "Cat";
+    const catName = cats.find(c => c.id === rec.cat_id)?.name ?? "Cat";
     if (daysUntil <= 30 && daysUntil >= 0) {
       suggestions.push(`${catName}'s ${rec.title} is due in ${daysUntil} days (${format(new Date(rec.next_due_date), "MMM d")})`);
     } else if (daysUntil < 0) {
@@ -42,11 +41,11 @@ function getHealthSuggestions() {
     }
   }
 
-  for (const cat of mockCats) {
-    const weights = getCatWeights(cat.id);
-    if (weights.length >= 2) {
-      const latest = weights[weights.length - 1];
-      const prev = weights[weights.length - 2];
+  for (const cat of cats) {
+    const catWeights = weights.filter(w => w.cat_id === cat.id).sort((a, b) => a.recorded_at.localeCompare(b.recorded_at));
+    if (catWeights.length >= 2) {
+      const latest = catWeights[catWeights.length - 1];
+      const prev = catWeights[catWeights.length - 2];
       const change = latest.weight_kg - prev.weight_kg;
       if (change > 0.5) {
         suggestions.push(`${cat.name} gained ${change.toFixed(1)}kg recently. Monitor food portions.`);
@@ -65,10 +64,30 @@ function getHealthSuggestions() {
 }
 
 export default function Dashboard() {
+  const [cats, setCats] = useState<Cat[]>([]);
+  const [weights, setWeights] = useState<WeightRecord[]>([]);
+  const [health, setHealth] = useState<HealthRecord[]>([]);
+  const [todayFood, setTodayFood] = useState<FoodLog[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeCat, setActiveCat] = useState<string | null>(null);
-  const suggestions = getHealthSuggestions();
-  const todayStr = format(new Date(), "yyyy-MM-dd");
-  const todayFood = mockFoodLogs.filter(f => f.date === todayStr);
+
+  useEffect(() => {
+    const todayStr = format(new Date(), "yyyy-MM-dd");
+    Promise.all([getCats(), getWeightRecords(), getHealthRecords(), getFoodLogs(todayStr)])
+      .then(([c, w, h, f]) => { setCats(c); setWeights(w); setHealth(h); setTodayFood(f); })
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 size={32} className="text-golden-500 animate-spin" />
+      </div>
+    );
+  }
+
+  const suggestions = buildSuggestions(cats, weights, health);
+  const upcoming = health.filter(h => h.next_due_date).sort((a, b) => (a.next_due_date ?? '').localeCompare(b.next_due_date ?? ''));
 
   return (
     <div className="px-4 pt-12 space-y-5">
@@ -76,26 +95,24 @@ export default function Dashboard() {
       <div className="golden-gradient rounded-2xl p-5 text-white shadow-lg">
         <div className="flex items-center gap-2 mb-1">
           <CatIcon size={24} />
-          <h1 className="text-xl font-bold">Paw Palace</h1>
+          <h1 className="text-xl font-bold">Merry & Pippin</h1>
         </div>
-        <p className="text-white/80 text-sm">Merry & Pippin&apos;s Wellness Hub</p>
+        <p className="text-white/80 text-sm">Growth Tracker</p>
         <p className="text-white/60 text-xs mt-1">{format(new Date(), "EEEE, MMMM d, yyyy")}</p>
       </div>
 
       {/* Cat Cards */}
       <div className="grid grid-cols-2 gap-3">
-        {mockCats.map((cat) => {
-          const weights = getCatWeights(cat.id);
-          const latestWeight = weights.length > 0 ? weights[weights.length - 1].weight_kg : null;
+        {cats.map((cat) => {
+          const catWeights = weights.filter(w => w.cat_id === cat.id).sort((a, b) => a.recorded_at.localeCompare(b.recorded_at));
+          const latestWeight = catWeights.length > 0 ? catWeights[catWeights.length - 1].weight_kg : null;
           const isActive = activeCat === cat.id;
 
           return (
             <button
               key={cat.id}
               onClick={() => setActiveCat(isActive ? null : cat.id)}
-              className={`card p-4 text-left transition-all ${
-                isActive ? "ring-2 ring-golden-400 shadow-md" : ""
-              }`}
+              className={`card p-4 text-left transition-all ${isActive ? "ring-2 ring-golden-400 shadow-md" : ""}`}
             >
               <div className="w-10 h-10 rounded-full golden-gradient flex items-center justify-center mb-2">
                 <span className="text-white font-bold text-sm">{cat.name[0]}</span>
@@ -135,7 +152,7 @@ export default function Dashboard() {
           <Heart size={20} className="text-danger mx-auto mb-1" />
           <p className="text-xs font-medium">Health</p>
           <p className="text-[10px] text-muted">
-            {getUpcomingRecords().filter(r => {
+            {upcoming.filter(r => {
               if (!r.next_due_date) return false;
               const d = differenceInDays(new Date(r.next_due_date), new Date());
               return d <= 30 && d >= 0;
@@ -166,8 +183,10 @@ export default function Dashboard() {
           </Link>
         </div>
         <div className="space-y-2">
-          {getUpcomingRecords().slice(0, 4).map((rec) => {
-            const cat = mockCats.find(c => c.id === rec.cat_id);
+          {upcoming.length === 0 ? (
+            <p className="text-xs text-muted">No upcoming events.</p>
+          ) : upcoming.slice(0, 4).map((rec) => {
+            const cat = cats.find(c => c.id === rec.cat_id);
             if (!rec.next_due_date) return null;
             const daysUntil = differenceInDays(new Date(rec.next_due_date), new Date());
             const isOverdue = daysUntil < 0;
@@ -207,7 +226,7 @@ export default function Dashboard() {
         ) : (
           <div className="space-y-2">
             {todayFood.map((meal) => {
-              const cat = mockCats.find(c => c.id === meal.cat_id);
+              const cat = cats.find(c => c.id === meal.cat_id);
               return (
                 <div key={meal.id} className="flex items-center justify-between py-1.5">
                   <div>

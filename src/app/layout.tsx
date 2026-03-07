@@ -9,13 +9,13 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "Paw Palace - Merry & Pippin",
-  description: "Wellness tracker for Merry & Pippin, Golden British Shorthairs",
+  title: "Merry & Pippin Growth Tracker",
+  description: "Growth tracker for Merry & Pippin, Golden British Shorthairs",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Paw Palace",
+    title: "M&P Growth Tracker",
   },
 };
 

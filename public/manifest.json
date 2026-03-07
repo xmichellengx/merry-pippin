@@ -1,7 +1,7 @@
 {
-  "name": "Paw Palace - Merry & Pippin",
-  "short_name": "Paw Palace",
-  "description": "Wellness tracker for Merry & Pippin, Golden British Shorthairs",
+  "name": "Merry & Pippin Growth Tracker",
+  "short_name": "M&P Tracker",
+  "description": "Growth tracker for Merry & Pippin, Golden British Shorthairs",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#FFFBF5",
