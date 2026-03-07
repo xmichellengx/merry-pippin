@@ -121,9 +121,9 @@ function EditCatModal({ cat, onClose, onSaved }: { cat: Cat; onClose: () => void
   };
 
   return (
-    <div className="fixed inset-0 overlay z-50 flex items-end justify-center" onClick={onClose}>
+    <div className="fixed inset-0 overlay z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div
-        className="bg-white rounded-t-2xl w-full max-w-lg p-5 space-y-4 max-h-[85vh] overflow-y-auto"
+        className="bg-white rounded-2xl w-full max-w-sm p-5 space-y-4 max-h-[90vh] overflow-y-auto"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
