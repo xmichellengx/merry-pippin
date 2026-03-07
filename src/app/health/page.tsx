@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Syringe,
   Bug,
@@ -12,11 +12,13 @@ import {
   Trash2,
   MapPin,
   ExternalLink,
+  Navigation,
+  Star,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { format, differenceInDays } from "date-fns";
 import { getCats, getHealthRecords, addHealthRecord, deleteHealthRecord } from "@/lib/data";
-import { malaysianVets, getVetsByState } from "@/lib/vets-malaysia";
 import type { Cat, HealthRecord } from "@/lib/supabase";
 
 const typeConfig: Record<string, { icon: typeof Syringe; color: string; bg: string }> = {
@@ -27,14 +29,194 @@ const typeConfig: Record<string, { icon: typeof Syringe; color: string; bg: stri
   other: { icon: Stethoscope, color: "text-gray-600", bg: "bg-gray-50" },
 };
 
+type NearbyVet = {
+  name: string;
+  address: string;
+  lat: number;
+  lng: number;
+  rating: number | null;
+  totalRatings: number;
+  placeId: string;
+  openNow: boolean | null;
+  mapsUrl: string;
+  isOpen: boolean;
+};
+
+function VetSelector({
+  selectedVet,
+  onSelect,
+}: {
+  selectedVet: string;
+  onSelect: (name: string, mapsUrl?: string) => void;
+}) {
+  const [nearbyVets, setNearbyVets] = useState<NearbyVet[]>([]);
+  const [loadingVets, setLoadingVets] = useState(false);
+  const [vetError, setVetError] = useState("");
+  const [showResults, setShowResults] = useState(false);
+  const [manualEntry, setManualEntry] = useState(false);
+  const [customVet, setCustomVet] = useState("");
+
+  const findNearbyVets = useCallback(async () => {
+    setLoadingVets(true);
+    setVetError("");
+    setShowResults(false);
+
+    if (!navigator.geolocation) {
+      setVetError("Geolocation is not supported by your browser.");
+      setLoadingVets(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const res = await fetch(
+            `/api/nearby-vets?lat=${position.coords.latitude}&lng=${position.coords.longitude}`
+          );
+          const data = await res.json();
+          if (!res.ok) {
+            setVetError(data.error || "Failed to find nearby vets");
+          } else {
+            setNearbyVets(data.vets || []);
+            setShowResults(true);
+          }
+        } catch {
+          setVetError("Failed to fetch nearby vets");
+        } finally {
+          setLoadingVets(false);
+        }
+      },
+      (err) => {
+        setVetError(
+          err.code === 1
+            ? "Location access denied. Please enable location in your browser settings."
+            : "Could not get your location. Please try again."
+        );
+        setLoadingVets(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }, []);
+
+  if (selectedVet && !manualEntry) {
+    return (
+      <div className="flex items-center gap-2 p-2 rounded-lg bg-golden-50 border border-golden-200">
+        <MapPin size={14} className="text-golden-500 shrink-0" />
+        <span className="text-xs font-medium text-golden-700 flex-1">{selectedVet}</span>
+        <button
+          type="button"
+          onClick={() => onSelect("")}
+          className="text-muted hover:text-foreground"
+        >
+          <X size={14} />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={findNearbyVets}
+          disabled={loadingVets}
+          className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-golden-50 text-golden-700 text-xs font-medium hover:bg-golden-100 transition-colors disabled:opacity-50"
+        >
+          {loadingVets ? (
+            <Loader2 size={13} className="animate-spin" />
+          ) : (
+            <Navigation size={13} />
+          )}
+          {loadingVets ? "Finding vets..." : "Find Nearby Vets"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setManualEntry(!manualEntry)}
+          className="px-3 py-2 rounded-lg bg-gray-100 text-gray-600 text-xs font-medium hover:bg-gray-200 transition-colors"
+        >
+          Type manually
+        </button>
+      </div>
+
+      {vetError && (
+        <p className="text-xs text-red-500">{vetError}</p>
+      )}
+
+      {manualEntry && (
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="Enter vet clinic name..."
+            value={customVet}
+            onChange={(e) => setCustomVet(e.target.value)}
+            className="flex-1"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              if (customVet.trim()) {
+                onSelect(customVet.trim());
+                setManualEntry(false);
+                setCustomVet("");
+              }
+            }}
+            className="px-3 py-2 rounded-lg golden-gradient text-white text-xs font-medium"
+          >
+            Add
+          </button>
+        </div>
+      )}
+
+      {showResults && (
+        <div className="max-h-48 overflow-y-auto rounded-lg border border-card-border bg-white">
+          {nearbyVets.length === 0 ? (
+            <p className="p-3 text-xs text-muted text-center">No vet clinics found nearby.</p>
+          ) : (
+            nearbyVets.map((vet) => (
+              <button
+                key={vet.placeId}
+                type="button"
+                onClick={() => {
+                  onSelect(vet.name, vet.mapsUrl);
+                  setShowResults(false);
+                }}
+                className="w-full text-left px-3 py-2.5 hover:bg-golden-50 border-b border-card-border last:border-0 transition-colors"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <span className="text-xs font-semibold block">{vet.name}</span>
+                    <span className="text-[11px] text-muted block mt-0.5">{vet.address}</span>
+                  </div>
+                  <div className="text-right shrink-0">
+                    {vet.rating !== null && (
+                      <span className="flex items-center gap-0.5 text-[11px] text-amber-600">
+                        <Star size={10} className="fill-amber-400 text-amber-400" />
+                        {vet.rating} <span className="text-muted">({vet.totalRatings})</span>
+                      </span>
+                    )}
+                    {vet.openNow !== null && (
+                      <span className={`text-[10px] font-medium ${vet.openNow ? "text-green-600" : "text-red-500"}`}>
+                        {vet.openNow ? "Open now" : "Closed"}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </button>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function RecordCard({ record, onDelete }: { record: HealthRecord; onDelete: (id: string) => void }) {
   const config = typeConfig[record.record_type] ?? typeConfig.other;
   const Icon = config.icon;
   const dueIn = record.next_due_date
     ? differenceInDays(new Date(record.next_due_date), new Date())
     : null;
-
-  const vet = record.vet_name ? malaysianVets.find(v => v.name === record.vet_name) : null;
 
   return (
     <div className="card p-4">
@@ -58,19 +240,7 @@ function RecordCard({ record, onDelete }: { record: HealthRecord; onDelete: (id:
           {record.vet_name && (
             <div className="flex items-center gap-1 mt-1.5">
               <MapPin size={11} className="text-golden-500 shrink-0" />
-              {vet ? (
-                <a
-                  href={vet.maps_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[11px] text-golden-600 font-medium flex items-center gap-0.5 hover:underline"
-                >
-                  {record.vet_name} <span className="text-muted font-normal">({vet.area})</span>
-                  <ExternalLink size={9} className="text-muted" />
-                </a>
-              ) : (
-                <span className="text-[11px] text-golden-600 font-medium">{record.vet_name}</span>
-              )}
+              <span className="text-[11px] text-golden-600 font-medium">{record.vet_name}</span>
             </div>
           )}
           {record.next_due_date && dueIn !== null && (
@@ -107,8 +277,6 @@ export default function HealthPage() {
   const [formDueDate, setFormDueDate] = useState("");
   const [formNotes, setFormNotes] = useState("");
   const [formVet, setFormVet] = useState("");
-  const [customVet, setCustomVet] = useState("");
-  const [vetSearch, setVetSearch] = useState("");
 
   const loadData = () => {
     Promise.all([getCats(), getHealthRecords()])
@@ -120,7 +288,6 @@ export default function HealthPage() {
 
   const handleSave = async () => {
     if (!formCatId || !formTitle) return;
-    const vetName = formVet === "__custom" ? customVet : formVet;
     setSaving(true);
     try {
       await addHealthRecord({
@@ -128,10 +295,10 @@ export default function HealthPage() {
         date: formDate,
         ...(formDueDate ? { next_due_date: formDueDate } : {}),
         ...(formNotes ? { description: formNotes } : {}),
-        ...(vetName ? { vet_name: vetName } : {}),
+        ...(formVet ? { vet_name: formVet } : {}),
       });
       setShowAddForm(false);
-      setFormCatId(""); setFormTitle(""); setFormDueDate(""); setFormNotes(""); setFormVet(""); setCustomVet(""); setVetSearch("");
+      setFormCatId(""); setFormTitle(""); setFormDueDate(""); setFormNotes(""); setFormVet("");
       loadData();
     } finally { setSaving(false); }
   };
@@ -148,15 +315,6 @@ export default function HealthPage() {
   const filtered = records
     .filter(r => selectedCat === "all" || r.cat_id === selectedCat)
     .filter(r => filterType === "all" || r.record_type === filterType);
-
-  const vetsByState = getVetsByState();
-  const filteredVets = vetSearch
-    ? malaysianVets.filter(v =>
-        v.name.toLowerCase().includes(vetSearch.toLowerCase()) ||
-        v.area.toLowerCase().includes(vetSearch.toLowerCase()) ||
-        v.state.toLowerCase().includes(vetSearch.toLowerCase())
-      )
-    : [];
 
   return (
     <div className="px-4 pt-12 space-y-4">
@@ -220,67 +378,16 @@ export default function HealthPage() {
             <input type="date" value={formDueDate} onChange={e => setFormDueDate(e.target.value)} />
           </div>
 
-          {/* Vet Selector */}
+          {/* Vet Selector - Google Places Nearby Search */}
           <div>
             <label className="text-xs text-muted block mb-1">
               <MapPin size={11} className="inline mr-0.5" />
               Vet Clinic (optional)
             </label>
-            <input
-              type="text"
-              placeholder="Search vet clinics in Malaysia..."
-              value={vetSearch}
-              onChange={e => { setVetSearch(e.target.value); if (formVet !== "__custom") setFormVet(""); }}
-              className="mb-1"
+            <VetSelector
+              selectedVet={formVet}
+              onSelect={(name) => setFormVet(name)}
             />
-            {vetSearch && filteredVets.length > 0 && (
-              <div className="max-h-36 overflow-y-auto rounded-lg border border-card-border bg-white">
-                {filteredVets.map(vet => (
-                  <button
-                    key={vet.name}
-                    type="button"
-                    onClick={() => { setFormVet(vet.name); setVetSearch(""); }}
-                    className={`w-full text-left px-3 py-2 text-xs hover:bg-golden-50 border-b border-card-border last:border-0 ${formVet === vet.name ? "bg-golden-50 font-semibold" : ""}`}
-                  >
-                    <span className="font-medium">{vet.name}</span>
-                    <span className="text-muted ml-1">- {vet.area}, {vet.state}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-            {!vetSearch && (
-              <select value={formVet} onChange={e => { setFormVet(e.target.value); setCustomVet(""); }}>
-                <option value="">No vet selected</option>
-                {Object.entries(vetsByState).map(([state, vets]) => (
-                  <optgroup key={state} label={state}>
-                    {vets.map(v => (
-                      <option key={v.name} value={v.name}>{v.name} ({v.area})</option>
-                    ))}
-                  </optgroup>
-                ))}
-                <option value="__custom">Other (type manually)</option>
-              </select>
-            )}
-            {formVet && formVet !== "__custom" && (
-              <div className="flex items-center gap-1 mt-1">
-                <MapPin size={11} className="text-golden-500" />
-                <span className="text-[11px] text-golden-600 font-medium">{formVet}</span>
-                {(() => { const v = malaysianVets.find(v => v.name === formVet); return v ? (
-                  <a href={v.maps_url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-muted flex items-center gap-0.5 ml-1 hover:underline">
-                    Open in Maps <ExternalLink size={9} />
-                  </a>
-                ) : null; })()}
-              </div>
-            )}
-            {formVet === "__custom" && (
-              <input
-                type="text"
-                placeholder="Enter vet clinic name..."
-                value={customVet}
-                onChange={e => setCustomVet(e.target.value)}
-                className="mt-1"
-              />
-            )}
           </div>
 
           <div>
