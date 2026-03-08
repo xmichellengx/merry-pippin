@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Admin PIN not configured' }, { status: 500 })
   }
 
-  if (pin === adminPin) {
+  if (String(pin).trim() === String(adminPin).trim()) {
     return NextResponse.json({ success: true })
   }
 
