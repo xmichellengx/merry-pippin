@@ -816,16 +816,16 @@ export default function HealthPage() {
         ))}
       </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
+      <div className="flex gap-2 overflow-x-auto pb-1">
         {["all", "vaccine", "deworm", "vet_visit", "medication"].map(type => (
           <button key={type} onClick={() => setFilterType(type)} className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors shrink-0 ${filterType === type ? "bg-foreground text-white" : "bg-golden-50 text-foreground/70"}`}>
             {type === "all" ? "All Types" : typeConfig[type]?.label ?? type}
           </button>
         ))}
-        <button onClick={() => litterSectionRef.current?.scrollIntoView({ behavior: "smooth" })} className="px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors shrink-0 bg-amber-100 text-amber-700 border border-amber-200">
-          🚽 Litter Analysis
-        </button>
       </div>
+      <button onClick={() => litterSectionRef.current?.scrollIntoView({ behavior: "smooth" })} className="w-full py-2 rounded-xl text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
+        🚽 Jump to Litter Analysis
+      </button>
 
       {isAdmin && showAddForm && (
         <div className="card p-4 space-y-3 border-golden-300 border-2">
