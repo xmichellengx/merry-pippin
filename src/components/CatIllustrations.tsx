@@ -57,25 +57,5 @@ export function CatWithCamera({ size = 100, className = "" }: { size?: number; c
 }
 
 export function TwoCatsSilhouette({ size = 140, className = "" }: { size?: number; className?: string }) {
-  return (
-    <svg width={size} height={size * 0.75} viewBox="0 0 200 150" fill="none" className={className}>
-      {/* Left cat - slightly bigger (Merry) */}
-      <ellipse cx="68" cy="100" rx="32" ry="28" fill="white" />
-      <circle cx="68" cy="58" r="28" fill="white" />
-      <path d="M44 38 Q40 18 54 32" fill="white" />
-      <path d="M92 38 Q96 18 82 32" fill="white" />
-      <ellipse cx="55" cy="108" rx="10" ry="6" fill="white" />
-      <ellipse cx="81" cy="108" rx="10" ry="6" fill="white" />
-      <path d="M98 95 Q110 80 105 65" stroke="white" strokeWidth="8" fill="none" strokeLinecap="round" />
-
-      {/* Right cat - slightly smaller (Pippin) */}
-      <ellipse cx="142" cy="104" rx="28" ry="24" fill="white" />
-      <circle cx="142" cy="66" r="24" fill="white" />
-      <path d="M122 50 Q118 32 131 44" fill="white" />
-      <path d="M162 50 Q166 32 153 44" fill="white" />
-      <ellipse cx="131" cy="112" rx="9" ry="5" fill="white" />
-      <ellipse cx="153" cy="112" rx="9" ry="5" fill="white" />
-      <path d="M168 100 Q178 88 175 75" stroke="white" strokeWidth="7" fill="none" strokeLinecap="round" />
-    </svg>
-  );
+  return <CatImage src="/two-cats-silhouette.png" alt="Two cats silhouette" size={size} className={className} />;
 }
