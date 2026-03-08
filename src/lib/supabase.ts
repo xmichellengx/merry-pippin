@@ -32,6 +32,7 @@ export type HealthRecord = {
   date: string
   next_due_date: string | null
   vet_name: string | null
+  photo_url: string | null
   created_at: string
 }
 

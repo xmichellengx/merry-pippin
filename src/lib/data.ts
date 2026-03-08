@@ -51,7 +51,7 @@ export async function getHealthRecords(catId?: string): Promise<HealthRecord[]> 
 
 export async function addHealthRecord(record: {
   cat_id: string; record_type: string; title: string;
-  description?: string; date: string; next_due_date?: string; vet_name?: string;
+  description?: string; date: string; next_due_date?: string; vet_name?: string; photo_url?: string;
 }) {
   const { data, error } = await supabase.from('health_records').insert(record).select().single()
   if (error) throw error
@@ -60,7 +60,7 @@ export async function addHealthRecord(record: {
 
 export async function addHealthRecords(records: {
   cat_id: string; record_type: string; title: string;
-  description?: string; date: string; next_due_date?: string; vet_name?: string;
+  description?: string; date: string; next_due_date?: string; vet_name?: string; photo_url?: string;
 }[]) {
   const { data, error } = await supabase.from('health_records').insert(records).select()
   if (error) throw error
@@ -69,7 +69,7 @@ export async function addHealthRecords(records: {
 
 export async function updateHealthRecord(id: string, updates: {
   title?: string; description?: string | null; date?: string;
-  next_due_date?: string | null; vet_name?: string | null; record_type?: string;
+  next_due_date?: string | null; vet_name?: string | null; record_type?: string; photo_url?: string | null;
 }) {
   const { data, error } = await supabase.from('health_records').update(updates).eq('id', id).select().single()
   if (error) throw error

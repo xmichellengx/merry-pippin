@@ -17,10 +17,13 @@ import {
   X,
   Check,
   Pencil,
+  Camera,
+  ImageIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { format, differenceInDays } from "date-fns";
 import { getCats, getHealthRecords, addHealthRecords, updateHealthRecord, deleteHealthRecord } from "@/lib/data";
+import { supabase } from "@/lib/supabase";
 import type { Cat, HealthRecord } from "@/lib/supabase";
 import { CatWithHeart, CatSleeping } from "@/components/CatIllustrations";
 import { useAdmin } from "@/components/AdminContext";
@@ -57,6 +60,86 @@ const dewormBrands = [
   { value: "Nexgard Combo", label: "Nexgard Combo — Boehringer Ingelheim (spot-on)" },
   { value: "Other deworm", label: "Other (type manually)" },
 ];
+
+async function uploadHealthPhoto(file: File): Promise<string> {
+  const fileExt = file.name.split('.').pop();
+  const fileName = `health-${Date.now()}.${fileExt}`;
+
+  const { error } = await supabase.storage.from('photos').upload(fileName, file);
+  if (!error) {
+    const { data: { publicUrl } } = supabase.storage.from('photos').getPublicUrl(fileName);
+    return publicUrl;
+  }
+
+  // Fallback to data URL if storage not configured
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.readAsDataURL(file);
+  });
+}
+
+function PhotoUpload({
+  photoUrl,
+  onUpload,
+  label,
+}: {
+  photoUrl: string;
+  onUpload: (url: string) => void;
+  label?: string;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const url = await uploadHealthPhoto(file);
+      onUpload(url);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div>
+      <label className="text-[11px] text-muted block mb-1">
+        <Camera size={10} className="inline mr-0.5" />
+        {label || "Photo (vaccine sticker / label)"}
+      </label>
+      {photoUrl ? (
+        <div className="relative inline-block">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={photoUrl} alt="Record photo" className="w-full max-w-[200px] h-auto rounded-lg border border-card-border" />
+          <button
+            type="button"
+            onClick={() => onUpload("")}
+            className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center"
+          >
+            <X size={10} />
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          disabled={uploading}
+          className="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed border-golden-200 text-golden-600 text-xs font-medium hover:border-golden-400 hover:bg-golden-50 transition-colors disabled:opacity-50"
+        >
+          {uploading ? (
+            <Loader2 size={14} className="animate-spin" />
+          ) : (
+            <Camera size={14} />
+          )}
+          {uploading ? "Uploading..." : "Upload photo"}
+        </button>
+      )}
+      <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
+    </div>
+  );
+}
 
 type NearbyVet = {
   name: string;
@@ -332,9 +415,11 @@ function EditRecordModal({
   const [notes, setNotes] = useState(record.description ?? "");
   const [vetName, setVetName] = useState(record.vet_name ?? "");
   const [recordType, setRecordType] = useState<string>(record.record_type);
+  const [photoUrl, setPhotoUrl] = useState(record.photo_url ?? "");
   const [saving, setSaving] = useState(false);
 
   const catName = cats.find(c => c.id === record.cat_id)?.name ?? "Unknown";
+  const showPhoto = recordType === "vaccine" || recordType === "deworm";
 
   const handleSave = async () => {
     if (!title) return;
@@ -347,6 +432,7 @@ function EditRecordModal({
         next_due_date: dueDate || null,
         description: notes || null,
         vet_name: vetName || null,
+        photo_url: photoUrl || null,
       });
       onSaved();
       onClose();
@@ -401,6 +487,14 @@ function EditRecordModal({
           <label className="text-xs text-muted block mb-1">Notes</label>
           <textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)} />
         </div>
+
+        {showPhoto && (
+          <PhotoUpload
+            photoUrl={photoUrl}
+            onUpload={setPhotoUrl}
+            label={recordType === "vaccine" ? "Vaccine sticker / label photo" : "Deworm product photo"}
+          />
+        )}
 
         <div className="flex gap-2 pt-2">
           <button
@@ -482,6 +576,24 @@ function RecordCard({
               <span className="text-[11px] text-golden-600 font-medium">{record.vet_name}</span>
             </div>
           )}
+          {record.photo_url && (
+            <div className="mt-2">
+              <button
+                onClick={() => window.open(record.photo_url!, '_blank')}
+                className="group relative"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={record.photo_url}
+                  alt="Vaccine/deworm label"
+                  className="w-full max-w-[180px] h-auto rounded-lg border border-card-border"
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 rounded-lg transition-colors flex items-center justify-center">
+                  <ImageIcon size={16} className="text-white opacity-0 group-hover:opacity-80 transition-opacity" />
+                </div>
+              </button>
+            </div>
+          )}
           {record.next_due_date && dueIn !== null && (
             <div className="flex items-center gap-2 mt-2">
               <span className={`badge ${isOverdue ? "badge-danger" : isDueSoon ? "badge-warning" : "badge-success"}`}>
@@ -525,12 +637,12 @@ export default function HealthPage() {
   const [formDate, setFormDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [formNotes, setFormNotes] = useState("");
   const [formVet, setFormVet] = useState("");
-  const [formTypes, setFormTypes] = useState<Record<string, { checked: boolean; dueDate: string; brand: string }>>({
-    vaccine: { checked: false, dueDate: "", brand: "" },
-    deworm: { checked: false, dueDate: "", brand: "" },
-    vet_visit: { checked: false, dueDate: "", brand: "" },
-    medication: { checked: false, dueDate: "", brand: "" },
-    other: { checked: false, dueDate: "", brand: "" },
+  const [formTypes, setFormTypes] = useState<Record<string, { checked: boolean; dueDate: string; brand: string; photo: string }>>({
+    vaccine: { checked: false, dueDate: "", brand: "", photo: "" },
+    deworm: { checked: false, dueDate: "", brand: "", photo: "" },
+    vet_visit: { checked: false, dueDate: "", brand: "", photo: "" },
+    medication: { checked: false, dueDate: "", brand: "", photo: "" },
+    other: { checked: false, dueDate: "", brand: "", photo: "" },
   });
 
   const loadData = () => {
@@ -547,7 +659,7 @@ export default function HealthPage() {
     if (!formCatId || !formTitle || checkedTypes.length === 0) return;
     setSaving(true);
     try {
-      const newRecords = checkedTypes.map(([type, { dueDate, brand }]) => {
+      const newRecords = checkedTypes.map(([type, { dueDate, brand, photo }]) => {
         const brandPrefix = brand && brand !== "Other vaccine" && brand !== "Other deworm" ? `${brand} — ` : "";
         return {
           cat_id: formCatId,
@@ -557,17 +669,18 @@ export default function HealthPage() {
           ...(dueDate ? { next_due_date: dueDate } : {}),
           ...(formNotes ? { description: formNotes } : {}),
           ...(formVet ? { vet_name: formVet } : {}),
+          ...(photo ? { photo_url: photo } : {}),
         };
       });
       await addHealthRecords(newRecords);
       setShowAddForm(false);
       setFormCatId(""); setFormTitle(""); setFormNotes(""); setFormVet("");
       setFormTypes({
-        vaccine: { checked: false, dueDate: "", brand: "" },
-        deworm: { checked: false, dueDate: "", brand: "" },
-        vet_visit: { checked: false, dueDate: "", brand: "" },
-        medication: { checked: false, dueDate: "", brand: "" },
-        other: { checked: false, dueDate: "", brand: "" },
+        vaccine: { checked: false, dueDate: "", brand: "", photo: "" },
+        deworm: { checked: false, dueDate: "", brand: "", photo: "" },
+        vet_visit: { checked: false, dueDate: "", brand: "", photo: "" },
+        medication: { checked: false, dueDate: "", brand: "", photo: "" },
+        other: { checked: false, dueDate: "", brand: "", photo: "" },
       });
       loadData();
     } finally { setSaving(false); }
@@ -646,10 +759,11 @@ export default function HealthPage() {
           <div>
             <label className="text-xs text-muted block mb-2">What was done? (tick all that apply)</label>
             <div className="space-y-1">
-              {Object.entries(formTypes).map(([type, { checked, dueDate, brand }]) => {
+              {Object.entries(formTypes).map(([type, { checked, dueDate, brand, photo }]) => {
                 const config = typeConfig[type];
                 const Icon = config.icon;
                 const brandOptions = type === "vaccine" ? vaccineBrands : type === "deworm" ? dewormBrands : null;
+                const showPhotoUpload = type === "vaccine" || type === "deworm";
                 return (
                   <div key={type}>
                     <label className="flex items-center gap-2.5 cursor-pointer py-1.5">
@@ -698,6 +812,16 @@ export default function HealthPage() {
                             className="text-xs"
                           />
                         </div>
+                        {showPhotoUpload && (
+                          <PhotoUpload
+                            photoUrl={photo}
+                            onUpload={(url) => setFormTypes(prev => ({
+                              ...prev,
+                              [type]: { ...prev[type], photo: url },
+                            }))}
+                            label={type === "vaccine" ? "Vaccine sticker / label photo" : "Deworm product photo"}
+                          />
+                        )}
                       </div>
                     )}
                   </div>
