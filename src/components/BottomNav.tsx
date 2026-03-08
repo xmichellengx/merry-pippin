@@ -136,19 +136,6 @@ function PawLocked({ size = 22, className = "" }: { size?: number; className?: s
   );
 }
 
-function PawUnlocked({ size = 22, className = "" }: { size?: number; className?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-      <ellipse cx="8.5" cy="7" rx="2.2" ry="2.8" fill="currentColor" transform="rotate(-15 8.5 7)" />
-      <ellipse cx="15.5" cy="7" rx="2.2" ry="2.8" fill="currentColor" transform="rotate(15 15.5 7)" />
-      <ellipse cx="5.5" cy="11.5" rx="1.8" ry="2.5" fill="currentColor" transform="rotate(-25 5.5 11.5)" />
-      <ellipse cx="18.5" cy="11.5" rx="1.8" ry="2.5" fill="currentColor" transform="rotate(25 18.5 11.5)" />
-      <ellipse cx="12" cy="16" rx="4.5" ry="4" fill="currentColor" />
-      <path d="M12 14.5 C12 13.5 10.8 13 10.2 13.8 C9.6 13 8.4 13.5 8.4 14.5 C8.4 15.8 10.2 17 12 17.5 C13.8 17 15.6 15.8 15.6 14.5 C15.6 13.5 14.4 13 13.8 13.8 C13.2 13 12 13.5 12 14.5Z" fill="white" opacity="0.9" />
-    </svg>
-  );
-}
-
 // ── Tab config ──
 
 const tabs = [
@@ -223,7 +210,7 @@ function PinModal() {
 
 export default function BottomNav() {
   const pathname = usePathname();
-  const { isAdmin, showPinModal, setShowPinModal, logout } = useAdmin();
+  const { showPinModal } = useAdmin();
 
   return (
     <>
@@ -248,21 +235,6 @@ export default function BottomNav() {
               </Link>
             );
           })}
-          <button
-            onClick={() => isAdmin ? logout() : setShowPinModal(true)}
-            className={`flex flex-col items-center justify-center gap-0.5 w-16 py-1 rounded-xl transition-colors ${
-              isAdmin ? "text-golden-600" : "text-muted"
-            }`}
-          >
-            {isAdmin ? (
-              <PawUnlocked size={24} className="text-golden-500" />
-            ) : (
-              <PawLocked size={24} />
-            )}
-            <span className={`text-[10px] font-medium ${isAdmin ? "text-golden-600 font-bold" : ""}`}>
-              Meowmeee
-            </span>
-          </button>
         </div>
       </nav>
     </>

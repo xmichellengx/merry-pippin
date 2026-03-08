@@ -16,6 +16,8 @@ import {
   X,
   Send,
   Bot,
+  Lock,
+  Unlock,
 } from "lucide-react";
 import Link from "next/link";
 import { format, differenceInDays, differenceInMonths } from "date-fns";
@@ -362,7 +364,7 @@ export default function Dashboard() {
   const [todayFood, setTodayFood] = useState<FoodLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingCat, setEditingCat] = useState<Cat | null>(null);
-  const { isAdmin } = useAdmin();
+  const { isAdmin, logout, setShowPinModal } = useAdmin();
 
   const loadData = () => {
     const todayStr = format(new Date(), "yyyy-MM-dd");
@@ -400,12 +402,22 @@ export default function Dashboard() {
 
   return (
     <div className="px-4 pt-12 space-y-5">
-      {/* Header */}
-      <div className="golden-gradient rounded-2xl p-5 text-white shadow-lg relative overflow-hidden">
+      {/* Header - tap to login/logout */}
+      <button
+        onClick={() => isAdmin ? logout() : setShowPinModal(true)}
+        className="w-full golden-gradient rounded-2xl p-5 text-white shadow-lg relative overflow-hidden text-left"
+      >
         <div className="relative z-10">
-          <div className="flex items-center gap-2 mb-1">
-            <CatIcon size={24} />
-            <h1 className="text-xl font-bold">Merry & Pippin</h1>
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2">
+              <CatIcon size={24} />
+              <h1 className="text-xl font-bold">Merry & Pippin</h1>
+            </div>
+            {isAdmin ? (
+              <Unlock size={18} className="text-white/70" />
+            ) : (
+              <Lock size={18} className="text-white/50" />
+            )}
           </div>
           <p className="text-white/80 text-sm">Growth Tracker</p>
           <p className="text-white/60 text-xs mt-1">{format(new Date(), "EEEE, MMMM d, yyyy")}</p>
@@ -413,7 +425,7 @@ export default function Dashboard() {
         <div className="absolute -right-2 -bottom-2 opacity-20">
           <TwoCatsSitting size={140} />
         </div>
-      </div>
+      </button>
 
       {/* Cat Cards */}
       <div className="grid grid-cols-2 gap-3">
