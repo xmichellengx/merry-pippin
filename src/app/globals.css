@@ -50,13 +50,20 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-quicksand), 'Quicksand', sans-serif;
+  font-size: 16px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Bump up small text sizes for readability */
+.text-xs { font-size: 0.8125rem !important; }
+.text-\[10px\] { font-size: 0.6875rem !important; }
+.text-\[9px\] { font-size: 0.6875rem !important; }
+.text-sm { font-size: 0.9375rem !important; }
+
 /* Mobile-first: safe area for bottom nav (nav is h-16 = 4rem) */
 .pb-safe {
-  padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
 }
 
 /* Smooth card shadows */
