@@ -6,6 +6,7 @@ import Link from "next/link";
 import { format, subDays } from "date-fns";
 import { getCats, getFoodLogs, addFoodLog, deleteFoodLog } from "@/lib/data";
 import type { Cat, FoodLog } from "@/lib/supabase";
+import { CatEating, CatSleeping } from "@/components/CatIllustrations";
 
 const foodTypeEmoji: Record<string, string> = {
   wet: "\uD83E\uDD6B",
@@ -74,7 +75,7 @@ export default function FoodPage() {
   });
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen"><Loader2 size={32} className="text-golden-500 animate-spin" /></div>;
+    return <div className="flex flex-col items-center justify-center min-h-screen gap-3"><CatSleeping size={120} className="opacity-30" /><Loader2 size={32} className="text-golden-500 animate-spin" /></div>;
   }
 
   return (
@@ -176,7 +177,7 @@ export default function FoodPage() {
 
       {filteredLogs.length === 0 ? (
         <div className="card p-8 text-center">
-          <UtensilsCrossed size={32} className="text-muted mx-auto mb-2" />
+          <CatEating size={90} className="mx-auto mb-2 opacity-40" />
           <p className="text-sm text-muted">No meals logged for this day.</p>
           <button onClick={() => setShowAddForm(true)} className="mt-3 px-4 py-2 rounded-xl golden-gradient text-white text-sm font-medium shadow-md">Log First Meal</button>
         </div>

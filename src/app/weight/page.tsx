@@ -9,6 +9,7 @@ import type { Cat, WeightRecord } from "@/lib/supabase";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
+import { CatOnScale, CatSleeping } from "@/components/CatIllustrations";
 
 export default function WeightPage() {
   const [cats, setCats] = useState<Cat[]>([]);
@@ -51,7 +52,7 @@ export default function WeightPage() {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen"><Loader2 size={32} className="text-golden-500 animate-spin" /></div>;
+    return <div className="flex flex-col items-center justify-center min-h-screen gap-3"><CatSleeping size={120} className="opacity-30" /><Loader2 size={32} className="text-golden-500 animate-spin" /></div>;
   }
 
   // Build chart data
@@ -140,7 +141,8 @@ export default function WeightPage() {
       {cats.filter(c => selectedCat === "all" || selectedCat === c.id).map(cat => {
         const catWeights = weights.filter(w => w.cat_id === cat.id);
         if (catWeights.length === 0) return (
-          <div key={cat.id} className="card p-4 text-center">
+          <div key={cat.id} className="card p-6 text-center">
+            <CatOnScale size={80} className="mx-auto mb-2 opacity-40" />
             <p className="text-sm text-muted">No weight records for {cat.name} yet.</p>
           </div>
         );

@@ -20,6 +20,7 @@ import { format, differenceInDays, differenceInMonths } from "date-fns";
 import { getCats, getWeightRecords, getHealthRecords, getFoodLogs, updateCat } from "@/lib/data";
 import { supabase } from "@/lib/supabase";
 import type { Cat, WeightRecord, HealthRecord, FoodLog } from "@/lib/supabase";
+import { TwoCatsSitting, CatSleeping } from "@/components/CatIllustrations";
 
 function getAge(dob: string | null) {
   if (!dob) return "Unknown age";
@@ -212,7 +213,8 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex flex-col items-center justify-center min-h-screen gap-3">
+        <CatSleeping size={120} className="opacity-30" />
         <Loader2 size={32} className="text-golden-500 animate-spin" />
       </div>
     );
@@ -224,13 +226,18 @@ export default function Dashboard() {
   return (
     <div className="px-4 pt-12 space-y-5">
       {/* Header */}
-      <div className="golden-gradient rounded-2xl p-5 text-white shadow-lg">
-        <div className="flex items-center gap-2 mb-1">
-          <CatIcon size={24} />
-          <h1 className="text-xl font-bold">Merry & Pippin</h1>
+      <div className="golden-gradient rounded-2xl p-5 text-white shadow-lg relative overflow-hidden">
+        <div className="relative z-10">
+          <div className="flex items-center gap-2 mb-1">
+            <CatIcon size={24} />
+            <h1 className="text-xl font-bold">Merry & Pippin</h1>
+          </div>
+          <p className="text-white/80 text-sm">Growth Tracker</p>
+          <p className="text-white/60 text-xs mt-1">{format(new Date(), "EEEE, MMMM d, yyyy")}</p>
         </div>
-        <p className="text-white/80 text-sm">Growth Tracker</p>
-        <p className="text-white/60 text-xs mt-1">{format(new Date(), "EEEE, MMMM d, yyyy")}</p>
+        <div className="absolute -right-2 -bottom-2 opacity-20">
+          <TwoCatsSitting size={140} />
+        </div>
       </div>
 
       {/* Cat Cards */}
@@ -334,7 +341,10 @@ export default function Dashboard() {
         </div>
         <div className="space-y-2">
           {upcoming.length === 0 ? (
-            <p className="text-xs text-muted">No upcoming events.</p>
+            <div className="flex flex-col items-center py-2">
+              <CatSleeping size={100} className="opacity-40 mb-1" />
+              <p className="text-xs text-muted">No upcoming events.</p>
+            </div>
           ) : upcoming.slice(0, 4).map((rec) => {
             const cat = cats.find(c => c.id === rec.cat_id);
             if (!rec.next_due_date) return null;
@@ -372,7 +382,10 @@ export default function Dashboard() {
           </Link>
         </div>
         {todayFood.length === 0 ? (
-          <p className="text-xs text-muted">No meals logged yet today.</p>
+          <div className="flex flex-col items-center py-2">
+            <CatSleeping size={90} className="opacity-30 mb-1" />
+            <p className="text-xs text-muted">No meals logged yet today.</p>
+          </div>
         ) : (
           <div className="space-y-2">
             {todayFood.map((meal) => {

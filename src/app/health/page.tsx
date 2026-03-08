@@ -22,6 +22,7 @@ import Link from "next/link";
 import { format, differenceInDays } from "date-fns";
 import { getCats, getHealthRecords, addHealthRecords, updateHealthRecord, deleteHealthRecord } from "@/lib/data";
 import type { Cat, HealthRecord } from "@/lib/supabase";
+import { CatWithHeart, CatSleeping } from "@/components/CatIllustrations";
 
 const typeConfig: Record<string, { icon: typeof Syringe; color: string; bg: string; label: string }> = {
   vaccine: { icon: Syringe, color: "text-blue-600", bg: "bg-blue-50", label: "Vaccine" },
@@ -550,7 +551,7 @@ export default function HealthPage() {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen"><Loader2 size={32} className="text-golden-500 animate-spin" /></div>;
+    return <div className="flex flex-col items-center justify-center min-h-screen gap-3"><CatSleeping size={120} className="opacity-30" /><Loader2 size={32} className="text-golden-500 animate-spin" /></div>;
   }
 
   const filtered = records
@@ -687,6 +688,7 @@ export default function HealthPage() {
       <div className="space-y-3">
         {filtered.length === 0 ? (
           <div className="card p-8 text-center">
+            <CatWithHeart size={80} className="mx-auto mb-2 opacity-40" />
             <p className="text-muted text-sm">No records found.</p>
           </div>
         ) : (

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { getCats, getPhotos, addPhoto, deletePhoto } from "@/lib/data";
 import { supabase } from "@/lib/supabase";
 import type { Cat, Photo } from "@/lib/supabase";
+import { CatWithCamera, CatSleeping } from "@/components/CatIllustrations";
 
 export default function PhotosPage() {
   const [cats, setCats] = useState<Cat[]>([]);
@@ -76,7 +77,7 @@ export default function PhotosPage() {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen"><Loader2 size={32} className="text-golden-500 animate-spin" /></div>;
+    return <div className="flex flex-col items-center justify-center min-h-screen gap-3"><CatSleeping size={120} className="opacity-30" /><Loader2 size={32} className="text-golden-500 animate-spin" /></div>;
   }
 
   return (
@@ -128,7 +129,7 @@ export default function PhotosPage() {
 
       {photos.length === 0 ? (
         <div className="card p-8 text-center">
-          <Camera size={40} className="text-muted mx-auto mb-3" />
+          <CatWithCamera size={90} className="mx-auto mb-2 opacity-40" />
           <p className="text-sm text-muted mb-1">No photos yet</p>
           <p className="text-xs text-muted">Add photos of Merry & Pippin!</p>
           <button onClick={() => setShowUpload(true)} className="mt-4 px-4 py-2 rounded-xl golden-gradient text-white text-sm font-medium shadow-md">Add First Photo</button>
