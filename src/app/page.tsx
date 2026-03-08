@@ -62,7 +62,14 @@ function AiHealthInsights({ context }: { context: string }) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        message: "Give me a brief health summary for my cats. Highlight any upcoming vaccines/deworming due, weight trends, and any concerns. Keep it to 3-5 bullet points, each one sentence. Use bullet points with dashes.",
+        message: `Analyze my cats' data and give me 4-6 specific, actionable insights. Be data-driven — reference actual numbers, dates, and trends from the data. Include:
+1. Daily food intake analysis — are they eating enough/too much based on their age, weight, and breed? What should the target daily intake be in grams?
+2. Weight trend analysis — is the growth rate healthy for their age? Any concerns?
+3. Upcoming health tasks — what vaccines/deworming are due soon with exact dates?
+4. Any concerns from the notes I've logged (e.g., food preferences, appetite changes, supplements)
+5. One specific breed-relevant tip for Golden British Shorthairs at their current age
+
+Do NOT give generic advice like "keep an eye on growth" or "regular playtime helps". Every point must reference specific data. Use dashes for bullet points.`,
         context,
       }),
     })
@@ -364,6 +371,7 @@ export default function Dashboard() {
   const [weights, setWeights] = useState<WeightRecord[]>([]);
   const [health, setHealth] = useState<HealthRecord[]>([]);
   const [todayFood, setTodayFood] = useState<FoodLog[]>([]);
+  const [recentFood, setRecentFood] = useState<FoodLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingCat, setEditingCat] = useState<Cat | null>(null);
   const [showMenu, setShowMenu] = useState(false);
@@ -371,8 +379,8 @@ export default function Dashboard() {
 
   const loadData = () => {
     const todayStr = format(new Date(), "yyyy-MM-dd");
-    Promise.all([getCats(), getWeightRecords(), getHealthRecords(), getFoodLogs(todayStr)])
-      .then(([c, w, h, f]) => { setCats(c); setWeights(w); setHealth(h); setTodayFood(f); })
+    Promise.all([getCats(), getWeightRecords(), getHealthRecords(), getFoodLogs(todayStr), getFoodLogs()])
+      .then(([c, w, h, f, allFood]) => { setCats(c); setWeights(w); setHealth(h); setTodayFood(f); setRecentFood(allFood.slice(-50)); })
       .finally(() => setLoading(false));
   };
 
@@ -383,16 +391,63 @@ export default function Dashboard() {
     [health]
   );
 
-  // Build context for AI chat (memoized to prevent re-renders)
-  const aiContext = useMemo(() => [
-    ...cats.map(cat => {
+  // Build rich context for AI (memoized to prevent re-renders)
+  const aiContext = useMemo(() => {
+    const lines: string[] = [];
+    cats.forEach(cat => {
       const catWeights = weights.filter(w => w.cat_id === cat.id).sort((a, b) => a.recorded_at.localeCompare(b.recorded_at));
-      const latestWeight = catWeights.length > 0 ? catWeights[catWeights.length - 1] : null;
       const catHealth = health.filter(h => h.cat_id === cat.id);
-      return `Cat: ${cat.name}, Breed: ${cat.breed}, Color: ${cat.color}, DOB: ${cat.date_of_birth || "unknown"}, Age: ${getAge(cat.date_of_birth)}${latestWeight ? `, Latest weight: ${latestWeight.weight_kg}kg (${latestWeight.recorded_at})` : ""}${catHealth.length > 0 ? `, Recent health: ${catHealth.slice(0, 5).map(h => `${h.title} on ${h.date}${h.next_due_date ? ` (next due: ${h.next_due_date})` : ""}`).join("; ")}` : ""}`;
-    }),
-    `Today's meals: ${todayFood.length > 0 ? todayFood.map(f => `${f.food_name} (${f.food_type}, ${f.amount_grams || "?"}g) for ${cats.find(c => c.id === f.cat_id)?.name || "cat"}`).join("; ") : "none logged yet"}`,
-  ].join("\n"), [cats, weights, health, todayFood]);
+      const catFood = recentFood.filter(f => f.cat_id === cat.id);
+
+      lines.push(`\n## ${cat.name}`);
+      lines.push(`Breed: ${cat.breed}, Color: ${cat.color}, Gender: ${cat.gender || "unknown"}, DOB: ${cat.date_of_birth || "unknown"}, Age: ${getAge(cat.date_of_birth)}`);
+
+      // Weight history with trend
+      if (catWeights.length > 0) {
+        lines.push(`Weight history: ${catWeights.map(w => `${w.weight_kg}kg (${w.recorded_at})`).join(" → ")}`);
+        if (catWeights.length >= 2) {
+          const first = catWeights[0];
+          const last = catWeights[catWeights.length - 1];
+          const gainPerMonth = ((last.weight_kg - first.weight_kg) / Math.max(1, differenceInMonths(new Date(last.recorded_at), new Date(first.recorded_at)))).toFixed(2);
+          lines.push(`Weight trend: ${first.weight_kg}kg → ${last.weight_kg}kg, avg gain: ${gainPerMonth}kg/month`);
+        }
+      }
+
+      // Health records with notes
+      if (catHealth.length > 0) {
+        lines.push(`Health records:`);
+        catHealth.slice(0, 10).forEach(h => {
+          let rec = `- ${h.title} (${h.record_type}) on ${h.date}`;
+          if (h.next_due_date) rec += `, next due: ${h.next_due_date}`;
+          if (h.vet_name) rec += `, vet: ${h.vet_name}`;
+          if (h.description) rec += `, notes: ${h.description}`;
+          lines.push(rec);
+        });
+      }
+
+      // Recent food logs with notes
+      if (catFood.length > 0) {
+        const dailyTotals: Record<string, number> = {};
+        catFood.forEach(f => {
+          dailyTotals[f.date] = (dailyTotals[f.date] || 0) + (f.amount_grams || 0);
+        });
+        lines.push(`Recent meals (last ${catFood.length} logs):`);
+        catFood.slice(-10).forEach(f => {
+          let meal = `- ${f.date} ${f.meal_time}: ${f.food_name} (${f.food_type}, ${f.amount_grams || "?"}g)`;
+          if (f.notes) meal += ` [note: ${f.notes}]`;
+          lines.push(meal);
+        });
+        const avgDaily = Object.values(dailyTotals);
+        if (avgDaily.length > 0) {
+          lines.push(`Avg daily intake: ${Math.round(avgDaily.reduce((a, b) => a + b, 0) / avgDaily.length)}g/day over ${avgDaily.length} days`);
+        }
+      }
+    });
+
+    lines.push(`\nToday (${format(new Date(), "yyyy-MM-dd")}): ${todayFood.length > 0 ? todayFood.map(f => `${f.food_name} (${f.food_type}, ${f.amount_grams || "?"}g) for ${cats.find(c => c.id === f.cat_id)?.name || "cat"}${f.notes ? ` [${f.notes}]` : ""}`).join("; ") : "no meals logged yet"}`);
+
+    return lines.join("\n");
+  }, [cats, weights, health, todayFood, recentFood]);
 
   if (loading) {
     return (
