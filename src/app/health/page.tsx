@@ -25,7 +25,7 @@ import { format, differenceInDays } from "date-fns";
 import { getCats, getHealthRecords, addHealthRecords, updateHealthRecord, deleteHealthRecord, getLitterBoxLogs, addLitterBoxLog, updateLitterBoxLog, deleteLitterBoxLog } from "@/lib/data";
 import { supabase } from "@/lib/supabase";
 import type { Cat, HealthRecord, LitterBoxLog } from "@/lib/supabase";
-import { CatWithHeart, TwoCatsSitting } from "@/components/CatIllustrations";
+import { TwoCatsSitting } from "@/components/CatIllustrations";
 import { useAdmin } from "@/components/AdminContext";
 
 const typeConfig: Record<string, { icon: typeof Syringe; color: string; bg: string; label: string }> = {
@@ -822,8 +822,8 @@ export default function HealthPage() {
             {type === "all" ? "All Types" : typeConfig[type]?.label ?? type}
           </button>
         ))}
-        <button onClick={() => litterSectionRef.current?.scrollIntoView({ behavior: "smooth" })} className="px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors bg-golden-50 text-foreground/70">
-          🚽 Litter
+        <button onClick={() => litterSectionRef.current?.scrollIntoView({ behavior: "smooth" })} className="px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors bg-amber-100 text-amber-700 border border-amber-200">
+          🚽 Litter Analysis
         </button>
       </div>
 
@@ -959,7 +959,8 @@ export default function HealthPage() {
       <div className="space-y-3">
         {filtered.length === 0 ? (
           <div className="card p-8 text-center">
-            <CatWithHeart size={80} className="mx-auto mb-2 opacity-40" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/cat-face-icon.png" alt="No records" width={110} height={110} className="mx-auto mb-2 opacity-40" />
             <p className="text-muted text-sm">No records found.</p>
           </div>
         ) : (
