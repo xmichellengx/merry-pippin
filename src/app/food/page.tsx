@@ -280,26 +280,26 @@ export default function FoodPage() {
             const cat = cats.find(c => c.id === meal.cat_id);
             return (
               <div key={meal.id} className="card p-4 card-hover">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl">{getTypeEmojis(meal.food_type)}</span>
-                    <div>
-                      <p className="text-sm font-medium">{meal.food_name}</p>
-                      <p className="text-[10px] text-muted">{cat?.name} &middot; {meal.meal_time.charAt(0).toUpperCase() + meal.meal_time.slice(1)}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="text-right">
-                      {meal.amount_grams && <p className="text-sm font-semibold text-golden-600">{meal.amount_grams}g</p>}
-                      <span className="badge badge-info">{getTypeLabels(meal.food_type)}</span>
-                    </div>
-                    {isAdmin && (
-                      <div className="flex items-center gap-1.5">
-                        <button onClick={() => openEdit(meal)} className="text-muted hover:text-golden-600"><Pencil size={13} /></button>
-                        <button onClick={() => handleDelete(meal.id)} className="text-muted hover:text-danger"><Trash2 size={14} /></button>
+                <div className="flex items-start gap-3">
+                  <span className="text-xl shrink-0 mt-0.5">{getTypeEmojis(meal.food_type)}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">{meal.food_name}</p>
+                        <p className="text-[10px] text-muted">{cat?.name} &middot; {meal.meal_time.charAt(0).toUpperCase() + meal.meal_time.slice(1)}</p>
                       </div>
-                    )}
+                      <div className="text-right shrink-0">
+                        {meal.amount_grams && <p className="text-sm font-semibold text-golden-600">{meal.amount_grams}g</p>}
+                        <span className="badge badge-info text-[9px]">{getTypeLabels(meal.food_type)}</span>
+                      </div>
+                    </div>
                   </div>
+                  {isAdmin && (
+                    <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
+                      <button onClick={() => openEdit(meal)} className="text-muted hover:text-golden-600"><Pencil size={13} /></button>
+                      <button onClick={() => handleDelete(meal.id)} className="text-muted hover:text-danger"><Trash2 size={14} /></button>
+                    </div>
+                  )}
                 </div>
                 {meal.notes && <p className="text-xs text-muted mt-2 pl-9">{meal.notes}</p>}
               </div>
