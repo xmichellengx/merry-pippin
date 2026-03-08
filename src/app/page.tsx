@@ -34,41 +34,58 @@ function getAge(dob: string | null) {
   return rem > 0 ? `${years}y ${rem}m` : `${years}y`;
 }
 
-function buildSuggestions(cats: Cat[], weights: WeightRecord[], health: HealthRecord[]) {
-  const suggestions: string[] = [];
-  const today = new Date();
+function AiHealthInsights({ context }: { context: string }) {
+  const [insights, setInsights] = useState<string>("");
+  const [loading, setLoading] = useState(true);
+  const hasFetched = useRef(false);
 
-  for (const rec of health) {
-    if (!rec.next_due_date) continue;
-    const daysUntil = differenceInDays(new Date(rec.next_due_date), today);
-    const catName = cats.find(c => c.id === rec.cat_id)?.name ?? "Cat";
-    if (daysUntil <= 30 && daysUntil >= 0) {
-      suggestions.push(`${catName}'s ${rec.title} is due in ${daysUntil} days (${format(new Date(rec.next_due_date), "MMM d")})`);
-    } else if (daysUntil < 0) {
-      suggestions.push(`${catName}'s ${rec.title} is overdue by ${Math.abs(daysUntil)} days!`);
-    }
-  }
+  useEffect(() => {
+    if (hasFetched.current || !context) return;
+    hasFetched.current = true;
 
-  for (const cat of cats) {
-    const catWeights = weights.filter(w => w.cat_id === cat.id).sort((a, b) => a.recorded_at.localeCompare(b.recorded_at));
-    if (catWeights.length >= 2) {
-      const latest = catWeights[catWeights.length - 1];
-      const prev = catWeights[catWeights.length - 2];
-      const change = latest.weight_kg - prev.weight_kg;
-      if (change > 0.5) {
-        suggestions.push(`${cat.name} gained ${change.toFixed(1)}kg recently. Monitor food portions.`);
-      } else if (change < -0.3) {
-        suggestions.push(`${cat.name} lost ${Math.abs(change).toFixed(1)}kg. Consider a vet checkup.`);
-      }
-    }
-  }
+    fetch("/api/ai-chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: "Give me a brief health summary for my cats. Highlight any upcoming vaccines/deworming due, weight trends, and any concerns. Keep it to 3-5 bullet points, each one sentence. Use bullet points with dashes.",
+        context,
+      }),
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.reply) setInsights(data.reply);
+        else setInsights("Could not generate insights right now. Check back later!");
+      })
+      .catch(() => setInsights("Could not connect to AI. Check back later!"))
+      .finally(() => setLoading(false));
+  }, [context]);
 
-  if (suggestions.length === 0) {
-    suggestions.push("Both cats are looking healthy! Keep up the great care.");
-    suggestions.push("Tip: British Shorthairs benefit from interactive play sessions to prevent obesity.");
-  }
-
-  return suggestions;
+  return (
+    <div className="card p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-7 h-7 rounded-full bg-golden-100 flex items-center justify-center">
+          <Sparkles size={14} className="text-golden-600" />
+        </div>
+        <h2 className="font-semibold text-sm">Health Insights</h2>
+        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-golden-50 text-golden-600 font-medium">AI</span>
+      </div>
+      {loading ? (
+        <div className="flex items-center gap-2 py-2">
+          <Loader2 size={14} className="animate-spin text-golden-500" />
+          <span className="text-xs text-muted">Analyzing your cats&apos; health data...</span>
+        </div>
+      ) : (
+        <div className="space-y-1.5">
+          {insights.split("\n").filter(l => l.trim()).map((line, i) => (
+            <div key={i} className="flex gap-2 items-start">
+              <AlertCircle size={14} className="text-golden-500 mt-0.5 shrink-0" />
+              <p className="text-xs text-foreground/80 leading-relaxed">{line.replace(/^[-•*]\s*/, "")}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 type AiMessage = { role: "user" | "assistant"; text: string };
@@ -335,7 +352,6 @@ export default function Dashboard() {
     );
   }
 
-  const suggestions = buildSuggestions(cats, weights, health);
   const upcoming = health.filter(h => h.next_due_date).sort((a, b) => (a.next_due_date ?? '').localeCompare(b.next_due_date ?? ''));
 
   // Build context for AI chat
@@ -413,26 +429,8 @@ export default function Dashboard() {
         />
       )}
 
-      {/* AI Suggestions (static) */}
-      <div className="card p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-7 h-7 rounded-full bg-golden-100 flex items-center justify-center">
-            <Sparkles size={14} className="text-golden-600" />
-          </div>
-          <h2 className="font-semibold text-sm">Health Insights</h2>
-        </div>
-        <div className="space-y-2">
-          {suggestions.map((s, i) => (
-            <div key={i} className="flex gap-2 items-start">
-              <AlertCircle size={14} className="text-golden-500 mt-0.5 shrink-0" />
-              <p className="text-xs text-foreground/80 leading-relaxed">{s}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* AI Chat */}
-      <AiChatCard context={aiContext} />
+      {/* AI Health Insights */}
+      <AiHealthInsights context={aiContext} />
 
       {/* Quick Stats */}
       <div className="grid grid-cols-3 gap-3">
@@ -539,6 +537,9 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      {/* AI Chat */}
+      <AiChatCard context={aiContext} />
     </div>
   );
 }
