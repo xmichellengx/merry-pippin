@@ -2,10 +2,8 @@
 
 import { useState, useEffect, useRef, useMemo } from "react";
 import {
-  Heart,
   UtensilsCrossed,
   Calendar,
-  TrendingUp,
   AlertCircle,
   Sparkles,
   ChevronRight,
@@ -485,31 +483,6 @@ export default function Dashboard() {
 
       {/* AI Health Insights */}
       <AiHealthInsights context={aiContext} />
-
-      {/* Quick Stats */}
-      <div className="grid grid-cols-3 gap-3">
-        <Link href="/health" className="card p-3 text-center card-hover">
-          <Heart size={20} className="text-danger mx-auto mb-1" />
-          <p className="text-xs font-medium">Health</p>
-          <p className="text-[10px] text-muted">
-            {upcoming.filter(r => {
-              if (!r.next_due_date) return false;
-              const d = differenceInDays(new Date(r.next_due_date), new Date());
-              return d <= 30 && d >= 0;
-            }).length} upcoming
-          </p>
-        </Link>
-        <Link href="/weight" className="card p-3 text-center card-hover">
-          <TrendingUp size={20} className="text-golden-500 mx-auto mb-1" />
-          <p className="text-xs font-medium">Growth</p>
-          <p className="text-[10px] text-muted">Track trends</p>
-        </Link>
-        <Link href="/food" className="card p-3 text-center card-hover">
-          <UtensilsCrossed size={20} className="text-golden-700 mx-auto mb-1" />
-          <p className="text-xs font-medium">Food</p>
-          <p className="text-[10px] text-muted">{todayFood.length} meals today</p>
-        </Link>
-      </div>
 
       {/* Upcoming Events */}
       <div className="card p-4">
