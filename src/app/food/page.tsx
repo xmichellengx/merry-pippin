@@ -17,7 +17,58 @@ const foodTypeEmoji: Record<string, string> = {
   supplement: "\uD83D\uDC8A",
 };
 
+const foodTypeLabels: Record<string, string> = {
+  wet: "Wet",
+  dry: "Dry",
+  raw: "Raw",
+  treat: "Treat",
+  supplement: "Supplement",
+};
+
+const allFoodTypes = ["dry", "wet", "raw", "treat", "supplement"];
+
 const mealTimeOrder = ["breakfast", "lunch", "snack", "dinner"];
+
+// Helper to get emojis for a potentially multi-type food_type string
+function getTypeEmojis(foodType: string) {
+  const types = foodType.split(",").map(t => t.trim());
+  return types.map(t => foodTypeEmoji[t] || "").join("");
+}
+
+function getTypeLabels(foodType: string) {
+  const types = foodType.split(",").map(t => t.trim());
+  return types.map(t => foodTypeLabels[t] || t).join(" + ");
+}
+
+// Multi-select food type chip component
+function FoodTypeChips({ selected, onChange }: { selected: string[]; onChange: (types: string[]) => void }) {
+  const toggle = (type: string) => {
+    if (selected.includes(type)) {
+      onChange(selected.filter(t => t !== type));
+    } else {
+      onChange([...selected, type]);
+    }
+  };
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {allFoodTypes.map(type => (
+        <button
+          key={type}
+          type="button"
+          onClick={() => toggle(type)}
+          className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 ${
+            selected.includes(type)
+              ? "golden-gradient text-white shadow-sm"
+              : "bg-golden-50 text-golden-700"
+          }`}
+        >
+          <span>{foodTypeEmoji[type]}</span>
+          <span>{foodTypeLabels[type]}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export default function FoodPage() {
   const [cats, setCats] = useState<Cat[]>([]);
@@ -31,7 +82,7 @@ export default function FoodPage() {
 
   const [formCatId, setFormCatId] = useState("");
   const [formFoodName, setFormFoodName] = useState("");
-  const [formFoodType, setFormFoodType] = useState("dry");
+  const [formFoodTypes, setFormFoodTypes] = useState<string[]>(["dry"]);
   const [formMealTime, setFormMealTime] = useState("breakfast");
   const [formAmount, setFormAmount] = useState("");
   const [formNotes, setFormNotes] = useState("");
@@ -40,7 +91,7 @@ export default function FoodPage() {
   const [editingMeal, setEditingMeal] = useState<FoodLog | null>(null);
   const [editCatId, setEditCatId] = useState("");
   const [editFoodName, setEditFoodName] = useState("");
-  const [editFoodType, setEditFoodType] = useState("dry");
+  const [editFoodTypes, setEditFoodTypes] = useState<string[]>(["dry"]);
   const [editMealTime, setEditMealTime] = useState("breakfast");
   const [editAmount, setEditAmount] = useState("");
   const [editNotes, setEditNotes] = useState("");
@@ -56,17 +107,17 @@ export default function FoodPage() {
   }, [selectedDate, loadLogs]);
 
   const handleSave = async () => {
-    if (!formCatId || !formFoodName) return;
+    if (!formCatId || !formFoodName || formFoodTypes.length === 0) return;
     setSaving(true);
     try {
       await addFoodLog({
-        cat_id: formCatId, food_name: formFoodName, food_type: formFoodType,
+        cat_id: formCatId, food_name: formFoodName, food_type: formFoodTypes.join(","),
         meal_time: formMealTime, date: selectedDate,
         ...(formAmount ? { amount_grams: parseFloat(formAmount) } : {}),
         ...(formNotes ? { notes: formNotes } : {}),
       });
       setShowAddForm(false);
-      setFormCatId(""); setFormFoodName(""); setFormAmount(""); setFormNotes("");
+      setFormCatId(""); setFormFoodName(""); setFormFoodTypes(["dry"]); setFormAmount(""); setFormNotes("");
       loadLogs(selectedDate);
     } finally { setSaving(false); }
   };
@@ -80,20 +131,20 @@ export default function FoodPage() {
     setEditingMeal(meal);
     setEditCatId(meal.cat_id);
     setEditFoodName(meal.food_name);
-    setEditFoodType(meal.food_type);
+    setEditFoodTypes(meal.food_type.split(",").map(t => t.trim()));
     setEditMealTime(meal.meal_time);
     setEditAmount(meal.amount_grams?.toString() ?? "");
     setEditNotes(meal.notes ?? "");
   };
 
   const handleEditSave = async () => {
-    if (!editingMeal || !editCatId || !editFoodName) return;
+    if (!editingMeal || !editCatId || !editFoodName || editFoodTypes.length === 0) return;
     setEditSaving(true);
     try {
       await updateFoodLog(editingMeal.id, {
         cat_id: editCatId,
         food_name: editFoodName,
-        food_type: editFoodType,
+        food_type: editFoodTypes.join(","),
         meal_time: editMealTime,
         amount_grams: editAmount ? parseFloat(editAmount) : null,
         notes: editNotes || null,
@@ -156,8 +207,8 @@ export default function FoodPage() {
           </div>
         </div>
         <div className="flex gap-3 mt-3">
-          {(["dry", "wet", "raw", "treat", "supplement"] as const).map(type => {
-            const typeTotal = filteredLogs.filter(f => f.food_type === type).reduce((s, f) => s + (f.amount_grams ?? 0), 0);
+          {allFoodTypes.map(type => {
+            const typeTotal = filteredLogs.filter(f => f.food_type.split(",").map(t => t.trim()).includes(type)).reduce((s, f) => s + (f.amount_grams ?? 0), 0);
             if (typeTotal === 0) return null;
             return <div key={type} className="flex items-center gap-1"><span className="text-sm">{foodTypeEmoji[type]}</span><span className="text-[10px] text-muted">{typeTotal}g</span></div>;
           })}
@@ -178,26 +229,18 @@ export default function FoodPage() {
             <label className="text-xs text-muted block mb-1">Food Name</label>
             <input type="text" placeholder="e.g., Royal Canin British Shorthair" value={formFoodName} onChange={e => setFormFoodName(e.target.value)} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs text-muted block mb-1">Type</label>
-              <select value={formFoodType} onChange={e => setFormFoodType(e.target.value)}>
-                <option value="dry">Dry Food</option>
-                <option value="wet">Wet Food</option>
-                <option value="raw">Raw Meat</option>
-                <option value="treat">Treat</option>
-                <option value="supplement">Supplement</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-xs text-muted block mb-1">Meal Time</label>
-              <select value={formMealTime} onChange={e => setFormMealTime(e.target.value)}>
-                <option value="breakfast">Breakfast</option>
-                <option value="lunch">Lunch</option>
-                <option value="snack">Snack</option>
-                <option value="dinner">Dinner</option>
-              </select>
-            </div>
+          <div>
+            <label className="text-xs text-muted block mb-1">Type (tap to select, can pick multiple)</label>
+            <FoodTypeChips selected={formFoodTypes} onChange={setFormFoodTypes} />
+          </div>
+          <div>
+            <label className="text-xs text-muted block mb-1">Meal Time</label>
+            <select value={formMealTime} onChange={e => setFormMealTime(e.target.value)}>
+              <option value="breakfast">Breakfast</option>
+              <option value="lunch">Lunch</option>
+              <option value="snack">Snack</option>
+              <option value="dinner">Dinner</option>
+            </select>
           </div>
           <div>
             <label className="text-xs text-muted block mb-1">Amount (grams)</label>
@@ -208,7 +251,7 @@ export default function FoodPage() {
             <textarea rows={2} placeholder="Optional notes..." value={formNotes} onChange={e => setFormNotes(e.target.value)} />
           </div>
           <div className="flex gap-2">
-            <button onClick={handleSave} disabled={saving || !formCatId || !formFoodName} className="flex-1 py-2.5 rounded-xl golden-gradient text-white text-sm font-semibold shadow-md disabled:opacity-50">
+            <button onClick={handleSave} disabled={saving || !formCatId || !formFoodName || formFoodTypes.length === 0} className="flex-1 py-2.5 rounded-xl golden-gradient text-white text-sm font-semibold shadow-md disabled:opacity-50">
               {saving ? "Saving..." : "Save Meal"}
             </button>
             <button onClick={() => setShowAddForm(false)} className="px-4 py-2.5 rounded-xl bg-golden-50 text-golden-700 text-sm font-medium">Cancel</button>
@@ -230,7 +273,7 @@ export default function FoodPage() {
               <div key={meal.id} className="card p-4 card-hover">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <span className="text-xl">{foodTypeEmoji[meal.food_type]}</span>
+                    <span className="text-xl">{getTypeEmojis(meal.food_type)}</span>
                     <div>
                       <p className="text-sm font-medium">{meal.food_name}</p>
                       <p className="text-[10px] text-muted">{cat?.name} &middot; {meal.meal_time.charAt(0).toUpperCase() + meal.meal_time.slice(1)}</p>
@@ -239,7 +282,7 @@ export default function FoodPage() {
                   <div className="flex items-center gap-2">
                     <div className="text-right">
                       {meal.amount_grams && <p className="text-sm font-semibold text-golden-600">{meal.amount_grams}g</p>}
-                      <span className="badge badge-info">{meal.food_type}</span>
+                      <span className="badge badge-info">{getTypeLabels(meal.food_type)}</span>
                     </div>
                     {isAdmin && (
                       <div className="flex items-center gap-1.5">
@@ -274,25 +317,18 @@ export default function FoodPage() {
               <label className="text-xs text-muted block mb-1">Food Name</label>
               <input type="text" value={editFoodName} onChange={e => setEditFoodName(e.target.value)} />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-muted block mb-1">Type</label>
-                <select value={editFoodType} onChange={e => setEditFoodType(e.target.value)}>
-                  <option value="dry">Dry Food</option>
-                  <option value="wet">Wet Food</option>
-                  <option value="treat">Treat</option>
-                  <option value="supplement">Supplement</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-xs text-muted block mb-1">Meal Time</label>
-                <select value={editMealTime} onChange={e => setEditMealTime(e.target.value)}>
-                  <option value="breakfast">Breakfast</option>
-                  <option value="lunch">Lunch</option>
-                  <option value="snack">Snack</option>
-                  <option value="dinner">Dinner</option>
-                </select>
-              </div>
+            <div>
+              <label className="text-xs text-muted block mb-1">Type (tap to select, can pick multiple)</label>
+              <FoodTypeChips selected={editFoodTypes} onChange={setEditFoodTypes} />
+            </div>
+            <div>
+              <label className="text-xs text-muted block mb-1">Meal Time</label>
+              <select value={editMealTime} onChange={e => setEditMealTime(e.target.value)}>
+                <option value="breakfast">Breakfast</option>
+                <option value="lunch">Lunch</option>
+                <option value="snack">Snack</option>
+                <option value="dinner">Dinner</option>
+              </select>
             </div>
             <div>
               <label className="text-xs text-muted block mb-1">Amount (grams)</label>
@@ -303,7 +339,7 @@ export default function FoodPage() {
               <textarea rows={2} placeholder="Optional notes..." value={editNotes} onChange={e => setEditNotes(e.target.value)} />
             </div>
             <div className="flex gap-2">
-              <button onClick={handleEditSave} disabled={editSaving || !editCatId || !editFoodName} className="flex-1 py-2.5 rounded-xl golden-gradient text-white text-sm font-semibold shadow-md disabled:opacity-50">
+              <button onClick={handleEditSave} disabled={editSaving || !editCatId || !editFoodName || editFoodTypes.length === 0} className="flex-1 py-2.5 rounded-xl golden-gradient text-white text-sm font-semibold shadow-md disabled:opacity-50">
                 {editSaving ? "Saving..." : "Update Meal"}
               </button>
               <button onClick={() => setEditingMeal(null)} className="px-4 py-2.5 rounded-xl bg-golden-50 text-golden-700 text-sm font-medium">Cancel</button>

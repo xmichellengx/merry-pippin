@@ -48,7 +48,7 @@ export type FoodLog = {
   id: string
   cat_id: string
   food_name: string
-  food_type: 'wet' | 'dry' | 'raw' | 'treat' | 'supplement'
+  food_type: string
   amount_grams: number | null
   meal_time: 'breakfast' | 'lunch' | 'dinner' | 'snack'
   date: string
