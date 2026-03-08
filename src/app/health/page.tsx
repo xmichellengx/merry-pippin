@@ -33,6 +33,31 @@ const typeConfig: Record<string, { icon: typeof Syringe; color: string; bg: stri
   other: { icon: Stethoscope, color: "text-gray-600", bg: "bg-gray-50", label: "Other" },
 };
 
+const vaccineBrands = [
+  { value: "", label: "Select vaccine brand..." },
+  { value: "Purevax 3-in-1 (FVRCP)", label: "Purevax 3-in-1 FVRCP — Boehringer Ingelheim" },
+  { value: "Purevax 4-in-1 (FVRCP + FeLV)", label: "Purevax 4-in-1 FVRCP + FeLV — Boehringer Ingelheim" },
+  { value: "Felocell 3 (FVRCP)", label: "Felocell 3 FVRCP — Zoetis" },
+  { value: "Felocell 4 (FVRCP + FeLV)", label: "Felocell 4 FVRCP + FeLV — Zoetis" },
+  { value: "Nobivac Tricat (FVRCP)", label: "Nobivac Tricat HCPCH 3-in-1 — MSD Animal Health" },
+  { value: "Rabisin (Rabies)", label: "Rabisin Rabies — Boehringer Ingelheim" },
+  { value: "Leukocell 2 (FeLV)", label: "Leukocell 2 FeLV — Zoetis" },
+  { value: "Other vaccine", label: "Other (type manually)" },
+];
+
+const dewormBrands = [
+  { value: "", label: "Select deworm brand..." },
+  { value: "Drontal", label: "Drontal — Elanco (tablet)" },
+  { value: "Milbemax", label: "Milbemax — Elanco (tablet)" },
+  { value: "Broadline", label: "Broadline — Boehringer Ingelheim (spot-on)" },
+  { value: "Revolution Plus", label: "Revolution Plus — Zoetis (spot-on)" },
+  { value: "Advocate", label: "Advocate — Elanco (spot-on)" },
+  { value: "Profender", label: "Profender — Elanco (spot-on)" },
+  { value: "Panacur", label: "Panacur — MSD (paste/granules)" },
+  { value: "Nexgard Combo", label: "Nexgard Combo — Boehringer Ingelheim (spot-on)" },
+  { value: "Other deworm", label: "Other (type manually)" },
+];
+
 type NearbyVet = {
   name: string;
   address: string;
@@ -500,12 +525,12 @@ export default function HealthPage() {
   const [formDate, setFormDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [formNotes, setFormNotes] = useState("");
   const [formVet, setFormVet] = useState("");
-  const [formTypes, setFormTypes] = useState<Record<string, { checked: boolean; dueDate: string }>>({
-    vaccine: { checked: false, dueDate: "" },
-    deworm: { checked: false, dueDate: "" },
-    vet_visit: { checked: false, dueDate: "" },
-    medication: { checked: false, dueDate: "" },
-    other: { checked: false, dueDate: "" },
+  const [formTypes, setFormTypes] = useState<Record<string, { checked: boolean; dueDate: string; brand: string }>>({
+    vaccine: { checked: false, dueDate: "", brand: "" },
+    deworm: { checked: false, dueDate: "", brand: "" },
+    vet_visit: { checked: false, dueDate: "", brand: "" },
+    medication: { checked: false, dueDate: "", brand: "" },
+    other: { checked: false, dueDate: "", brand: "" },
   });
 
   const loadData = () => {
@@ -522,24 +547,27 @@ export default function HealthPage() {
     if (!formCatId || !formTitle || checkedTypes.length === 0) return;
     setSaving(true);
     try {
-      const newRecords = checkedTypes.map(([type, { dueDate }]) => ({
-        cat_id: formCatId,
-        record_type: type,
-        title: formTitle,
-        date: formDate,
-        ...(dueDate ? { next_due_date: dueDate } : {}),
-        ...(formNotes ? { description: formNotes } : {}),
-        ...(formVet ? { vet_name: formVet } : {}),
-      }));
+      const newRecords = checkedTypes.map(([type, { dueDate, brand }]) => {
+        const brandPrefix = brand && brand !== "Other vaccine" && brand !== "Other deworm" ? `${brand} — ` : "";
+        return {
+          cat_id: formCatId,
+          record_type: type,
+          title: brandPrefix ? `${brandPrefix}${formTitle}` : formTitle,
+          date: formDate,
+          ...(dueDate ? { next_due_date: dueDate } : {}),
+          ...(formNotes ? { description: formNotes } : {}),
+          ...(formVet ? { vet_name: formVet } : {}),
+        };
+      });
       await addHealthRecords(newRecords);
       setShowAddForm(false);
       setFormCatId(""); setFormTitle(""); setFormNotes(""); setFormVet("");
       setFormTypes({
-        vaccine: { checked: false, dueDate: "" },
-        deworm: { checked: false, dueDate: "" },
-        vet_visit: { checked: false, dueDate: "" },
-        medication: { checked: false, dueDate: "" },
-        other: { checked: false, dueDate: "" },
+        vaccine: { checked: false, dueDate: "", brand: "" },
+        deworm: { checked: false, dueDate: "", brand: "" },
+        vet_visit: { checked: false, dueDate: "", brand: "" },
+        medication: { checked: false, dueDate: "", brand: "" },
+        other: { checked: false, dueDate: "", brand: "" },
       });
       loadData();
     } finally { setSaving(false); }
@@ -618,9 +646,10 @@ export default function HealthPage() {
           <div>
             <label className="text-xs text-muted block mb-2">What was done? (tick all that apply)</label>
             <div className="space-y-1">
-              {Object.entries(formTypes).map(([type, { checked, dueDate }]) => {
+              {Object.entries(formTypes).map(([type, { checked, dueDate, brand }]) => {
                 const config = typeConfig[type];
                 const Icon = config.icon;
+                const brandOptions = type === "vaccine" ? vaccineBrands : type === "deworm" ? dewormBrands : null;
                 return (
                   <div key={type}>
                     <label className="flex items-center gap-2.5 cursor-pointer py-1.5">
@@ -639,17 +668,36 @@ export default function HealthPage() {
                       <span className="text-sm font-medium">{config.label}</span>
                     </label>
                     {checked && (
-                      <div className="pl-[1.625rem] ml-2 mt-0.5 mb-1 border-l-2 border-golden-200">
-                        <label className="text-[11px] text-muted block mb-0.5">Next due date</label>
-                        <input
-                          type="date"
-                          value={dueDate}
-                          onChange={(e) => setFormTypes(prev => ({
-                            ...prev,
-                            [type]: { ...prev[type], dueDate: e.target.value },
-                          }))}
-                          className="text-xs"
-                        />
+                      <div className="pl-[1.625rem] ml-2 mt-0.5 mb-1 border-l-2 border-golden-200 space-y-2">
+                        {brandOptions && (
+                          <div>
+                            <label className="text-[11px] text-muted block mb-0.5">Brand</label>
+                            <select
+                              value={brand}
+                              onChange={(e) => setFormTypes(prev => ({
+                                ...prev,
+                                [type]: { ...prev[type], brand: e.target.value },
+                              }))}
+                              className="text-xs"
+                            >
+                              {brandOptions.map(opt => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+                        <div>
+                          <label className="text-[11px] text-muted block mb-0.5">Next due date</label>
+                          <input
+                            type="date"
+                            value={dueDate}
+                            onChange={(e) => setFormTypes(prev => ({
+                              ...prev,
+                              [type]: { ...prev[type], dueDate: e.target.value },
+                            }))}
+                            className="text-xs"
+                          />
+                        </div>
                       </div>
                     )}
                   </div>

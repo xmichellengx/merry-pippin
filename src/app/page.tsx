@@ -14,6 +14,8 @@ import {
   Pencil,
   Camera,
   X,
+  Send,
+  Bot,
 } from "lucide-react";
 import Link from "next/link";
 import { format, differenceInDays, differenceInMonths } from "date-fns";
@@ -67,6 +69,117 @@ function buildSuggestions(cats: Cat[], weights: WeightRecord[], health: HealthRe
   }
 
   return suggestions;
+}
+
+type AiMessage = { role: "user" | "assistant"; text: string };
+
+function AiChatCard({ context }: { context: string }) {
+  const [messages, setMessages] = useState<AiMessage[]>([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const quickQuestions = [
+    "How much should a BSH kitten eat?",
+    "When is the next vaccine due?",
+    "Tips for healthy weight gain",
+    "How to groom British Shorthairs?",
+  ];
+
+  const sendMessage = async (text: string) => {
+    if (!text.trim() || loading) return;
+    const userMsg: AiMessage = { role: "user", text: text.trim() };
+    setMessages(prev => [...prev, userMsg]);
+    setInput("");
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/ai-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text.trim(), context }),
+      });
+      const data = await res.json();
+      if (data.reply) {
+        setMessages(prev => [...prev, { role: "assistant", text: data.reply }]);
+      } else {
+        setMessages(prev => [...prev, { role: "assistant", text: "Sorry, I couldn't get a response. Try again!" }]);
+      }
+    } catch {
+      setMessages(prev => [...prev, { role: "assistant", text: "Oops! Something went wrong. Try again later." }]);
+    } finally {
+      setLoading(false);
+      setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }), 100);
+    }
+  };
+
+  return (
+    <div className="card p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-7 h-7 rounded-full bg-purple-100 flex items-center justify-center">
+          <Bot size={14} className="text-purple-600" />
+        </div>
+        <h2 className="font-semibold text-sm">Ask AI About Your Cats</h2>
+        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-purple-50 text-purple-500 font-medium">ChatGPT</span>
+      </div>
+
+      {messages.length === 0 ? (
+        <div className="space-y-2 mb-3">
+          <p className="text-xs text-muted">Ask me anything about cat care, nutrition, health, or your cats!</p>
+          <div className="flex flex-wrap gap-1.5">
+            {quickQuestions.map((q, i) => (
+              <button
+                key={i}
+                onClick={() => sendMessage(q)}
+                className="px-2.5 py-1.5 rounded-lg bg-purple-50 text-purple-700 text-[11px] font-medium hover:bg-purple-100 transition-colors"
+              >
+                {q}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div ref={scrollRef} className="max-h-60 overflow-y-auto space-y-2.5 mb-3 scroll-smooth">
+          {messages.map((msg, i) => (
+            <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+              <div className={`max-w-[85%] px-3 py-2 rounded-2xl text-xs leading-relaxed ${
+                msg.role === "user"
+                  ? "bg-golden-500 text-white rounded-br-md"
+                  : "bg-purple-50 text-foreground rounded-bl-md"
+              }`}>
+                {msg.text}
+              </div>
+            </div>
+          ))}
+          {loading && (
+            <div className="flex justify-start">
+              <div className="bg-purple-50 px-3 py-2 rounded-2xl rounded-bl-md">
+                <Loader2 size={14} className="animate-spin text-purple-400" />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="flex gap-2">
+        <input
+          type="text"
+          placeholder="Ask about your cats..."
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter") sendMessage(input); }}
+          className="flex-1 text-xs !py-2 !px-3 !rounded-xl"
+        />
+        <button
+          onClick={() => sendMessage(input)}
+          disabled={loading || !input.trim()}
+          className="w-9 h-9 rounded-xl golden-gradient flex items-center justify-center shadow-sm disabled:opacity-40"
+        >
+          <Send size={14} className="text-white" />
+        </button>
+      </div>
+    </div>
+  );
 }
 
 function EditCatModal({ cat, onClose, onSaved }: { cat: Cat; onClose: () => void; onSaved: () => void }) {
@@ -225,6 +338,17 @@ export default function Dashboard() {
   const suggestions = buildSuggestions(cats, weights, health);
   const upcoming = health.filter(h => h.next_due_date).sort((a, b) => (a.next_due_date ?? '').localeCompare(b.next_due_date ?? ''));
 
+  // Build context for AI chat
+  const aiContext = [
+    ...cats.map(cat => {
+      const catWeights = weights.filter(w => w.cat_id === cat.id).sort((a, b) => a.recorded_at.localeCompare(b.recorded_at));
+      const latestWeight = catWeights.length > 0 ? catWeights[catWeights.length - 1] : null;
+      const catHealth = health.filter(h => h.cat_id === cat.id);
+      return `Cat: ${cat.name}, Breed: ${cat.breed}, Color: ${cat.color}, DOB: ${cat.date_of_birth || "unknown"}, Age: ${getAge(cat.date_of_birth)}${latestWeight ? `, Latest weight: ${latestWeight.weight_kg}kg (${latestWeight.recorded_at})` : ""}${catHealth.length > 0 ? `, Recent health: ${catHealth.slice(0, 5).map(h => `${h.title} on ${h.date}${h.next_due_date ? ` (next due: ${h.next_due_date})` : ""}`).join("; ")}` : ""}`;
+    }),
+    `Today's meals: ${todayFood.length > 0 ? todayFood.map(f => `${f.food_name} (${f.food_type}, ${f.amount_grams || "?"}g) for ${cats.find(c => c.id === f.cat_id)?.name || "cat"}`).join("; ") : "none logged yet"}`,
+  ].join("\n");
+
   return (
     <div className="px-4 pt-12 space-y-5">
       {/* Header */}
@@ -289,7 +413,7 @@ export default function Dashboard() {
         />
       )}
 
-      {/* AI Suggestions */}
+      {/* AI Suggestions (static) */}
       <div className="card p-4">
         <div className="flex items-center gap-2 mb-3">
           <div className="w-7 h-7 rounded-full bg-golden-100 flex items-center justify-center">
@@ -306,6 +430,9 @@ export default function Dashboard() {
           ))}
         </div>
       </div>
+
+      {/* AI Chat */}
+      <AiChatCard context={aiContext} />
 
       {/* Quick Stats */}
       <div className="grid grid-cols-3 gap-3">
