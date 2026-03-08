@@ -47,7 +47,7 @@
 }
 
 body {
-  background: var(--background);
+  background: #FFFFFF;
   color: var(--foreground);
   font-family: var(--font-quicksand), 'Quicksand', sans-serif;
   font-size: 16px;
@@ -60,11 +60,6 @@ body {
 .text-\[10px\] { font-size: 0.6875rem !important; }
 .text-\[9px\] { font-size: 0.6875rem !important; }
 .text-sm { font-size: 0.9375rem !important; }
-
-/* Mobile-first: safe area for bottom nav (nav is h-12 = 3rem) */
-.pb-safe {
-  padding-bottom: calc(3rem + env(safe-area-inset-bottom, 0px));
-}
 
 /* Smooth card shadows */
 .card {

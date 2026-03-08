@@ -215,9 +215,9 @@ export default function BottomNav() {
   return (
     <>
       {showPinModal && <PinModal />}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-card-border z-50"
-        style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
-        <div className="max-w-lg mx-auto flex items-center justify-around h-12">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-card-border"
+        style={{ background: "#FFFFFF", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+        <div className="max-w-lg mx-auto flex items-center justify-around h-14">
           {tabs.map((tab) => {
             const isActive = pathname === tab.href;
             const isHome = tab.href === "/";
