@@ -1,12 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { Geist } from "next/font/google";
+import { Quicksand } from "next/font/google";
 import "./globals.css";
 import BottomNav from "@/components/BottomNav";
 import { AdminProvider } from "@/components/AdminContext";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const quicksand = Quicksand({
+  variable: "--font-quicksand",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -36,7 +37,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} font-sans antialiased bg-background text-foreground`}>
+      <body className={`${quicksand.variable} antialiased bg-background text-foreground`} style={{ fontFamily: "var(--font-quicksand), sans-serif" }}>
         <AdminProvider>
           <main className="pb-safe min-h-screen max-w-lg mx-auto">
             {children}

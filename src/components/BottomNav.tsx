@@ -3,36 +3,133 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  LayoutDashboard,
-  Heart,
-  Scale,
-  UtensilsCrossed,
-  Camera,
-  X,
-  Loader2,
-} from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 import { useAdmin } from "./AdminContext";
 
-const tabs = [
-  { href: "/", label: "Home", icon: LayoutDashboard },
-  { href: "/health", label: "Health", icon: Heart },
-  { href: "/weight", label: "Weight", icon: Scale },
-  { href: "/food", label: "Food", icon: UtensilsCrossed },
-  { href: "/photos", label: "Photos", icon: Camera },
-];
+// ── Cute custom nav icons ──
+
+function IconHome({ size = 24, active = false }: { size?: number; active?: boolean }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      {/* House body */}
+      <rect x="5" y="12" width="14" height="9" rx="2" fill={active ? "#E8932B" : "currentColor"} opacity={active ? 1 : 0.45} />
+      {/* Roof */}
+      <path d="M3 13L12 4L21 13" stroke={active ? "#D97A1E" : "currentColor"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      {/* Cat ears on roof */}
+      <path d="M8.5 8L7 4.5L10 7" fill={active ? "#E8932B" : "currentColor"} opacity={active ? 1 : 0.5} />
+      <path d="M15.5 8L17 4.5L14 7" fill={active ? "#E8932B" : "currentColor"} opacity={active ? 1 : 0.5} />
+      {/* Door / window - cat face */}
+      <circle cx="12" cy="17" r="2.5" fill={active ? "#FFF8EE" : "white"} opacity="0.9" />
+      {/* Cat eyes in window */}
+      <circle cx="11" cy="16.5" r="0.6" fill={active ? "#D97A1E" : "currentColor"} opacity="0.7" />
+      <circle cx="13" cy="16.5" r="0.6" fill={active ? "#D97A1E" : "currentColor"} opacity="0.7" />
+      {/* Cat nose */}
+      <ellipse cx="12" cy="17.5" rx="0.4" ry="0.3" fill="#F5A0B0" />
+    </svg>
+  );
+}
+
+function IconHealth({ size = 24, active = false }: { size?: number; active?: boolean }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      {/* Heart */}
+      <path
+        d="M12 21C12 21 3 14.5 3 8.5C3 5.5 5.5 3 8.5 3C10.2 3 11.7 3.8 12 5C12.3 3.8 13.8 3 15.5 3C18.5 3 21 5.5 21 8.5C21 14.5 12 21 12 21Z"
+        fill={active ? "#F5A0B0" : "currentColor"}
+        opacity={active ? 1 : 0.45}
+      />
+      {/* Cross / plus */}
+      <rect x="10.5" y="8" width="3" height="8" rx="1" fill="white" opacity="0.85" />
+      <rect x="8" y="10.5" width="8" height="3" rx="1" fill="white" opacity="0.85" />
+      {/* Tiny sparkle */}
+      {active && <>
+        <circle cx="19" cy="5" r="1" fill="#F5C67E" opacity="0.7" />
+        <circle cx="20.5" cy="3.5" r="0.5" fill="#F5C67E" opacity="0.5" />
+      </>}
+    </svg>
+  );
+}
+
+function IconWeight({ size = 24, active = false }: { size?: number; active?: boolean }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      {/* Scale base */}
+      <rect x="4" y="17" width="16" height="4" rx="2" fill={active ? "#E8932B" : "currentColor"} opacity={active ? 1 : 0.45} />
+      {/* Scale top */}
+      <rect x="6" y="13" width="12" height="5" rx="2.5" fill={active ? "#F0C87A" : "currentColor"} opacity={active ? 0.8 : 0.35} />
+      {/* Display */}
+      <rect x="9" y="14.5" width="6" height="2.5" rx="1" fill={active ? "#B8E6B8" : "white"} opacity="0.85" />
+      {/* Cat sitting on scale */}
+      <circle cx="12" cy="7.5" r="3.5" fill={active ? "#F0C87A" : "currentColor"} opacity={active ? 1 : 0.4} />
+      {/* Cat ears */}
+      <path d="M9 5.5L8 2.5L10.5 5" fill={active ? "#E8B86D" : "currentColor"} opacity={active ? 1 : 0.4} />
+      <path d="M15 5.5L16 2.5L13.5 5" fill={active ? "#E8B86D" : "currentColor"} opacity={active ? 1 : 0.4} />
+      {/* Ear pink */}
+      <path d="M9.3 5L8.7 3.5L10.2 4.8" fill="#F5B8C4" opacity={active ? 0.7 : 0.3} />
+      <path d="M14.7 5L15.3 3.5L13.8 4.8" fill="#F5B8C4" opacity={active ? 0.7 : 0.3} />
+      {/* Eyes */}
+      <circle cx="10.8" cy="7" r="0.6" fill={active ? "#2D1B0E" : "white"} opacity="0.8" />
+      <circle cx="13.2" cy="7" r="0.6" fill={active ? "#2D1B0E" : "white"} opacity="0.8" />
+      {/* Nose */}
+      <ellipse cx="12" cy="8.2" rx="0.5" ry="0.35" fill="#F5A0B0" opacity={active ? 1 : 0.5} />
+      {/* Body on scale */}
+      <ellipse cx="12" cy="12" rx="3" ry="2" fill={active ? "#F0C87A" : "currentColor"} opacity={active ? 0.9 : 0.35} />
+    </svg>
+  );
+}
+
+function IconFood({ size = 24, active = false }: { size?: number; active?: boolean }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      {/* Bowl */}
+      <ellipse cx="12" cy="18" rx="8" ry="2.5" fill={active ? "#D97A1E" : "currentColor"} opacity={active ? 1 : 0.45} />
+      <path d="M4 15.5Q4 20 12 20Q20 20 20 15.5" fill={active ? "#E8932B" : "currentColor"} opacity={active ? 0.9 : 0.4} />
+      <ellipse cx="12" cy="15.5" rx="8" ry="2.5" fill={active ? "#F0C87A" : "currentColor"} opacity={active ? 0.8 : 0.35} />
+      {/* Food in bowl */}
+      <ellipse cx="12" cy="15.5" rx="5.5" ry="1.5" fill={active ? "#8B6914" : "currentColor"} opacity={active ? 0.6 : 0.2} />
+      {/* Steam / yummy lines */}
+      <path d="M9 11Q9.5 9.5 9 8" stroke={active ? "#E8932B" : "currentColor"} strokeWidth="1" strokeLinecap="round" opacity={active ? 0.5 : 0.25} />
+      <path d="M12 10Q12.5 8.5 12 7" stroke={active ? "#E8932B" : "currentColor"} strokeWidth="1" strokeLinecap="round" opacity={active ? 0.5 : 0.25} />
+      <path d="M15 11Q15.5 9.5 15 8" stroke={active ? "#E8932B" : "currentColor"} strokeWidth="1" strokeLinecap="round" opacity={active ? 0.5 : 0.25} />
+      {/* Fish shape in food */}
+      <ellipse cx="11" cy="15.3" rx="1.5" ry="0.7" fill={active ? "#F0C87A" : "white"} opacity="0.5" />
+      <path d="M12.5 15.3L14 14.5L14 16.1Z" fill={active ? "#F0C87A" : "white"} opacity="0.4" />
+    </svg>
+  );
+}
+
+function IconPhotos({ size = 24, active = false }: { size?: number; active?: boolean }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      {/* Camera body */}
+      <rect x="3" y="8" width="18" height="12" rx="3" fill={active ? "#E8932B" : "currentColor"} opacity={active ? 1 : 0.45} />
+      {/* Camera top bump */}
+      <rect x="8" y="5.5" width="8" height="3.5" rx="1.5" fill={active ? "#D97A1E" : "currentColor"} opacity={active ? 0.8 : 0.35} />
+      {/* Cat ears on camera */}
+      <path d="M8.5 6L7 3L10 5.5" fill={active ? "#F0C87A" : "currentColor"} opacity={active ? 1 : 0.4} />
+      <path d="M15.5 6L17 3L14 5.5" fill={active ? "#F0C87A" : "currentColor"} opacity={active ? 1 : 0.4} />
+      {/* Ear pink */}
+      <path d="M8.8 5.5L7.8 3.8L9.6 5.2" fill="#F5B8C4" opacity={active ? 0.6 : 0.25} />
+      <path d="M15.2 5.5L16.2 3.8L14.4 5.2" fill="#F5B8C4" opacity={active ? 0.6 : 0.25} />
+      {/* Lens */}
+      <circle cx="12" cy="14" r="4" fill={active ? "#F0C87A" : "currentColor"} opacity={active ? 0.7 : 0.3} />
+      <circle cx="12" cy="14" r="2.5" fill={active ? "#6B8EAE" : "white"} opacity="0.7" />
+      {/* Lens shine */}
+      <circle cx="11" cy="13" r="0.8" fill="white" opacity="0.6" />
+      {/* Flash */}
+      {active && <circle cx="17.5" cy="10" r="1" fill="#FFF8EE" opacity="0.8" />}
+    </svg>
+  );
+}
 
 function PawLocked({ size = 22, className = "" }: { size?: number; className?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-      {/* Paw pads */}
       <ellipse cx="8.5" cy="7" rx="2.2" ry="2.8" fill="currentColor" opacity="0.5" transform="rotate(-15 8.5 7)" />
       <ellipse cx="15.5" cy="7" rx="2.2" ry="2.8" fill="currentColor" opacity="0.5" transform="rotate(15 15.5 7)" />
       <ellipse cx="5.5" cy="11.5" rx="1.8" ry="2.5" fill="currentColor" opacity="0.5" transform="rotate(-25 5.5 11.5)" />
       <ellipse cx="18.5" cy="11.5" rx="1.8" ry="2.5" fill="currentColor" opacity="0.5" transform="rotate(25 18.5 11.5)" />
-      {/* Main pad */}
       <ellipse cx="12" cy="16" rx="4.5" ry="4" fill="currentColor" opacity="0.6" />
-      {/* Lock keyhole */}
       <circle cx="12" cy="15.5" r="1.2" fill="white" opacity="0.8" />
       <rect x="11.4" y="15.5" width="1.2" height="2" rx="0.4" fill="white" opacity="0.8" />
     </svg>
@@ -42,18 +139,25 @@ function PawLocked({ size = 22, className = "" }: { size?: number; className?: s
 function PawUnlocked({ size = 22, className = "" }: { size?: number; className?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-      {/* Paw pads */}
       <ellipse cx="8.5" cy="7" rx="2.2" ry="2.8" fill="currentColor" transform="rotate(-15 8.5 7)" />
       <ellipse cx="15.5" cy="7" rx="2.2" ry="2.8" fill="currentColor" transform="rotate(15 15.5 7)" />
       <ellipse cx="5.5" cy="11.5" rx="1.8" ry="2.5" fill="currentColor" transform="rotate(-25 5.5 11.5)" />
       <ellipse cx="18.5" cy="11.5" rx="1.8" ry="2.5" fill="currentColor" transform="rotate(25 18.5 11.5)" />
-      {/* Main pad */}
       <ellipse cx="12" cy="16" rx="4.5" ry="4" fill="currentColor" />
-      {/* Heart in center */}
       <path d="M12 14.5 C12 13.5 10.8 13 10.2 13.8 C9.6 13 8.4 13.5 8.4 14.5 C8.4 15.8 10.2 17 12 17.5 C13.8 17 15.6 15.8 15.6 14.5 C15.6 13.5 14.4 13 13.8 13.8 C13.2 13 12 13.5 12 14.5Z" fill="white" opacity="0.9" />
     </svg>
   );
 }
+
+// ── Tab config ──
+
+const tabs = [
+  { href: "/", label: "Home", Icon: IconHome },
+  { href: "/health", label: "Health", Icon: IconHealth },
+  { href: "/weight", label: "Weight", Icon: IconWeight },
+  { href: "/food", label: "Food", Icon: IconFood },
+  { href: "/photos", label: "Photos", Icon: IconPhotos },
+];
 
 function PinModal() {
   const { login, setShowPinModal } = useAdmin();
@@ -129,23 +233,16 @@ export default function BottomNav() {
         <div className="max-w-lg mx-auto flex items-center justify-around h-16">
           {tabs.map((tab) => {
             const isActive = pathname === tab.href;
-            const Icon = tab.icon;
             return (
               <Link
                 key={tab.href}
                 href={tab.href}
                 className={`flex flex-col items-center justify-center gap-0.5 w-16 py-1 rounded-xl transition-colors ${
-                  isActive
-                    ? "text-golden-600"
-                    : "text-muted"
+                  isActive ? "text-golden-600" : "text-muted"
                 }`}
               >
-                <Icon
-                  size={22}
-                  strokeWidth={isActive ? 2.5 : 1.8}
-                  className={isActive ? "text-golden-500" : ""}
-                />
-                <span className={`text-[10px] font-medium ${isActive ? "font-semibold" : ""}`}>
+                <tab.Icon size={24} active={isActive} />
+                <span className={`text-[10px] font-medium ${isActive ? "font-bold text-golden-600" : ""}`}>
                   {tab.label}
                 </span>
               </Link>
@@ -158,12 +255,12 @@ export default function BottomNav() {
             }`}
           >
             {isAdmin ? (
-              <PawUnlocked size={22} className="text-golden-500" />
+              <PawUnlocked size={24} className="text-golden-500" />
             ) : (
-              <PawLocked size={22} />
+              <PawLocked size={24} />
             )}
-            <span className={`text-[10px] font-medium ${isAdmin ? "text-golden-600 font-semibold" : ""}`}>
-              {isAdmin ? "Meowmy" : "Meowmy"}
+            <span className={`text-[10px] font-medium ${isAdmin ? "text-golden-600 font-bold" : ""}`}>
+              Meowmy
             </span>
           </button>
         </div>
