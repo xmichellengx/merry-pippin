@@ -36,26 +36,27 @@ function getAge(dob: string | null) {
 }
 
 function AiHealthInsights({ context }: { context: string }) {
-  const [insights, setInsights] = useState<string>("");
-  const [loading, setLoading] = useState(true);
-  const hasFetched = useRef(false);
+  const CACHE_KEY = "ai_health_insights";
+  const CACHE_TS_KEY = "ai_health_insights_ts";
+  const ONE_DAY = 24 * 60 * 60 * 1000;
+
+  // Check cache synchronously on first render
+  const cachedInsights = (() => {
+    try {
+      const cached = localStorage.getItem(CACHE_KEY);
+      const cachedTs = localStorage.getItem(CACHE_TS_KEY);
+      if (cached && cachedTs && Date.now() - parseInt(cachedTs) < ONE_DAY) return cached;
+    } catch { /* ignore */ }
+    return "";
+  })();
+
+  const [insights, setInsights] = useState<string>(cachedInsights);
+  const [loading, setLoading] = useState(!cachedInsights);
+  const hasFetched = useRef(!!cachedInsights);
 
   useEffect(() => {
     if (hasFetched.current || !context) return;
     hasFetched.current = true;
-
-    // Check localStorage cache (24-hour TTL)
-    const CACHE_KEY = "ai_health_insights";
-    const CACHE_TS_KEY = "ai_health_insights_ts";
-    const cached = localStorage.getItem(CACHE_KEY);
-    const cachedTs = localStorage.getItem(CACHE_TS_KEY);
-    const ONE_DAY = 24 * 60 * 60 * 1000;
-
-    if (cached && cachedTs && Date.now() - parseInt(cachedTs) < ONE_DAY) {
-      setInsights(cached);
-      setLoading(false);
-      return;
-    }
 
     fetch("/api/ai-chat", {
       method: "POST",
@@ -69,8 +70,10 @@ function AiHealthInsights({ context }: { context: string }) {
       .then(data => {
         if (data.reply) {
           setInsights(data.reply);
-          localStorage.setItem(CACHE_KEY, data.reply);
-          localStorage.setItem(CACHE_TS_KEY, Date.now().toString());
+          try {
+            localStorage.setItem(CACHE_KEY, data.reply);
+            localStorage.setItem(CACHE_TS_KEY, Date.now().toString());
+          } catch { /* storage full */ }
         } else {
           setInsights("Could not generate insights right now. Check back later!");
         }
