@@ -12,6 +12,7 @@ import { useAdmin } from "@/components/AdminContext";
 const foodTypeEmoji: Record<string, string> = {
   wet: "\uD83E\uDD6B",
   dry: "\uD83E\uDD63",
+  raw: "\uD83E\uDD69",
   treat: "\uD83C\uDF6A",
   supplement: "\uD83D\uDC8A",
 };
@@ -155,7 +156,7 @@ export default function FoodPage() {
           </div>
         </div>
         <div className="flex gap-3 mt-3">
-          {(["dry", "wet", "treat", "supplement"] as const).map(type => {
+          {(["dry", "wet", "raw", "treat", "supplement"] as const).map(type => {
             const typeTotal = filteredLogs.filter(f => f.food_type === type).reduce((s, f) => s + (f.amount_grams ?? 0), 0);
             if (typeTotal === 0) return null;
             return <div key={type} className="flex items-center gap-1"><span className="text-sm">{foodTypeEmoji[type]}</span><span className="text-[10px] text-muted">{typeTotal}g</span></div>;
@@ -183,6 +184,7 @@ export default function FoodPage() {
               <select value={formFoodType} onChange={e => setFormFoodType(e.target.value)}>
                 <option value="dry">Dry Food</option>
                 <option value="wet">Wet Food</option>
+                <option value="raw">Raw Meat</option>
                 <option value="treat">Treat</option>
                 <option value="supplement">Supplement</option>
               </select>

@@ -11,6 +11,7 @@ export type Cat = {
   breed: string
   color: string
   date_of_birth: string | null
+  gender: string | null
   photo_url: string | null
   created_at: string
 }
@@ -47,7 +48,7 @@ export type FoodLog = {
   id: string
   cat_id: string
   food_name: string
-  food_type: 'wet' | 'dry' | 'treat' | 'supplement'
+  food_type: 'wet' | 'dry' | 'raw' | 'treat' | 'supplement'
   amount_grams: number | null
   meal_time: 'breakfast' | 'lunch' | 'dinner' | 'snack'
   date: string

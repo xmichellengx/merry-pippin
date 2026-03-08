@@ -43,6 +43,19 @@ function AiHealthInsights({ context }: { context: string }) {
     if (hasFetched.current || !context) return;
     hasFetched.current = true;
 
+    // Check localStorage cache (24-hour TTL)
+    const CACHE_KEY = "ai_health_insights";
+    const CACHE_TS_KEY = "ai_health_insights_ts";
+    const cached = localStorage.getItem(CACHE_KEY);
+    const cachedTs = localStorage.getItem(CACHE_TS_KEY);
+    const ONE_DAY = 24 * 60 * 60 * 1000;
+
+    if (cached && cachedTs && Date.now() - parseInt(cachedTs) < ONE_DAY) {
+      setInsights(cached);
+      setLoading(false);
+      return;
+    }
+
     fetch("/api/ai-chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -53,8 +66,13 @@ function AiHealthInsights({ context }: { context: string }) {
     })
       .then(res => res.json())
       .then(data => {
-        if (data.reply) setInsights(data.reply);
-        else setInsights("Could not generate insights right now. Check back later!");
+        if (data.reply) {
+          setInsights(data.reply);
+          localStorage.setItem(CACHE_KEY, data.reply);
+          localStorage.setItem(CACHE_TS_KEY, Date.now().toString());
+        } else {
+          setInsights("Could not generate insights right now. Check back later!");
+        }
       })
       .catch(() => setInsights("Could not connect to AI. Check back later!"))
       .finally(() => setLoading(false));
@@ -204,6 +222,7 @@ function EditCatModal({ cat, onClose, onSaved }: { cat: Cat; onClose: () => void
   const [breed, setBreed] = useState(cat.breed);
   const [color, setColor] = useState(cat.color);
   const [dob, setDob] = useState(cat.date_of_birth ?? "");
+  const [gender, setGender] = useState(cat.gender ?? "");
   const [photoUrl, setPhotoUrl] = useState(cat.photo_url ?? "");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -243,6 +262,7 @@ function EditCatModal({ cat, onClose, onSaved }: { cat: Cat; onClose: () => void
         breed,
         color,
         date_of_birth: dob || null,
+        gender: gender || null,
         photo_url: photoUrl || null,
       });
       onSaved();
@@ -299,6 +319,16 @@ function EditCatModal({ cat, onClose, onSaved }: { cat: Cat; onClose: () => void
             <label className="text-xs text-muted block mb-1">Color</label>
             <input type="text" value={color} onChange={e => setColor(e.target.value)} />
           </div>
+        </div>
+
+        {/* Gender */}
+        <div>
+          <label className="text-xs text-muted block mb-1">Gender</label>
+          <select value={gender} onChange={e => setGender(e.target.value)}>
+            <option value="">Not set</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
         </div>
 
         {/* Date of Birth */}
@@ -410,7 +440,7 @@ export default function Dashboard() {
                 )}
               </div>
               <h3 className="font-semibold text-sm">{cat.name}</h3>
-              <p className="text-muted text-xs">{cat.color} {cat.breed}</p>
+              <p className="text-muted text-xs">{cat.gender ? `${cat.gender === "male" ? "♂" : "♀"} ` : ""}{cat.color} {cat.breed}</p>
               <p className="text-muted text-xs">{getAge(cat.date_of_birth)}</p>
               {latestWeight && (
                 <p className="text-golden-600 font-semibold text-sm mt-2">{latestWeight} kg</p>
