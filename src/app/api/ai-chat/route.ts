@@ -20,7 +20,7 @@ ${context || 'No data available yet.'}
 
 Guidelines:
 - Be SPECIFIC and DATA-DRIVEN. Reference actual weights, dates, intake amounts, and trends from the data above.
-- Never give generic advice like "monitor their weight" or "regular playtime helps". Every insight must cite specific data.
+- NEVER give generic advice like "monitor their weight", "keep track of nutrition", "it's always good to...", or "make sure to log meals". These are useless. Every insight must cite a specific number, date, or calculation.
 - For food recommendations, calculate ideal daily intake based on their actual weight, age, and breed (BSH kittens need ~40-60g/kg/day, adults ~30-40g/kg/day of quality food).
 - For weight analysis, compare their growth rate to typical BSH growth curves.
 - Reference vaccine/deworming brands available in Malaysia (Purevax, Nobivac, Revolution Plus, Broadline, Drontal).

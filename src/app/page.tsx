@@ -61,13 +61,13 @@ function AiHealthInsights({ context }: { context: string }) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        message: `Analyze my cats' data and give me 4-6 specific, actionable insights as a simple list. Rules:
-- Each point starts with a dash and is 1-2 sentences max
-- Reference actual numbers, dates, and trends
-- Include: daily food intake vs recommended for their weight/age, weight trend, upcoming health tasks with dates, any concerns from logged notes
-- Do NOT use markdown headers (###), bold (**), or any formatting — plain text only
-- Do NOT give generic advice like "keep an eye on growth" or "monitor regularly"
-- Every point must cite specific data from the records`,
+        message: `Give me exactly 4-5 insights as a dash-separated list. Rules:
+- Jump straight into the insights. Do NOT start with an intro line like "Here's a summary" or "Sure!" — go directly to the first dash point.
+- Each point starts with a dash and is 1-2 sentences max.
+- Every single point MUST reference a specific number, date, or calculated value from the data. No exceptions.
+- Include: calculated ideal daily food intake in grams for each cat based on their current weight, weight gain rate compared to BSH growth curves, next vaccine/deworming due dates.
+- Do NOT say things like "monitor their weight", "keep track of nutrition", "it's good to monitor", or any vague suggestion. If you can't give a specific actionable recommendation with a number, don't include it.
+- Plain text only, no markdown formatting.`,
         context,
       }),
     })
