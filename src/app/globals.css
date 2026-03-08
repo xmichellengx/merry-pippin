@@ -127,13 +127,6 @@ input:not([type="checkbox"]):focus, select:focus, textarea:focus {
   -webkit-overflow-scrolling: touch;
 }
 
-/* Fix iOS Safari vh issue */
-@supports (-webkit-touch-callout: none) {
-  .h-\[70vh\] {
-    height: 70svh;
-  }
-}
-
 /* Fix inputs zooming on iOS (font-size < 16px causes auto-zoom) */
 @media screen and (max-width: 768px) {
   input:not([type="checkbox"]), select, textarea {

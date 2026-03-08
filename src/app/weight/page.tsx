@@ -82,7 +82,7 @@ export default function WeightPage() {
   };
 
   if (loading) {
-    return <div className="flex flex-col items-center justify-center h-[70vh] gap-3"><CatSleeping size={120} className="opacity-30" /><Loader2 size={32} className="text-golden-500 animate-spin" /></div>;
+    return <div className="flex flex-col items-center pt-40 gap-3"><CatSleeping size={120} className="opacity-30" /><Loader2 size={32} className="text-golden-500 animate-spin" /></div>;
   }
 
   // Build chart data
