@@ -139,9 +139,9 @@ function PawLocked({ size = 22, className = "" }: { size?: number; className?: s
 // ── Tab config ──
 
 const tabs = [
-  { href: "/", label: "Home", Icon: IconHome },
   { href: "/health", label: "Health", Icon: IconHealth },
   { href: "/weight", label: "Weight", Icon: IconWeight },
+  { href: "/", label: "Home", Icon: IconHome },
   { href: "/food", label: "Food", Icon: IconFood },
   { href: "/photos", label: "Photos", Icon: IconPhotos },
 ];
@@ -215,23 +215,28 @@ export default function BottomNav() {
   return (
     <>
       {showPinModal && <PinModal />}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-lg border-t border-card-border z-50"
+      <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-card-border z-50"
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
-        <div className="max-w-lg mx-auto flex items-center justify-around h-16">
+        <div className="max-w-lg mx-auto flex items-center justify-around h-12">
           {tabs.map((tab) => {
             const isActive = pathname === tab.href;
+            const isHome = tab.href === "/";
             return (
               <Link
                 key={tab.href}
                 href={tab.href}
-                className={`flex flex-col items-center justify-center gap-0.5 w-16 py-1 rounded-xl transition-colors ${
-                  isActive ? "text-golden-600" : "text-muted"
-                }`}
+                className={`flex flex-col items-center justify-center ${isHome ? "w-12 h-12 -mt-5 rounded-full golden-gradient shadow-lg border-4 border-white" : `w-14 py-0.5 rounded-lg transition-colors ${isActive ? "text-golden-600" : "text-muted"}`}`}
               >
-                <tab.Icon size={24} active={isActive} />
-                <span className={`text-[10px] font-medium ${isActive ? "font-bold text-golden-600" : ""}`}>
-                  {tab.label}
-                </span>
+                {isHome ? (
+                  <tab.Icon size={22} active={true} />
+                ) : (
+                  <>
+                    <tab.Icon size={20} active={isActive} />
+                    <span className={`text-[9px] font-medium mt-0.5 ${isActive ? "font-bold text-golden-600" : ""}`}>
+                      {tab.label}
+                    </span>
+                  </>
+                )}
               </Link>
             );
           })}
