@@ -816,13 +816,13 @@ export default function HealthPage() {
         ))}
       </div>
 
-      <div className="flex gap-2 flex-wrap pb-1">
+      <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
         {["all", "vaccine", "deworm", "vet_visit", "medication"].map(type => (
-          <button key={type} onClick={() => setFilterType(type)} className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${filterType === type ? "bg-foreground text-white" : "bg-golden-50 text-foreground/70"}`}>
+          <button key={type} onClick={() => setFilterType(type)} className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors shrink-0 ${filterType === type ? "bg-foreground text-white" : "bg-golden-50 text-foreground/70"}`}>
             {type === "all" ? "All Types" : typeConfig[type]?.label ?? type}
           </button>
         ))}
-        <button onClick={() => litterSectionRef.current?.scrollIntoView({ behavior: "smooth" })} className="px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors bg-amber-100 text-amber-700 border border-amber-200">
+        <button onClick={() => litterSectionRef.current?.scrollIntoView({ behavior: "smooth" })} className="px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors shrink-0 bg-amber-100 text-amber-700 border border-amber-200">
           🚽 Litter Analysis
         </button>
       </div>
