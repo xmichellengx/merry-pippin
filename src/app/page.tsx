@@ -393,7 +393,7 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-3">
+      <div className="flex flex-col items-center justify-center h-[70vh] gap-3">
         <CatSleeping size={120} className="opacity-30" />
         <Loader2 size={32} className="text-golden-500 animate-spin" />
       </div>

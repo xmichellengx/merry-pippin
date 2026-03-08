@@ -43,7 +43,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${quicksand.variable} antialiased bg-background text-foreground`} style={{ fontFamily: "var(--font-quicksand), sans-serif" }}>
         <AdminProvider>
-          <main className="pb-safe min-h-screen max-w-lg mx-auto">
+          <main className="pb-safe max-w-lg mx-auto">
             {children}
           </main>
           <BottomNav />

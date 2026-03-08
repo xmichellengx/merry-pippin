@@ -63,7 +63,7 @@ body {
 
 /* Mobile-first: safe area for bottom nav (nav is h-12 = 3rem) */
 .pb-safe {
-  padding-bottom: calc(2.75rem + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(3.25rem + env(safe-area-inset-bottom, 0px));
 }
 
 /* Smooth card shadows */
@@ -127,10 +127,10 @@ input:not([type="checkbox"]):focus, select:focus, textarea:focus {
   -webkit-overflow-scrolling: touch;
 }
 
-/* Fix iOS Safari 100vh issue */
+/* Fix iOS Safari vh issue */
 @supports (-webkit-touch-callout: none) {
-  .min-h-screen {
-    min-height: -webkit-fill-available;
+  .h-\[70vh\] {
+    height: 70svh;
   }
 }
 
