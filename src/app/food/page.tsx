@@ -270,7 +270,7 @@ export default function FoodPage() {
 
       {filteredLogs.length === 0 ? (
         <div className="card p-8 text-center">
-          <img src="/cat-face-icon.png" alt="cat" width={90} height={90} className="mx-auto mb-2 opacity-60" />
+          <img src="/cat-face-icon.png" alt="cat" width={110} height={110} className="mx-auto mb-2 opacity-60" />
           <p className="text-sm text-muted">No meals logged for this day.</p>
           {isAdmin && <button onClick={() => setShowAddForm(true)} className="mt-3 px-4 py-2 rounded-xl golden-gradient text-white text-sm font-medium shadow-md">Log First Meal</button>}
         </div>
