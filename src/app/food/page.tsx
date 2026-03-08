@@ -119,6 +119,8 @@ export default function FoodPage() {
       setShowAddForm(false);
       setFormCatId(""); setFormFoodName(""); setFormFoodTypes(["dry"]); setFormAmount(""); setFormNotes("");
       loadLogs(selectedDate);
+    } catch (err) {
+      alert("Failed to save: " + (err instanceof Error ? err.message : String(err)));
     } finally { setSaving(false); }
   };
 
@@ -151,6 +153,8 @@ export default function FoodPage() {
       });
       setEditingMeal(null);
       loadLogs(selectedDate);
+    } catch (err) {
+      alert("Failed to save: " + (err instanceof Error ? err.message : String(err)));
     } finally { setEditSaving(false); }
   };
 
