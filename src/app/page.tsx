@@ -460,6 +460,7 @@ export default function Dashboard() {
   return (
     <div className="px-4 pt-12 space-y-5">
       {/* Header */}
+      <div className="relative">
       <div className="golden-gradient rounded-2xl p-5 text-white shadow-lg relative overflow-hidden">
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-1">
@@ -481,18 +482,19 @@ export default function Dashboard() {
         <button onClick={() => setShowMenu(!showMenu)} className="absolute bottom-3 right-3 z-10 w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
           <Menu size={18} />
         </button>
-        {/* Dropdown menu */}
-        {showMenu && (
-          <div className="absolute bottom-[-45px] right-4 z-20 bg-white rounded-xl shadow-lg border border-card-border py-1 min-w-[140px]">
-            <button
-              onClick={() => { setShowMenu(false); isAdmin ? logout() : setShowPinModal(true); }}
-              className="w-full px-4 py-2.5 text-left text-sm text-foreground flex items-center gap-2 hover:bg-golden-50"
-            >
-              {isAdmin ? <Unlock size={15} className="text-golden-600" /> : <Lock size={15} className="text-muted" />}
-              {isAdmin ? "Log out" : "Meowmeee Login"}
-            </button>
-          </div>
-        )}
+      </div>
+      {/* Dropdown menu */}
+      {showMenu && (
+        <div className="absolute right-4 mt-1 z-20 bg-white rounded-xl shadow-lg border border-card-border py-1 min-w-[140px]">
+          <button
+            onClick={() => { setShowMenu(false); isAdmin ? logout() : setShowPinModal(true); }}
+            className="w-full px-4 py-2.5 text-left text-sm text-foreground flex items-center gap-2 hover:bg-golden-50"
+          >
+            {isAdmin ? <Unlock size={15} className="text-golden-600" /> : <Lock size={15} className="text-muted" />}
+            {isAdmin ? "Log out" : "Meowmeee Login"}
+          </button>
+        </div>
+      )}
       </div>
 
       {/* Cat Cards */}
