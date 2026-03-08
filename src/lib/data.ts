@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { Cat, WeightRecord, HealthRecord, FoodLog, Photo } from './supabase'
+import type { Cat, WeightRecord, HealthRecord, FoodLog, Photo, LitterBoxLog } from './supabase'
 
 // ── Cats ──
 
@@ -139,5 +139,32 @@ export async function addPhoto(record: { cat_id?: string; url: string; caption?:
 
 export async function deletePhoto(id: string) {
   const { error } = await supabase.from('photos').delete().eq('id', id)
+  if (error) throw error
+}
+
+// ── Litter Box Logs ──
+
+export async function getLitterBoxLogs(): Promise<LitterBoxLog[]> {
+  const { data, error } = await supabase.from('litter_box_logs').select('*').order('created_at', { ascending: false })
+  if (error) { console.error('getLitterBoxLogs:', error.message); return []; }
+  return data ?? []
+}
+
+export async function addLitterBoxLog(record: {
+  date: string; time?: string; photo_url?: string; notes?: string; ai_analysis?: string;
+}) {
+  const { data, error } = await supabase.from('litter_box_logs').insert(record).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function updateLitterBoxLog(id: string, updates: { ai_analysis?: string }) {
+  const { data, error } = await supabase.from('litter_box_logs').update(updates).eq('id', id).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function deleteLitterBoxLog(id: string) {
+  const { error } = await supabase.from('litter_box_logs').delete().eq('id', id)
   if (error) throw error
 }

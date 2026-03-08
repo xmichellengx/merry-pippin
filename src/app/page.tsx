@@ -564,6 +564,9 @@ export default function Dashboard() {
             const isOverdue = daysUntil < 0;
             const isUrgent = daysUntil <= 14 && daysUntil >= 0;
 
+            const calDate = rec.next_due_date.replace(/-/g, "");
+            const calUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`${cat?.name || "Cat"} - ${rec.title}`)}&dates=${calDate}/${calDate}&details=${encodeURIComponent(`${rec.record_type} for ${cat?.name || "cat"}`)}`;
+
             return (
               <div key={rec.id} className="flex items-center justify-between py-2 border-b border-card-border last:border-0">
                 <div className="flex items-center gap-3">
@@ -573,9 +576,14 @@ export default function Dashboard() {
                     <p className="text-[10px] text-muted">{cat?.name} &middot; {rec.record_type}</p>
                   </div>
                 </div>
-                <span className={`badge ${isOverdue ? "badge-danger" : isUrgent ? "badge-warning" : "badge-success"}`}>
-                  {isOverdue ? `${Math.abs(daysUntil)}d overdue` : `${daysUntil}d`}
-                </span>
+                <div className="flex items-center gap-2">
+                  <a href={calUrl} target="_blank" rel="noopener noreferrer" className="text-golden-500 hover:text-golden-700" title="Add to Google Calendar">
+                    <Calendar size={14} />
+                  </a>
+                  <span className={`badge ${isOverdue ? "badge-danger" : isUrgent ? "badge-warning" : "badge-success"}`}>
+                    {isOverdue ? `${Math.abs(daysUntil)}d overdue` : `${daysUntil}d`}
+                  </span>
+                </div>
               </div>
             );
           })}

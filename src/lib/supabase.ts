@@ -64,3 +64,13 @@ export type Photo = {
   taken_at: string | null
   created_at: string
 }
+
+export type LitterBoxLog = {
+  id: string
+  date: string
+  time: string | null
+  photo_url: string | null
+  notes: string | null
+  ai_analysis: string | null
+  created_at: string
+}

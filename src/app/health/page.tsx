@@ -22,9 +22,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { format, differenceInDays } from "date-fns";
-import { getCats, getHealthRecords, addHealthRecords, updateHealthRecord, deleteHealthRecord } from "@/lib/data";
+import { getCats, getHealthRecords, addHealthRecords, updateHealthRecord, deleteHealthRecord, getLitterBoxLogs, addLitterBoxLog, updateLitterBoxLog, deleteLitterBoxLog } from "@/lib/data";
 import { supabase } from "@/lib/supabase";
-import type { Cat, HealthRecord } from "@/lib/supabase";
+import type { Cat, HealthRecord, LitterBoxLog } from "@/lib/supabase";
 import { CatWithHeart, TwoCatsSitting } from "@/components/CatIllustrations";
 import { useAdmin } from "@/components/AdminContext";
 
@@ -631,6 +631,14 @@ export default function HealthPage() {
   const [editingRecord, setEditingRecord] = useState<HealthRecord | null>(null);
   const { isAdmin } = useAdmin();
 
+  // Litter box state
+  const [litterLogs, setLitterLogs] = useState<LitterBoxLog[]>([]);
+  const [showLitterForm, setShowLitterForm] = useState(false);
+  const [litterPhoto, setLitterPhoto] = useState("");
+  const [litterNotes, setLitterNotes] = useState("");
+  const [litterSaving, setLitterSaving] = useState(false);
+  const [analyzingId, setAnalyzingId] = useState<string | null>(null);
+
   // Form state
   const [formCatId, setFormCatId] = useState("");
   const [formTitle, setFormTitle] = useState("");
@@ -646,8 +654,8 @@ export default function HealthPage() {
   });
 
   const loadData = () => {
-    Promise.all([getCats(), getHealthRecords()])
-      .then(([c, h]) => { setCats(c); setRecords(h); })
+    Promise.all([getCats(), getHealthRecords(), getLitterBoxLogs()])
+      .then(([c, h, l]) => { setCats(c); setRecords(h); setLitterLogs(l); })
       .finally(() => setLoading(false));
   };
 
@@ -692,9 +700,53 @@ export default function HealthPage() {
   };
 
   const handleMarkDone = async (record: HealthRecord) => {
-    // Clear the due date to mark as completed
     await updateHealthRecord(record.id, { next_due_date: null });
     loadData();
+  };
+
+  const handleLitterSave = async () => {
+    if (!litterPhoto && !litterNotes) return;
+    setLitterSaving(true);
+    try {
+      const now = new Date();
+      const log = await addLitterBoxLog({
+        date: format(now, "yyyy-MM-dd"),
+        time: format(now, "HH:mm"),
+        ...(litterPhoto ? { photo_url: litterPhoto } : {}),
+        ...(litterNotes ? { notes: litterNotes } : {}),
+      });
+      setShowLitterForm(false);
+      setLitterPhoto("");
+      setLitterNotes("");
+      loadData();
+      // Auto-analyze if photo was uploaded
+      if (litterPhoto && log?.id) {
+        handleLitterAnalyze(log.id, litterPhoto, litterNotes);
+      }
+    } finally { setLitterSaving(false); }
+  };
+
+  const handleLitterAnalyze = async (id: string, photoUrl: string, notes: string) => {
+    setAnalyzingId(id);
+    try {
+      const res = await fetch("/api/analyze-litter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ photoUrl, notes }),
+      });
+      const data = await res.json();
+      if (data.analysis) {
+        await updateLitterBoxLog(id, { ai_analysis: data.analysis });
+        loadData();
+      }
+    } catch (err) {
+      console.error("Analysis failed:", err);
+    } finally { setAnalyzingId(null); }
+  };
+
+  const handleLitterDelete = async (id: string) => {
+    await deleteLitterBoxLog(id);
+    setLitterLogs(prev => prev.filter(l => l.id !== id));
   };
 
   if (loading) {
@@ -884,6 +936,108 @@ export default function HealthPage() {
             />
           ))
         )}
+      </div>
+
+      {/* Litter Box Log Section */}
+      <div className="mt-6">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">🚽</span>
+            <h2 className="font-semibold text-sm">Litter Box Log</h2>
+          </div>
+          {isAdmin && (
+            <button onClick={() => setShowLitterForm(!showLitterForm)} className="w-8 h-8 rounded-full golden-gradient flex items-center justify-center shadow-md">
+              <Plus size={16} className="text-white" />
+            </button>
+          )}
+        </div>
+
+        {/* Add Litter Log Form */}
+        {showLitterForm && (
+          <div className="fixed inset-0 bg-black/50 z-[60] flex items-end justify-center" onClick={() => setShowLitterForm(false)}>
+            <div className="bg-white w-full max-w-lg rounded-t-3xl p-5 space-y-3 max-h-[90vh] overflow-y-auto animate-slide-up"
+              style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" }} onClick={e => e.stopPropagation()}>
+              <h3 className="font-semibold text-sm">Log Litter Box Scoop</h3>
+
+              <PhotoUpload photoUrl={litterPhoto} onUpload={setLitterPhoto} label="Photo of litter box contents" />
+
+              <div>
+                <label className="text-[11px] text-muted block mb-1">Notes (optional)</label>
+                <textarea value={litterNotes} onChange={e => setLitterNotes(e.target.value)}
+                  placeholder="Anything unusual? Color, smell, consistency..."
+                  className="w-full px-3 py-2 rounded-lg border border-card-border text-sm resize-none" rows={3} />
+              </div>
+
+              <div className="flex gap-2">
+                <button onClick={() => setShowLitterForm(false)} className="flex-1 py-2.5 rounded-xl border border-card-border text-sm font-medium">Cancel</button>
+                <button onClick={handleLitterSave} disabled={litterSaving || (!litterPhoto && !litterNotes)}
+                  className="flex-1 py-2.5 rounded-xl golden-gradient text-white text-sm font-medium shadow-md disabled:opacity-50">
+                  {litterSaving ? "Saving..." : "Save & Analyze"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Litter Log Cards */}
+        <div className="space-y-2">
+          {litterLogs.length === 0 ? (
+            <div className="card p-6 text-center">
+              <p className="text-muted text-xs">No litter box logs yet. Tap + to log a scoop.</p>
+            </div>
+          ) : (
+            litterLogs.slice(0, 10).map(log => (
+              <div key={log.id} className="card p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">🚽</span>
+                    <span className="text-xs font-medium">{format(new Date(log.date), "MMM d, yyyy")}</span>
+                    {log.time && <span className="text-xs text-muted">{log.time}</span>}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {log.photo_url && !log.ai_analysis && (
+                      <button onClick={() => handleLitterAnalyze(log.id, log.photo_url!, log.notes || "")}
+                        disabled={analyzingId === log.id}
+                        className="px-2 py-1 rounded-lg bg-golden-50 text-golden-600 text-[10px] font-medium">
+                        {analyzingId === log.id ? "Analyzing..." : "Analyze"}
+                      </button>
+                    )}
+                    {isAdmin && (
+                      <button onClick={() => handleLitterDelete(log.id)} className="w-6 h-6 rounded-full flex items-center justify-center text-red-400 hover:bg-red-50">
+                        <Trash2 size={12} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {log.photo_url && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={log.photo_url} alt="Litter box" className="w-full max-w-[200px] h-auto rounded-lg border border-card-border" />
+                )}
+
+                {log.notes && <p className="text-xs text-foreground/70">{log.notes}</p>}
+
+                {analyzingId === log.id && (
+                  <div className="flex items-center gap-2 py-1">
+                    <Loader2 size={12} className="animate-spin text-golden-500" />
+                    <span className="text-[10px] text-muted">AI analyzing photo...</span>
+                  </div>
+                )}
+
+                {log.ai_analysis && (
+                  <div className="bg-golden-50 rounded-lg p-3 space-y-1">
+                    <div className="flex items-center gap-1 mb-1">
+                      <span className="text-[10px] font-semibold text-golden-700">AI Analysis</span>
+                    </div>
+                    {log.ai_analysis.split("\n").filter(l => l.trim()).map((line, i) => (
+                      <p key={i} className="text-[11px] text-foreground/80 leading-relaxed">{line.replace(/^[-•*]\s*/, "")}</p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );
