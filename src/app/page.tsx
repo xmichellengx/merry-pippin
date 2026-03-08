@@ -475,7 +475,7 @@ export default function Dashboard() {
           <p className="text-white/80 text-sm">Growth Tracker</p>
           <p className="text-white/60 text-xs mt-1">{format(new Date(), "EEEE, MMMM d, yyyy")}</p>
         </div>
-        <div className="absolute -right-2 -bottom-2 opacity-20">
+        <div className="absolute -right-2 -bottom-2 opacity-50">
           <TwoCatsSitting size={140} />
         </div>
         {/* Dropdown menu */}
