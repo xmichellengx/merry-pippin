@@ -54,9 +54,9 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Mobile-first: safe area for bottom nav */
+/* Mobile-first: safe area for bottom nav (nav is h-16 = 4rem) */
 .pb-safe {
-  padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
 }
 
 /* Smooth card shadows */

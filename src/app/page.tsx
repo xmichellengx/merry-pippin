@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
   Heart,
   UtensilsCrossed,
@@ -382,10 +382,13 @@ export default function Dashboard() {
     );
   }
 
-  const upcoming = health.filter(h => h.next_due_date).sort((a, b) => (a.next_due_date ?? '').localeCompare(b.next_due_date ?? ''));
+  const upcoming = useMemo(() =>
+    health.filter(h => h.next_due_date).sort((a, b) => (a.next_due_date ?? '').localeCompare(b.next_due_date ?? '')),
+    [health]
+  );
 
-  // Build context for AI chat
-  const aiContext = [
+  // Build context for AI chat (memoized to prevent re-renders)
+  const aiContext = useMemo(() => [
     ...cats.map(cat => {
       const catWeights = weights.filter(w => w.cat_id === cat.id).sort((a, b) => a.recorded_at.localeCompare(b.recorded_at));
       const latestWeight = catWeights.length > 0 ? catWeights[catWeights.length - 1] : null;
@@ -393,7 +396,7 @@ export default function Dashboard() {
       return `Cat: ${cat.name}, Breed: ${cat.breed}, Color: ${cat.color}, DOB: ${cat.date_of_birth || "unknown"}, Age: ${getAge(cat.date_of_birth)}${latestWeight ? `, Latest weight: ${latestWeight.weight_kg}kg (${latestWeight.recorded_at})` : ""}${catHealth.length > 0 ? `, Recent health: ${catHealth.slice(0, 5).map(h => `${h.title} on ${h.date}${h.next_due_date ? ` (next due: ${h.next_due_date})` : ""}`).join("; ")}` : ""}`;
     }),
     `Today's meals: ${todayFood.length > 0 ? todayFood.map(f => `${f.food_name} (${f.food_type}, ${f.amount_grams || "?"}g) for ${cats.find(c => c.id === f.cat_id)?.name || "cat"}`).join("; ") : "none logged yet"}`,
-  ].join("\n");
+  ].join("\n"), [cats, weights, health, todayFood]);
 
   return (
     <div className="px-4 pt-12 space-y-5">
