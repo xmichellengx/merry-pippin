@@ -373,15 +373,6 @@ export default function Dashboard() {
 
   useEffect(() => { loadData(); }, []);
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-3">
-        <CatSleeping size={120} className="opacity-30" />
-        <Loader2 size={32} className="text-golden-500 animate-spin" />
-      </div>
-    );
-  }
-
   const upcoming = useMemo(() =>
     health.filter(h => h.next_due_date).sort((a, b) => (a.next_due_date ?? '').localeCompare(b.next_due_date ?? '')),
     [health]
@@ -397,6 +388,15 @@ export default function Dashboard() {
     }),
     `Today's meals: ${todayFood.length > 0 ? todayFood.map(f => `${f.food_name} (${f.food_type}, ${f.amount_grams || "?"}g) for ${cats.find(c => c.id === f.cat_id)?.name || "cat"}`).join("; ") : "none logged yet"}`,
   ].join("\n"), [cats, weights, health, todayFood]);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-3">
+        <CatSleeping size={120} className="opacity-30" />
+        <Loader2 size={32} className="text-golden-500 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="px-4 pt-12 space-y-5">
