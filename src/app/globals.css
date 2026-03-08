@@ -93,7 +93,7 @@ body {
 .badge-info { background: #E3F2FD; color: #1565C0; }
 
 /* Input styling */
-input, select, textarea {
+input:not([type="checkbox"]), select, textarea {
   border: 1.5px solid var(--card-border);
   border-radius: 0.75rem;
   padding: 0.75rem 1rem;
@@ -103,7 +103,7 @@ input, select, textarea {
   transition: border-color 0.2s;
 }
 
-input:focus, select:focus, textarea:focus {
+input:not([type="checkbox"]):focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--golden-400);
   box-shadow: 0 0 0 3px rgba(240, 169, 74, 0.15);

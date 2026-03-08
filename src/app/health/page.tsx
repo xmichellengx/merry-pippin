@@ -608,13 +608,13 @@ export default function HealthPage() {
           {/* Type checkboxes with per-type due dates */}
           <div>
             <label className="text-xs text-muted block mb-2">What was done? (tick all that apply)</label>
-            <div className="space-y-2">
+            <div className="space-y-1">
               {Object.entries(formTypes).map(([type, { checked, dueDate }]) => {
                 const config = typeConfig[type];
                 const Icon = config.icon;
                 return (
                   <div key={type}>
-                    <label className="flex items-center gap-3 cursor-pointer py-1">
+                    <label className="flex items-center gap-2.5 cursor-pointer py-1.5">
                       <input
                         type="checkbox"
                         checked={checked}
@@ -627,11 +627,11 @@ export default function HealthPage() {
                       <div className={`w-6 h-6 rounded-lg ${config.bg} flex items-center justify-center shrink-0`}>
                         <Icon size={13} className={config.color} />
                       </div>
-                      <span className="text-xs font-medium">{config.label}</span>
+                      <span className="text-sm font-medium">{config.label}</span>
                     </label>
                     {checked && (
-                      <div className="ml-[2.75rem] mt-1 mb-1">
-                        <label className="text-[11px] text-muted block mb-0.5">Next due date for {config.label.toLowerCase()}</label>
+                      <div className="pl-[1.625rem] ml-2 mt-0.5 mb-1 border-l-2 border-golden-200">
+                        <label className="text-[11px] text-muted block mb-0.5">Next due date</label>
                         <input
                           type="date"
                           value={dueDate}
