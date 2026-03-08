@@ -15,18 +15,20 @@ import {
   Navigation,
   Star,
   X,
+  Check,
+  Pencil,
 } from "lucide-react";
 import Link from "next/link";
 import { format, differenceInDays } from "date-fns";
-import { getCats, getHealthRecords, addHealthRecords, deleteHealthRecord } from "@/lib/data";
+import { getCats, getHealthRecords, addHealthRecords, updateHealthRecord, deleteHealthRecord } from "@/lib/data";
 import type { Cat, HealthRecord } from "@/lib/supabase";
 
-const typeConfig: Record<string, { icon: typeof Syringe; color: string; bg: string }> = {
-  vaccine: { icon: Syringe, color: "text-blue-600", bg: "bg-blue-50" },
-  deworm: { icon: Bug, color: "text-orange-600", bg: "bg-orange-50" },
-  vet_visit: { icon: Stethoscope, color: "text-green-600", bg: "bg-green-50" },
-  medication: { icon: Pill, color: "text-purple-600", bg: "bg-purple-50" },
-  other: { icon: Stethoscope, color: "text-gray-600", bg: "bg-gray-50" },
+const typeConfig: Record<string, { icon: typeof Syringe; color: string; bg: string; label: string }> = {
+  vaccine: { icon: Syringe, color: "text-blue-600", bg: "bg-blue-50", label: "Vaccine" },
+  deworm: { icon: Bug, color: "text-orange-600", bg: "bg-orange-50", label: "Deworm" },
+  vet_visit: { icon: Stethoscope, color: "text-green-600", bg: "bg-green-50", label: "Vet Visit" },
+  medication: { icon: Pill, color: "text-purple-600", bg: "bg-purple-50", label: "Medication" },
+  other: { icon: Stethoscope, color: "text-gray-600", bg: "bg-gray-50", label: "Other" },
 };
 
 type NearbyVet = {
@@ -286,12 +288,130 @@ function VetSelector({
   );
 }
 
-function RecordCard({ record, onDelete }: { record: HealthRecord; onDelete: (id: string) => void }) {
+function EditRecordModal({
+  record,
+  cats,
+  onClose,
+  onSaved,
+}: {
+  record: HealthRecord;
+  cats: Cat[];
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [title, setTitle] = useState(record.title);
+  const [date, setDate] = useState(record.date);
+  const [dueDate, setDueDate] = useState(record.next_due_date ?? "");
+  const [notes, setNotes] = useState(record.description ?? "");
+  const [vetName, setVetName] = useState(record.vet_name ?? "");
+  const [recordType, setRecordType] = useState<string>(record.record_type);
+  const [saving, setSaving] = useState(false);
+
+  const catName = cats.find(c => c.id === record.cat_id)?.name ?? "Unknown";
+
+  const handleSave = async () => {
+    if (!title) return;
+    setSaving(true);
+    try {
+      await updateHealthRecord(record.id, {
+        title,
+        date,
+        record_type: recordType,
+        next_due_date: dueDate || null,
+        description: notes || null,
+        vet_name: vetName || null,
+      });
+      onSaved();
+      onClose();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 overlay z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div
+        className="bg-white rounded-2xl w-full max-w-sm p-5 space-y-4 max-h-[90vh] overflow-y-auto"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold">Edit Record</h2>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-golden-50 flex items-center justify-center">
+            <X size={16} className="text-muted" />
+          </button>
+        </div>
+
+        <p className="text-xs text-muted">Cat: <span className="font-medium text-foreground">{catName}</span></p>
+
+        <div>
+          <label className="text-xs text-muted block mb-1">Type</label>
+          <select value={recordType} onChange={e => setRecordType(e.target.value)}>
+            {Object.entries(typeConfig).map(([key, cfg]) => (
+              <option key={key} value={key}>{cfg.label}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="text-xs text-muted block mb-1">Title</label>
+          <input type="text" value={title} onChange={e => setTitle(e.target.value)} />
+        </div>
+        <div>
+          <label className="text-xs text-muted block mb-1">Date</label>
+          <input type="date" value={date} onChange={e => setDate(e.target.value)} />
+        </div>
+        <div>
+          <label className="text-xs text-muted block mb-1">Next Due Date</label>
+          <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+        </div>
+        <div>
+          <label className="text-xs text-muted block mb-1">Vet Clinic</label>
+          <VetSelector
+            selectedVet={vetName}
+            onSelect={(name) => setVetName(name)}
+          />
+        </div>
+        <div>
+          <label className="text-xs text-muted block mb-1">Notes</label>
+          <textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)} />
+        </div>
+
+        <div className="flex gap-2 pt-2">
+          <button
+            onClick={handleSave}
+            disabled={saving || !title}
+            className="flex-1 py-3 rounded-xl golden-gradient text-white text-sm font-semibold shadow-md disabled:opacity-50"
+          >
+            {saving ? "Saving..." : "Save Changes"}
+          </button>
+          <button onClick={onClose} className="px-5 py-3 rounded-xl bg-golden-50 text-golden-700 text-sm font-medium">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RecordCard({
+  record,
+  cats,
+  onDelete,
+  onEdit,
+  onMarkDone,
+}: {
+  record: HealthRecord;
+  cats: Cat[];
+  onDelete: (id: string) => void;
+  onEdit: (record: HealthRecord) => void;
+  onMarkDone: (record: HealthRecord) => void;
+}) {
   const config = typeConfig[record.record_type] ?? typeConfig.other;
   const Icon = config.icon;
   const dueIn = record.next_due_date
     ? differenceInDays(new Date(record.next_due_date), new Date())
     : null;
+  const isOverdue = dueIn !== null && dueIn < 0;
+  const isDueSoon = dueIn !== null && dueIn >= 0 && dueIn <= 30;
 
   return (
     <div className="card p-4">
@@ -300,11 +420,24 @@ function RecordCard({ record, onDelete }: { record: HealthRecord; onDelete: (id:
           <Icon size={18} className={config.color} />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-sm">{record.title}</h3>
-            <div className="flex items-center gap-2">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <h3 className="font-semibold text-sm">{record.title}</h3>
               <span className="text-[10px] text-muted">{format(new Date(record.date), "MMM d, yyyy")}</span>
-              <button onClick={() => onDelete(record.id)} className="text-muted hover:text-danger">
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                onClick={() => onEdit(record)}
+                className="w-7 h-7 rounded-lg bg-golden-50 flex items-center justify-center text-golden-600 hover:bg-golden-100 transition-colors"
+                title="Edit"
+              >
+                <Pencil size={12} />
+              </button>
+              <button
+                onClick={() => onDelete(record.id)}
+                className="w-7 h-7 rounded-lg bg-red-50 flex items-center justify-center text-red-400 hover:bg-red-100 transition-colors"
+                title="Delete"
+              >
                 <Trash2 size={12} />
               </button>
             </div>
@@ -319,14 +452,23 @@ function RecordCard({ record, onDelete }: { record: HealthRecord; onDelete: (id:
             </div>
           )}
           {record.next_due_date && dueIn !== null && (
-            <div className="mt-2">
-              <span className={`badge ${dueIn < 0 ? "badge-danger" : dueIn <= 30 ? "badge-warning" : "badge-success"}`}>
-                {dueIn < 0
+            <div className="flex items-center gap-2 mt-2">
+              <span className={`badge ${isOverdue ? "badge-danger" : isDueSoon ? "badge-warning" : "badge-success"}`}>
+                {isOverdue
                   ? `Overdue by ${Math.abs(dueIn)} days`
                   : dueIn === 0
                   ? "Due today"
                   : `Due in ${dueIn} days`}
               </span>
+              {(isOverdue || isDueSoon) && (
+                <button
+                  onClick={() => onMarkDone(record)}
+                  className="flex items-center gap-1 px-2 py-1 rounded-lg bg-green-50 text-green-600 text-[11px] font-medium hover:bg-green-100 transition-colors"
+                >
+                  <Check size={11} />
+                  Mark done
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -343,6 +485,7 @@ export default function HealthPage() {
   const [selectedCat, setSelectedCat] = useState<string>("all");
   const [filterType, setFilterType] = useState<string>("all");
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<HealthRecord | null>(null);
 
   // Form state
   const [formCatId, setFormCatId] = useState("");
@@ -372,7 +515,7 @@ export default function HealthPage() {
     if (!formCatId || !formTitle || checkedTypes.length === 0) return;
     setSaving(true);
     try {
-      const records = checkedTypes.map(([type, { dueDate }]) => ({
+      const newRecords = checkedTypes.map(([type, { dueDate }]) => ({
         cat_id: formCatId,
         record_type: type,
         title: formTitle,
@@ -381,7 +524,7 @@ export default function HealthPage() {
         ...(formNotes ? { description: formNotes } : {}),
         ...(formVet ? { vet_name: formVet } : {}),
       }));
-      await addHealthRecords(records);
+      await addHealthRecords(newRecords);
       setShowAddForm(false);
       setFormCatId(""); setFormTitle(""); setFormNotes(""); setFormVet("");
       setFormTypes({
@@ -398,6 +541,12 @@ export default function HealthPage() {
   const handleDelete = async (id: string) => {
     await deleteHealthRecord(id);
     setRecords(prev => prev.filter(r => r.id !== id));
+  };
+
+  const handleMarkDone = async (record: HealthRecord) => {
+    // Clear the due date to mark as completed
+    await updateHealthRecord(record.id, { next_due_date: null });
+    loadData();
   };
 
   if (loading) {
@@ -432,7 +581,7 @@ export default function HealthPage() {
       <div className="flex gap-2 overflow-x-auto scroll-smooth pb-1">
         {["all", "vaccine", "deworm", "vet_visit", "medication"].map(type => (
           <button key={type} onClick={() => setFilterType(type)} className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${filterType === type ? "bg-foreground text-white" : "bg-golden-50 text-foreground/70"}`}>
-            {type === "all" ? "All Types" : type === "vet_visit" ? "Vet Visit" : type.charAt(0).toUpperCase() + type.slice(1)}
+            {type === "all" ? "All Types" : typeConfig[type]?.label ?? type}
           </button>
         ))}
       </div>
@@ -463,10 +612,9 @@ export default function HealthPage() {
               {Object.entries(formTypes).map(([type, { checked, dueDate }]) => {
                 const config = typeConfig[type];
                 const Icon = config.icon;
-                const label = type === "vet_visit" ? "Vet Visit" : type === "other" ? "Other" : type.charAt(0).toUpperCase() + type.slice(1);
                 return (
-                  <div key={type} className="space-y-1">
-                    <label className="flex items-center gap-2 cursor-pointer">
+                  <div key={type}>
+                    <label className="flex items-center gap-3 cursor-pointer py-1">
                       <input
                         type="checkbox"
                         checked={checked}
@@ -474,16 +622,16 @@ export default function HealthPage() {
                           ...prev,
                           [type]: { ...prev[type], checked: e.target.checked },
                         }))}
-                        className="w-4 h-4 rounded border-gray-300 text-golden-500 focus:ring-golden-500"
+                        className="w-4 h-4 rounded border-gray-300 text-golden-500 focus:ring-golden-500 shrink-0"
                       />
-                      <div className={`w-6 h-6 rounded-lg ${config.bg} flex items-center justify-center`}>
+                      <div className={`w-6 h-6 rounded-lg ${config.bg} flex items-center justify-center shrink-0`}>
                         <Icon size={13} className={config.color} />
                       </div>
-                      <span className="text-xs font-medium">{label}</span>
+                      <span className="text-xs font-medium">{config.label}</span>
                     </label>
                     {checked && (
-                      <div className="ml-12">
-                        <label className="text-[11px] text-muted block mb-0.5">Next due date for {label.toLowerCase()}</label>
+                      <div className="ml-[2.75rem] mt-1 mb-1">
+                        <label className="text-[11px] text-muted block mb-0.5">Next due date for {config.label.toLowerCase()}</label>
                         <input
                           type="date"
                           value={dueDate}
@@ -526,13 +674,32 @@ export default function HealthPage() {
         </div>
       )}
 
+      {/* Edit Record Modal */}
+      {editingRecord && (
+        <EditRecordModal
+          record={editingRecord}
+          cats={cats}
+          onClose={() => setEditingRecord(null)}
+          onSaved={loadData}
+        />
+      )}
+
       <div className="space-y-3">
         {filtered.length === 0 ? (
           <div className="card p-8 text-center">
             <p className="text-muted text-sm">No records found.</p>
           </div>
         ) : (
-          filtered.map(record => <RecordCard key={record.id} record={record} onDelete={handleDelete} />)
+          filtered.map(record => (
+            <RecordCard
+              key={record.id}
+              record={record}
+              cats={cats}
+              onDelete={handleDelete}
+              onEdit={setEditingRecord}
+              onMarkDone={handleMarkDone}
+            />
+          ))
         )}
       </div>
     </div>
