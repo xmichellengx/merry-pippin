@@ -61,6 +61,26 @@ const dewormBrands = [
   { value: "Other deworm", label: "Other (type manually)" },
 ];
 
+function compressImage(file: File, maxWidth = 800, quality = 0.7): Promise<string> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let w = img.width, h = img.height;
+        if (w > maxWidth) { h = (h * maxWidth) / w; w = maxWidth; }
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 async function uploadHealthPhoto(file: File): Promise<string> {
   const fileExt = file.name.split('.').pop();
   const fileName = `health-${Date.now()}.${fileExt}`;
@@ -71,12 +91,8 @@ async function uploadHealthPhoto(file: File): Promise<string> {
     return publicUrl;
   }
 
-  // Fallback to data URL if storage not configured
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.readAsDataURL(file);
-  });
+  // Fallback to compressed data URL if storage not configured
+  return compressImage(file);
 }
 
 function PhotoUpload({
@@ -648,6 +664,7 @@ export default function HealthPage() {
   const [litterNotes, setLitterNotes] = useState("");
   const [litterSaving, setLitterSaving] = useState(false);
   const [analyzingId, setAnalyzingId] = useState<string | null>(null);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
 
   // Form state
   const [formCatId, setFormCatId] = useState("");
@@ -742,7 +759,12 @@ export default function HealthPage() {
 
   const handleLitterAnalyze = async (id: string, photos: string | string[], notes: string) => {
     setAnalyzingId(id);
-    const photoUrls = Array.isArray(photos) ? photos : parseLitterPhotos(photos);
+    setAnalysisError(null);
+    let photoUrls = Array.isArray(photos) ? photos : parseLitterPhotos(photos);
+    // Limit to first photo for analysis to avoid request size issues with data URLs
+    if (photoUrls.length > 1 && photoUrls.some(u => u.startsWith("data:"))) {
+      photoUrls = [photoUrls[0]];
+    }
     try {
       const res = await fetch("/api/analyze-litter", {
         method: "POST",
@@ -758,9 +780,12 @@ export default function HealthPage() {
           ...(!isAlarming ? { photo_url: null } : {}),
         });
         loadData();
+      } else if (data.error) {
+        setAnalysisError(data.error);
       }
     } catch (err) {
       console.error("Analysis failed:", err);
+      setAnalysisError("Analysis failed. Please try again.");
     } finally { setAnalyzingId(null); }
   };
 
@@ -1061,6 +1086,9 @@ export default function HealthPage() {
                         className="px-2 py-1 rounded-lg bg-golden-50 text-golden-600 text-[10px] font-medium">
                         {analyzingId === log.id ? "Analyzing..." : "Analyze"}
                       </button>
+                    )}
+                    {analysisError && analyzingId === null && (
+                      <span className="text-[10px] text-red-500">{analysisError}</span>
                     )}
                     {isAdmin && (
                       <button onClick={() => handleLitterDelete(log.id)} className="w-6 h-6 rounded-full flex items-center justify-center text-red-400 hover:bg-red-50">
