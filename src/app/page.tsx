@@ -23,7 +23,7 @@ import { format, differenceInDays, differenceInMonths } from "date-fns";
 import { getCats, getWeightRecords, getHealthRecords, getFoodLogs, updateCat } from "@/lib/data";
 import { supabase } from "@/lib/supabase";
 import type { Cat, WeightRecord, HealthRecord, FoodLog } from "@/lib/supabase";
-import { TwoCatsSitting, CatSleeping } from "@/components/CatIllustrations";
+import { TwoCatsSitting } from "@/components/CatIllustrations";
 import { useAdmin } from "@/components/AdminContext";
 
 function getAge(dob: string | null) {
@@ -452,7 +452,7 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div className="flex flex-col items-center pt-40 gap-3">
-        <CatSleeping size={120} className="opacity-30" />
+        <TwoCatsSitting size={120} className="opacity-30" />
         <Loader2 size={32} className="text-golden-500 animate-spin" />
       </div>
     );
@@ -464,13 +464,8 @@ export default function Dashboard() {
       <div className="golden-gradient rounded-2xl p-5 text-white shadow-lg relative overflow-hidden">
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-1">
-            <button onClick={() => setShowMenu(!showMenu)} className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-              <Menu size={18} />
-            </button>
-            <div className="flex items-center gap-2">
-              <CatIcon size={24} />
-              <h1 className="text-xl font-bold">Merry & Pippin</h1>
-            </div>
+            <CatIcon size={24} />
+            <h1 className="text-xl font-bold">Merry & Pippin</h1>
           </div>
           <p className="text-white/80 text-sm">Growth Tracker</p>
           <p className="text-white/60 text-xs mt-1">{format(new Date(), "EEEE, MMMM d, yyyy")}</p>
@@ -478,9 +473,12 @@ export default function Dashboard() {
         <div className="absolute -right-2 -bottom-4 opacity-25">
           <TwoCatsSitting size={120} />
         </div>
+        <button onClick={() => setShowMenu(!showMenu)} className="absolute bottom-3 right-3 z-10 w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+          <Menu size={18} />
+        </button>
         {/* Dropdown menu */}
         {showMenu && (
-          <div className="absolute top-14 left-4 z-20 bg-white rounded-xl shadow-lg border border-card-border py-1 min-w-[140px]">
+          <div className="absolute bottom-[-45px] right-4 z-20 bg-white rounded-xl shadow-lg border border-card-border py-1 min-w-[140px]">
             <button
               onClick={() => { setShowMenu(false); isAdmin ? logout() : setShowPinModal(true); }}
               className="w-full px-4 py-2.5 text-left text-sm text-foreground flex items-center gap-2 hover:bg-golden-50"
@@ -556,7 +554,7 @@ export default function Dashboard() {
         <div className="space-y-2">
           {upcoming.length === 0 ? (
             <div className="flex flex-col items-center py-2">
-              <CatSleeping size={100} className="opacity-40 mb-1" />
+              <TwoCatsSitting size={100} className="opacity-40 mb-1" />
               <p className="text-xs text-muted">No upcoming events.</p>
             </div>
           ) : upcoming.slice(0, 4).map((rec) => {
@@ -597,7 +595,7 @@ export default function Dashboard() {
         </div>
         {todayFood.length === 0 ? (
           <div className="flex flex-col items-center py-2">
-            <CatSleeping size={90} className="opacity-30 mb-1" />
+            <TwoCatsSitting size={90} className="opacity-30 mb-1" />
             <p className="text-xs text-muted">No meals logged yet today.</p>
           </div>
         ) : (

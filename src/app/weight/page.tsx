@@ -9,7 +9,7 @@ import type { Cat, WeightRecord } from "@/lib/supabase";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
-import { CatOnScale, CatSleeping } from "@/components/CatIllustrations";
+import { CatOnScale, TwoCatsSitting } from "@/components/CatIllustrations";
 import { useAdmin } from "@/components/AdminContext";
 
 export default function WeightPage() {
@@ -82,7 +82,7 @@ export default function WeightPage() {
   };
 
   if (loading) {
-    return <div className="flex flex-col items-center pt-40 gap-3"><CatSleeping size={120} className="opacity-30" /><Loader2 size={32} className="text-golden-500 animate-spin" /></div>;
+    return <div className="flex flex-col items-center pt-40 gap-3"><TwoCatsSitting size={120} className="opacity-30" /><Loader2 size={32} className="text-golden-500 animate-spin" /></div>;
   }
 
   // Build chart data

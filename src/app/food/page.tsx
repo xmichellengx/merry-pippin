@@ -6,7 +6,7 @@ import Link from "next/link";
 import { format, subDays } from "date-fns";
 import { getCats, getFoodLogs, addFoodLog, deleteFoodLog, updateFoodLog } from "@/lib/data";
 import type { Cat, FoodLog } from "@/lib/supabase";
-import { CatEating, CatSleeping } from "@/components/CatIllustrations";
+import { CatEating, TwoCatsSitting } from "@/components/CatIllustrations";
 import { useAdmin } from "@/components/AdminContext";
 
 const foodTypeEmoji: Record<string, string> = {
@@ -170,7 +170,7 @@ export default function FoodPage() {
   });
 
   if (loading) {
-    return <div className="flex flex-col items-center pt-40 gap-3"><CatSleeping size={120} className="opacity-30" /><Loader2 size={32} className="text-golden-500 animate-spin" /></div>;
+    return <div className="flex flex-col items-center pt-40 gap-3"><TwoCatsSitting size={120} className="opacity-30" /><Loader2 size={32} className="text-golden-500 animate-spin" /></div>;
   }
 
   return (

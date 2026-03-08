@@ -6,7 +6,7 @@ import Link from "next/link";
 import { getCats, getPhotos, addPhoto, deletePhoto } from "@/lib/data";
 import { supabase } from "@/lib/supabase";
 import type { Cat, Photo } from "@/lib/supabase";
-import { CatWithCamera, CatSleeping } from "@/components/CatIllustrations";
+import { CatWithCamera, TwoCatsSitting } from "@/components/CatIllustrations";
 import { useAdmin } from "@/components/AdminContext";
 
 export default function PhotosPage() {
@@ -79,7 +79,7 @@ export default function PhotosPage() {
   };
 
   if (loading) {
-    return <div className="flex flex-col items-center pt-40 gap-3"><CatSleeping size={120} className="opacity-30" /><Loader2 size={32} className="text-golden-500 animate-spin" /></div>;
+    return <div className="flex flex-col items-center pt-40 gap-3"><TwoCatsSitting size={120} className="opacity-30" /><Loader2 size={32} className="text-golden-500 animate-spin" /></div>;
   }
 
   return (
