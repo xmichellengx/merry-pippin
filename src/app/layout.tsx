@@ -19,6 +19,10 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: "M&P Growth Tracker",
   },
+  icons: {
+    icon: "/icon-512.png",
+    apple: "/icon-192.png",
+  },
 };
 
 export const viewport: Viewport = {
