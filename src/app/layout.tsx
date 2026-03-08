@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 import BottomNav from "@/components/BottomNav";
+import { AdminProvider } from "@/components/AdminContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,10 +37,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} font-sans antialiased bg-background text-foreground`}>
-        <main className="pb-safe min-h-screen max-w-lg mx-auto">
-          {children}
-        </main>
-        <BottomNav />
+        <AdminProvider>
+          <main className="pb-safe min-h-screen max-w-lg mx-auto">
+            {children}
+          </main>
+          <BottomNav />
+        </AdminProvider>
       </body>
     </html>
   );

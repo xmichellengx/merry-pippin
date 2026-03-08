@@ -23,6 +23,7 @@ import { format, differenceInDays } from "date-fns";
 import { getCats, getHealthRecords, addHealthRecords, updateHealthRecord, deleteHealthRecord } from "@/lib/data";
 import type { Cat, HealthRecord } from "@/lib/supabase";
 import { CatWithHeart, CatSleeping } from "@/components/CatIllustrations";
+import { useAdmin } from "@/components/AdminContext";
 
 const typeConfig: Record<string, { icon: typeof Syringe; color: string; bg: string; label: string }> = {
   vaccine: { icon: Syringe, color: "text-blue-600", bg: "bg-blue-50", label: "Vaccine" },
@@ -399,12 +400,14 @@ function RecordCard({
   onDelete,
   onEdit,
   onMarkDone,
+  isAdmin,
 }: {
   record: HealthRecord;
   cats: Cat[];
   onDelete: (id: string) => void;
   onEdit: (record: HealthRecord) => void;
   onMarkDone: (record: HealthRecord) => void;
+  isAdmin: boolean;
 }) {
   const config = typeConfig[record.record_type] ?? typeConfig.other;
   const Icon = config.icon;
@@ -426,22 +429,24 @@ function RecordCard({
               <h3 className="font-semibold text-sm">{record.title}</h3>
               <span className="text-[10px] text-muted">{format(new Date(record.date), "MMM d, yyyy")}</span>
             </div>
-            <div className="flex items-center gap-1 shrink-0">
-              <button
-                onClick={() => onEdit(record)}
-                className="w-7 h-7 rounded-lg bg-golden-50 flex items-center justify-center text-golden-600 hover:bg-golden-100 transition-colors"
-                title="Edit"
-              >
-                <Pencil size={12} />
-              </button>
-              <button
-                onClick={() => onDelete(record.id)}
-                className="w-7 h-7 rounded-lg bg-red-50 flex items-center justify-center text-red-400 hover:bg-red-100 transition-colors"
-                title="Delete"
-              >
-                <Trash2 size={12} />
-              </button>
-            </div>
+            {isAdmin && (
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  onClick={() => onEdit(record)}
+                  className="w-7 h-7 rounded-lg bg-golden-50 flex items-center justify-center text-golden-600 hover:bg-golden-100 transition-colors"
+                  title="Edit"
+                >
+                  <Pencil size={12} />
+                </button>
+                <button
+                  onClick={() => onDelete(record.id)}
+                  className="w-7 h-7 rounded-lg bg-red-50 flex items-center justify-center text-red-400 hover:bg-red-100 transition-colors"
+                  title="Delete"
+                >
+                  <Trash2 size={12} />
+                </button>
+              </div>
+            )}
           </div>
           {record.description && (
             <p className="text-xs text-muted mt-0.5">{record.description}</p>
@@ -461,7 +466,7 @@ function RecordCard({
                   ? "Due today"
                   : `Due in ${dueIn} days`}
               </span>
-              {(isOverdue || isDueSoon) && (
+              {isAdmin && (isOverdue || isDueSoon) && (
                 <button
                   onClick={() => onMarkDone(record)}
                   className="flex items-center gap-1 px-2 py-1 rounded-lg bg-green-50 text-green-600 text-[11px] font-medium hover:bg-green-100 transition-colors"
@@ -487,6 +492,7 @@ export default function HealthPage() {
   const [filterType, setFilterType] = useState<string>("all");
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingRecord, setEditingRecord] = useState<HealthRecord | null>(null);
+  const { isAdmin } = useAdmin();
 
   // Form state
   const [formCatId, setFormCatId] = useState("");
@@ -567,9 +573,11 @@ export default function HealthPage() {
           </Link>
           <h1 className="text-lg font-bold">Health Records</h1>
         </div>
-        <button onClick={() => setShowAddForm(!showAddForm)} className="w-9 h-9 rounded-full golden-gradient flex items-center justify-center shadow-md">
-          <Plus size={18} className="text-white" />
-        </button>
+        {isAdmin && (
+          <button onClick={() => setShowAddForm(!showAddForm)} className="w-9 h-9 rounded-full golden-gradient flex items-center justify-center shadow-md">
+            <Plus size={18} className="text-white" />
+          </button>
+        )}
       </div>
 
       <div className="flex gap-2">
@@ -587,7 +595,7 @@ export default function HealthPage() {
         ))}
       </div>
 
-      {showAddForm && (
+      {isAdmin && showAddForm && (
         <div className="card p-4 space-y-3 border-golden-300 border-2">
           <h3 className="font-semibold text-sm">New Health Record</h3>
           <div>
@@ -700,6 +708,7 @@ export default function HealthPage() {
               onDelete={handleDelete}
               onEdit={setEditingRecord}
               onMarkDone={handleMarkDone}
+              isAdmin={isAdmin}
             />
           ))
         )}

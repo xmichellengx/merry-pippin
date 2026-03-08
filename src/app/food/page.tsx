@@ -7,6 +7,7 @@ import { format, subDays } from "date-fns";
 import { getCats, getFoodLogs, addFoodLog, deleteFoodLog } from "@/lib/data";
 import type { Cat, FoodLog } from "@/lib/supabase";
 import { CatEating, CatSleeping } from "@/components/CatIllustrations";
+import { useAdmin } from "@/components/AdminContext";
 
 const foodTypeEmoji: Record<string, string> = {
   wet: "\uD83E\uDD6B",
@@ -25,6 +26,7 @@ export default function FoodPage() {
   const [selectedCat, setSelectedCat] = useState<string>("all");
   const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [showAddForm, setShowAddForm] = useState(false);
+  const { isAdmin } = useAdmin();
 
   const [formCatId, setFormCatId] = useState("");
   const [formFoodName, setFormFoodName] = useState("");
@@ -85,7 +87,7 @@ export default function FoodPage() {
           <Link href="/" className="w-8 h-8 rounded-full bg-golden-100 flex items-center justify-center"><ArrowLeft size={16} className="text-golden-700" /></Link>
           <h1 className="text-lg font-bold">Food Log</h1>
         </div>
-        <button onClick={() => setShowAddForm(!showAddForm)} className="w-9 h-9 rounded-full golden-gradient flex items-center justify-center shadow-md"><Plus size={18} className="text-white" /></button>
+        {isAdmin && <button onClick={() => setShowAddForm(!showAddForm)} className="w-9 h-9 rounded-full golden-gradient flex items-center justify-center shadow-md"><Plus size={18} className="text-white" /></button>}
       </div>
 
       <div className="flex gap-2 overflow-x-auto scroll-smooth pb-1">
@@ -124,7 +126,7 @@ export default function FoodPage() {
         </div>
       </div>
 
-      {showAddForm && (
+      {isAdmin && showAddForm && (
         <div className="card p-4 space-y-3 border-golden-300 border-2">
           <h3 className="font-semibold text-sm">Log Meal</h3>
           <div>
@@ -179,7 +181,7 @@ export default function FoodPage() {
         <div className="card p-8 text-center">
           <CatEating size={90} className="mx-auto mb-2 opacity-40" />
           <p className="text-sm text-muted">No meals logged for this day.</p>
-          <button onClick={() => setShowAddForm(true)} className="mt-3 px-4 py-2 rounded-xl golden-gradient text-white text-sm font-medium shadow-md">Log First Meal</button>
+          {isAdmin && <button onClick={() => setShowAddForm(true)} className="mt-3 px-4 py-2 rounded-xl golden-gradient text-white text-sm font-medium shadow-md">Log First Meal</button>}
         </div>
       ) : (
         <div className="space-y-2">
@@ -200,7 +202,7 @@ export default function FoodPage() {
                       {meal.amount_grams && <p className="text-sm font-semibold text-golden-600">{meal.amount_grams}g</p>}
                       <span className="badge badge-info">{meal.food_type}</span>
                     </div>
-                    <button onClick={() => handleDelete(meal.id)} className="text-muted hover:text-danger"><Trash2 size={14} /></button>
+                    {isAdmin && <button onClick={() => handleDelete(meal.id)} className="text-muted hover:text-danger"><Trash2 size={14} /></button>}
                   </div>
                 </div>
                 {meal.notes && <p className="text-xs text-muted mt-2 pl-9">{meal.notes}</p>}

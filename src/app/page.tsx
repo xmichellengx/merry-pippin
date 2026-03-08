@@ -21,6 +21,7 @@ import { getCats, getWeightRecords, getHealthRecords, getFoodLogs, updateCat } f
 import { supabase } from "@/lib/supabase";
 import type { Cat, WeightRecord, HealthRecord, FoodLog } from "@/lib/supabase";
 import { TwoCatsSitting, CatSleeping } from "@/components/CatIllustrations";
+import { useAdmin } from "@/components/AdminContext";
 
 function getAge(dob: string | null) {
   if (!dob) return "Unknown age";
@@ -201,6 +202,7 @@ export default function Dashboard() {
   const [todayFood, setTodayFood] = useState<FoodLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingCat, setEditingCat] = useState<Cat | null>(null);
+  const { isAdmin } = useAdmin();
 
   const loadData = () => {
     const todayStr = format(new Date(), "yyyy-MM-dd");
@@ -249,7 +251,7 @@ export default function Dashboard() {
           return (
             <button
               key={cat.id}
-              onClick={() => setEditingCat(cat)}
+              onClick={() => isAdmin && setEditingCat(cat)}
               className="card p-4 text-left transition-all active:scale-[0.98]"
             >
               <div className="relative">
@@ -261,9 +263,11 @@ export default function Dashboard() {
                     <span className="text-white font-bold text-sm">{cat.name[0]}</span>
                   </div>
                 )}
-                <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-golden-100 flex items-center justify-center">
-                  <Pencil size={10} className="text-golden-600" />
-                </div>
+                {isAdmin && (
+                  <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-golden-100 flex items-center justify-center">
+                    <Pencil size={10} className="text-golden-600" />
+                  </div>
+                )}
               </div>
               <h3 className="font-semibold text-sm">{cat.name}</h3>
               <p className="text-muted text-xs">{cat.color} {cat.breed}</p>

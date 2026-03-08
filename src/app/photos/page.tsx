@@ -7,6 +7,7 @@ import { getCats, getPhotos, addPhoto, deletePhoto } from "@/lib/data";
 import { supabase } from "@/lib/supabase";
 import type { Cat, Photo } from "@/lib/supabase";
 import { CatWithCamera, CatSleeping } from "@/components/CatIllustrations";
+import { useAdmin } from "@/components/AdminContext";
 
 export default function PhotosPage() {
   const [cats, setCats] = useState<Cat[]>([]);
@@ -15,6 +16,7 @@ export default function PhotosPage() {
   const [uploading, setUploading] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const [showUpload, setShowUpload] = useState(false);
+  const { isAdmin } = useAdmin();
   const [selectedCatId, setSelectedCatId] = useState<string>("");
   const [caption, setCaption] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -87,10 +89,10 @@ export default function PhotosPage() {
           <Link href="/" className="w-8 h-8 rounded-full bg-golden-100 flex items-center justify-center"><ArrowLeft size={16} className="text-golden-700" /></Link>
           <h1 className="text-lg font-bold">Photo Gallery</h1>
         </div>
-        <button onClick={() => setShowUpload(!showUpload)} className="w-9 h-9 rounded-full golden-gradient flex items-center justify-center shadow-md"><Plus size={18} className="text-white" /></button>
+        {isAdmin && <button onClick={() => setShowUpload(!showUpload)} className="w-9 h-9 rounded-full golden-gradient flex items-center justify-center shadow-md"><Plus size={18} className="text-white" /></button>}
       </div>
 
-      {showUpload && (
+      {isAdmin && showUpload && (
         <div className="card p-4 space-y-3 border-golden-300 border-2">
           <h3 className="font-semibold text-sm">Add Photos</h3>
           <p className="text-xs text-muted">Upload from your camera roll (iCloud photos sync automatically on iPhone)</p>
@@ -132,7 +134,7 @@ export default function PhotosPage() {
           <CatWithCamera size={90} className="mx-auto mb-2 opacity-40" />
           <p className="text-sm text-muted mb-1">No photos yet</p>
           <p className="text-xs text-muted">Add photos of Merry & Pippin!</p>
-          <button onClick={() => setShowUpload(true)} className="mt-4 px-4 py-2 rounded-xl golden-gradient text-white text-sm font-medium shadow-md">Add First Photo</button>
+          {isAdmin && <button onClick={() => setShowUpload(true)} className="mt-4 px-4 py-2 rounded-xl golden-gradient text-white text-sm font-medium shadow-md">Add First Photo</button>}
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-2">
@@ -156,7 +158,7 @@ export default function PhotosPage() {
       {selectedPhoto && (
         <div className="fixed inset-0 overlay z-50 flex items-center justify-center p-4" onClick={() => setSelectedPhoto(null)}>
           <div className="absolute top-12 right-4 flex gap-2">
-            <button onClick={() => handleDelete(selectedPhoto.id)} className="w-8 h-8 rounded-full bg-red-500/80 flex items-center justify-center"><Trash2 size={16} className="text-white" /></button>
+            {isAdmin && <button onClick={() => handleDelete(selectedPhoto.id)} className="w-8 h-8 rounded-full bg-red-500/80 flex items-center justify-center"><Trash2 size={16} className="text-white" /></button>}
             <button onClick={() => setSelectedPhoto(null)} className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center"><X size={18} className="text-white" /></button>
           </div>
           <div className="max-w-full max-h-[80vh]" onClick={e => e.stopPropagation()}>
