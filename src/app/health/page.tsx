@@ -154,6 +154,15 @@ type NearbyVet = {
   isOpen: boolean;
 };
 
+function parseLitterPhotos(photoUrl: string | null): string[] {
+  if (!photoUrl) return [];
+  try {
+    const parsed = JSON.parse(photoUrl);
+    if (Array.isArray(parsed)) return parsed;
+  } catch { /* not JSON */ }
+  return [photoUrl];
+}
+
 function VetSelector({
   selectedVet,
   onSelect,
@@ -633,8 +642,9 @@ export default function HealthPage() {
 
   // Litter box state
   const [litterLogs, setLitterLogs] = useState<LitterBoxLog[]>([]);
+  const litterSectionRef = useRef<HTMLDivElement>(null);
   const [showLitterForm, setShowLitterForm] = useState(false);
-  const [litterPhoto, setLitterPhoto] = useState("");
+  const [litterPhotos, setLitterPhotos] = useState<string[]>([]);
   const [litterNotes, setLitterNotes] = useState("");
   const [litterSaving, setLitterSaving] = useState(false);
   const [analyzingId, setAnalyzingId] = useState<string | null>(null);
@@ -708,41 +718,41 @@ export default function HealthPage() {
   };
 
   const handleLitterSave = async () => {
-    if (!litterPhoto && !litterNotes) return;
+    if (litterPhotos.length === 0 && !litterNotes) return;
     setLitterSaving(true);
     try {
       const now = new Date();
+      const photoUrlValue = litterPhotos.length > 0 ? JSON.stringify(litterPhotos) : undefined;
       const log = await addLitterBoxLog({
         date: format(now, "yyyy-MM-dd"),
         time: format(now, "HH:mm"),
-        ...(litterPhoto ? { photo_url: litterPhoto } : {}),
+        ...(photoUrlValue ? { photo_url: photoUrlValue } : {}),
         ...(litterNotes ? { notes: litterNotes } : {}),
       });
       setShowLitterForm(false);
-      setLitterPhoto("");
+      setLitterPhotos([]);
       setLitterNotes("");
       loadData();
-      // Auto-analyze if photo was uploaded
-      if (litterPhoto && log?.id) {
-        handleLitterAnalyze(log.id, litterPhoto, litterNotes);
+      // Auto-analyze if photos were uploaded
+      if (litterPhotos.length > 0 && log?.id) {
+        handleLitterAnalyze(log.id, litterPhotos, litterNotes);
       }
     } finally { setLitterSaving(false); }
   };
 
-  const handleLitterAnalyze = async (id: string, photoUrl: string, notes: string) => {
+  const handleLitterAnalyze = async (id: string, photos: string | string[], notes: string) => {
     setAnalyzingId(id);
+    const photoUrls = Array.isArray(photos) ? photos : parseLitterPhotos(photos);
     try {
       const res = await fetch("/api/analyze-litter", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ photoUrl, notes }),
+        body: JSON.stringify({ photoUrls, notes }),
       });
       const data = await res.json();
       if (data.analysis) {
-        // Check if AI flagged alarming issues
         const lower = data.analysis.toLowerCase();
         const isAlarming = ["concern", "alarming", "vet", "blood", "parasit", "worm", "diarrhea", "urgent", "abnormal", "warning", "immediate"].some(w => lower.includes(w));
-        // If not alarming, clear photo immediately; otherwise keep it
         await updateLitterBoxLog(id, {
           ai_analysis: data.analysis,
           ...(!isAlarming ? { photo_url: null } : {}),
@@ -812,6 +822,9 @@ export default function HealthPage() {
             {type === "all" ? "All Types" : typeConfig[type]?.label ?? type}
           </button>
         ))}
+        <button onClick={() => litterSectionRef.current?.scrollIntoView({ behavior: "smooth" })} className="px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors bg-golden-50 text-foreground/70">
+          🚽 Litter
+        </button>
       </div>
 
       {isAdmin && showAddForm && (
@@ -965,7 +978,7 @@ export default function HealthPage() {
       </div>
 
       {/* Litter Box Log Section */}
-      <div className="mt-6">
+      <div className="mt-6" ref={litterSectionRef}>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <span className="text-lg">🚽</span>
@@ -985,7 +998,27 @@ export default function HealthPage() {
               style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" }} onClick={e => e.stopPropagation()}>
               <h3 className="font-semibold text-sm">Log Litter Box Scoop</h3>
 
-              <PhotoUpload photoUrl={litterPhoto} onUpload={setLitterPhoto} label="Photo of litter box contents" />
+              <div>
+                <label className="text-[11px] text-muted block mb-1">
+                  <Camera size={10} className="inline mr-0.5" />
+                  Photos of litter box contents
+                </label>
+                {litterPhotos.length > 0 && (
+                  <div className="flex gap-2 flex-wrap mb-2">
+                    {litterPhotos.map((url, i) => (
+                      <div key={i} className="relative inline-block">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={url} alt={`Photo ${i + 1}`} className="w-20 h-20 object-cover rounded-lg border border-card-border" />
+                        <button type="button" onClick={() => setLitterPhotos(prev => prev.filter((_, j) => j !== i))}
+                          className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center">
+                          <X size={10} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <PhotoUpload photoUrl="" onUpload={(url) => { if (url) setLitterPhotos(prev => [...prev, url]); }} label="Add photo" />
+              </div>
 
               <div>
                 <label className="text-[11px] text-muted block mb-1">Notes (optional)</label>
@@ -996,7 +1029,7 @@ export default function HealthPage() {
 
               <div className="flex gap-2">
                 <button onClick={() => setShowLitterForm(false)} className="flex-1 py-2.5 rounded-xl border border-card-border text-sm font-medium">Cancel</button>
-                <button onClick={handleLitterSave} disabled={litterSaving || (!litterPhoto && !litterNotes)}
+                <button onClick={handleLitterSave} disabled={litterSaving || (litterPhotos.length === 0 && !litterNotes)}
                   className="flex-1 py-2.5 rounded-xl golden-gradient text-white text-sm font-medium shadow-md disabled:opacity-50">
                   {litterSaving ? "Saving..." : "Save & Analyze"}
                 </button>
@@ -1037,8 +1070,12 @@ export default function HealthPage() {
                 </div>
 
                 {log.photo_url && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={log.photo_url} alt="Litter box" className="w-full max-w-[200px] h-auto rounded-lg border border-card-border" />
+                  <div className="flex gap-2 flex-wrap">
+                    {parseLitterPhotos(log.photo_url).map((url, i) => (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img key={i} src={url} alt={`Litter box ${i + 1}`} className="w-20 h-20 object-cover rounded-lg border border-card-border" />
+                    ))}
+                  </div>
                 )}
 
                 {log.notes && <p className="text-xs text-foreground/70">{log.notes}</p>}
