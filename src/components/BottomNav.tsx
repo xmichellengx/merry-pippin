@@ -225,14 +225,14 @@ export default function BottomNav() {
               <Link
                 key={tab.href}
                 href={tab.href}
-                className={`flex flex-col items-center justify-center ${isHome ? "w-12 h-12 -mt-5 rounded-full golden-gradient shadow-lg border-4 border-white" : `w-14 py-0.5 rounded-lg transition-colors ${isActive ? "text-golden-600" : "text-muted"}`}`}
+                className={`flex flex-col items-center justify-center ${isHome ? "w-13 h-13 -mt-5 rounded-full golden-gradient shadow-lg border-4 border-white" : `w-14 py-0 rounded-lg transition-colors ${isActive ? "text-golden-600" : "text-muted"}`}`}
               >
                 {isHome ? (
-                  <tab.Icon size={22} active={true} />
+                  <tab.Icon size={26} active={true} />
                 ) : (
                   <>
-                    <tab.Icon size={20} active={isActive} />
-                    <span className={`text-[9px] font-medium mt-0.5 ${isActive ? "font-bold text-golden-600" : ""}`}>
+                    <tab.Icon size={26} active={isActive} />
+                    <span className={`text-[9px] font-medium leading-none ${isActive ? "font-bold text-golden-600" : ""}`}>
                       {tab.label}
                     </span>
                   </>
