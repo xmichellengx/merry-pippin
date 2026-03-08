@@ -464,7 +464,7 @@ export default function Dashboard() {
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-1">
             <h1 className="text-xl font-bold">Merry & Pippin</h1>
-            <img src="/cat-face-icon.png" alt="cat" width={60} height={60} />
+            <img src="/cat-face-icon.png" alt="cat" width={75} height={75} />
           </div>
           <p className="text-white/80 text-sm">Growth Tracker</p>
           <p className="text-white/60 text-xs mt-1">{format(new Date(), "EEEE, MMMM d, yyyy")}</p>
