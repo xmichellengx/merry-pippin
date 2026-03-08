@@ -7,7 +7,6 @@ import {
   AlertCircle,
   Sparkles,
   ChevronRight,
-  Cat as CatIcon,
   Loader2,
   Pencil,
   Camera,
@@ -464,7 +463,13 @@ export default function Dashboard() {
       <div className="golden-gradient rounded-2xl p-5 text-white shadow-lg relative overflow-hidden">
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-1">
-            <CatIcon size={24} />
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
+              <ellipse cx="12" cy="16" rx="5" ry="4" />
+              <circle cx="6.5" cy="10" r="2.5" />
+              <circle cx="11" cy="7.5" r="2.5" />
+              <circle cx="17.5" cy="10" r="2.5" />
+              <circle cx="13" cy="7.5" r="2.5" />
+            </svg>
             <h1 className="text-xl font-bold">Merry & Pippin</h1>
           </div>
           <p className="text-white/80 text-sm">Growth Tracker</p>
