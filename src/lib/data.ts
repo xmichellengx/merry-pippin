@@ -34,6 +34,14 @@ export async function addWeightRecord(record: { cat_id: string; weight_kg: numbe
   return data
 }
 
+export async function updateWeightRecord(id: string, updates: {
+  weight_kg?: number; recorded_at?: string; notes?: string | null;
+}) {
+  const { data, error } = await supabase.from('weight_records').update(updates).eq('id', id).select().single()
+  if (error) throw error
+  return data
+}
+
 export async function deleteWeightRecord(id: string) {
   const { error } = await supabase.from('weight_records').delete().eq('id', id)
   if (error) throw error
@@ -97,6 +105,15 @@ export async function addFoodLog(record: {
   amount_grams?: number; meal_time: string; date: string; notes?: string;
 }) {
   const { data, error } = await supabase.from('food_logs').insert(record).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function updateFoodLog(id: string, updates: {
+  food_name?: string; food_type?: string; amount_grams?: number | null;
+  meal_time?: string; notes?: string | null; cat_id?: string;
+}) {
+  const { data, error } = await supabase.from('food_logs').update(updates).eq('id', id).select().single()
   if (error) throw error
   return data
 }

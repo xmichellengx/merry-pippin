@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { ArrowLeft, Plus, UtensilsCrossed, Loader2, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, UtensilsCrossed, Loader2, Trash2, Pencil, X } from "lucide-react";
 import Link from "next/link";
 import { format, subDays } from "date-fns";
-import { getCats, getFoodLogs, addFoodLog, deleteFoodLog } from "@/lib/data";
+import { getCats, getFoodLogs, addFoodLog, deleteFoodLog, updateFoodLog } from "@/lib/data";
 import type { Cat, FoodLog } from "@/lib/supabase";
 import { CatEating, CatSleeping } from "@/components/CatIllustrations";
 import { useAdmin } from "@/components/AdminContext";
@@ -35,6 +35,16 @@ export default function FoodPage() {
   const [formAmount, setFormAmount] = useState("");
   const [formNotes, setFormNotes] = useState("");
 
+  // Edit modal state
+  const [editingMeal, setEditingMeal] = useState<FoodLog | null>(null);
+  const [editCatId, setEditCatId] = useState("");
+  const [editFoodName, setEditFoodName] = useState("");
+  const [editFoodType, setEditFoodType] = useState("dry");
+  const [editMealTime, setEditMealTime] = useState("breakfast");
+  const [editAmount, setEditAmount] = useState("");
+  const [editNotes, setEditNotes] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
+
   const loadLogs = useCallback((date: string) => {
     getFoodLogs(date).then(f => setLogs(f)).finally(() => setLoading(false));
   }, []);
@@ -63,6 +73,33 @@ export default function FoodPage() {
   const handleDelete = async (id: string) => {
     await deleteFoodLog(id);
     setLogs(prev => prev.filter(l => l.id !== id));
+  };
+
+  const openEdit = (meal: FoodLog) => {
+    setEditingMeal(meal);
+    setEditCatId(meal.cat_id);
+    setEditFoodName(meal.food_name);
+    setEditFoodType(meal.food_type);
+    setEditMealTime(meal.meal_time);
+    setEditAmount(meal.amount_grams?.toString() ?? "");
+    setEditNotes(meal.notes ?? "");
+  };
+
+  const handleEditSave = async () => {
+    if (!editingMeal || !editCatId || !editFoodName) return;
+    setEditSaving(true);
+    try {
+      await updateFoodLog(editingMeal.id, {
+        cat_id: editCatId,
+        food_name: editFoodName,
+        food_type: editFoodType,
+        meal_time: editMealTime,
+        amount_grams: editAmount ? parseFloat(editAmount) : null,
+        notes: editNotes || null,
+      });
+      setEditingMeal(null);
+      loadLogs(selectedDate);
+    } finally { setEditSaving(false); }
   };
 
   const filteredLogs = logs
@@ -202,13 +239,74 @@ export default function FoodPage() {
                       {meal.amount_grams && <p className="text-sm font-semibold text-golden-600">{meal.amount_grams}g</p>}
                       <span className="badge badge-info">{meal.food_type}</span>
                     </div>
-                    {isAdmin && <button onClick={() => handleDelete(meal.id)} className="text-muted hover:text-danger"><Trash2 size={14} /></button>}
+                    {isAdmin && (
+                      <div className="flex items-center gap-1.5">
+                        <button onClick={() => openEdit(meal)} className="text-muted hover:text-golden-600"><Pencil size={13} /></button>
+                        <button onClick={() => handleDelete(meal.id)} className="text-muted hover:text-danger"><Trash2 size={14} /></button>
+                      </div>
+                    )}
                   </div>
                 </div>
                 {meal.notes && <p className="text-xs text-muted mt-2 pl-9">{meal.notes}</p>}
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Edit Meal Modal */}
+      {editingMeal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center" onClick={() => setEditingMeal(null)}>
+          <div className="bg-card w-full max-w-md rounded-t-3xl p-5 space-y-3 max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="font-bold text-base">Edit Meal</h3>
+              <button onClick={() => setEditingMeal(null)} className="w-8 h-8 rounded-full bg-golden-50 flex items-center justify-center"><X size={16} className="text-golden-700" /></button>
+            </div>
+            <div>
+              <label className="text-xs text-muted block mb-1">Cat</label>
+              <select value={editCatId} onChange={e => setEditCatId(e.target.value)}>
+                {cats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-muted block mb-1">Food Name</label>
+              <input type="text" value={editFoodName} onChange={e => setEditFoodName(e.target.value)} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-muted block mb-1">Type</label>
+                <select value={editFoodType} onChange={e => setEditFoodType(e.target.value)}>
+                  <option value="dry">Dry Food</option>
+                  <option value="wet">Wet Food</option>
+                  <option value="treat">Treat</option>
+                  <option value="supplement">Supplement</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-muted block mb-1">Meal Time</label>
+                <select value={editMealTime} onChange={e => setEditMealTime(e.target.value)}>
+                  <option value="breakfast">Breakfast</option>
+                  <option value="lunch">Lunch</option>
+                  <option value="snack">Snack</option>
+                  <option value="dinner">Dinner</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="text-xs text-muted block mb-1">Amount (grams)</label>
+              <input type="number" placeholder="e.g., 85" value={editAmount} onChange={e => setEditAmount(e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs text-muted block mb-1">Notes</label>
+              <textarea rows={2} placeholder="Optional notes..." value={editNotes} onChange={e => setEditNotes(e.target.value)} />
+            </div>
+            <div className="flex gap-2">
+              <button onClick={handleEditSave} disabled={editSaving || !editCatId || !editFoodName} className="flex-1 py-2.5 rounded-xl golden-gradient text-white text-sm font-semibold shadow-md disabled:opacity-50">
+                {editSaving ? "Saving..." : "Update Meal"}
+              </button>
+              <button onClick={() => setEditingMeal(null)} className="px-4 py-2.5 rounded-xl bg-golden-50 text-golden-700 text-sm font-medium">Cancel</button>
+            </div>
+          </div>
         </div>
       )}
     </div>

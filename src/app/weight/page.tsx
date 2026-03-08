@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowLeft, Plus, TrendingUp, TrendingDown, Loader2, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, TrendingUp, TrendingDown, Loader2, Trash2, Pencil, X } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
-import { getCats, getWeightRecords, addWeightRecord, deleteWeightRecord } from "@/lib/data";
+import { getCats, getWeightRecords, addWeightRecord, deleteWeightRecord, updateWeightRecord } from "@/lib/data";
 import type { Cat, WeightRecord } from "@/lib/supabase";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -25,6 +25,13 @@ export default function WeightPage() {
   const [formWeight, setFormWeight] = useState("");
   const [formDate, setFormDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [formNotes, setFormNotes] = useState("");
+
+  // Edit modal state
+  const [editingWeight, setEditingWeight] = useState<WeightRecord | null>(null);
+  const [editWeight, setEditWeight] = useState("");
+  const [editDate, setEditDate] = useState("");
+  const [editNotes, setEditNotes] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
 
   const loadData = () => {
     Promise.all([getCats(), getWeightRecords()])
@@ -51,6 +58,27 @@ export default function WeightPage() {
   const handleDelete = async (id: string) => {
     await deleteWeightRecord(id);
     setWeights(prev => prev.filter(w => w.id !== id));
+  };
+
+  const openEdit = (record: WeightRecord) => {
+    setEditingWeight(record);
+    setEditWeight(record.weight_kg.toString());
+    setEditDate(record.recorded_at);
+    setEditNotes(record.notes ?? "");
+  };
+
+  const handleEditSave = async () => {
+    if (!editingWeight || !editWeight) return;
+    setEditSaving(true);
+    try {
+      await updateWeightRecord(editingWeight.id, {
+        weight_kg: parseFloat(editWeight),
+        recorded_at: editDate,
+        notes: editNotes || null,
+      });
+      setEditingWeight(null);
+      loadData();
+    } finally { setEditSaving(false); }
   };
 
   if (loading) {
@@ -181,7 +209,12 @@ export default function WeightPage() {
                   <span className="text-muted">{format(new Date(w.recorded_at), "MMM d, yyyy")}</span>
                   <div className="flex items-center gap-2">
                     <span className="font-medium">{w.weight_kg} kg</span>
-                    {isAdmin && <button onClick={() => handleDelete(w.id)} className="text-muted hover:text-danger"><Trash2 size={11} /></button>}
+                    {isAdmin && (
+                      <div className="flex items-center gap-1.5">
+                        <button onClick={() => openEdit(w)} className="text-muted hover:text-golden-600"><Pencil size={11} /></button>
+                        <button onClick={() => handleDelete(w.id)} className="text-muted hover:text-danger"><Trash2 size={11} /></button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -189,6 +222,40 @@ export default function WeightPage() {
           </div>
         );
       })}
+
+      {/* Edit Weight Modal */}
+      {editingWeight && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center" onClick={() => setEditingWeight(null)}>
+          <div className="bg-card w-full max-w-md rounded-t-3xl p-5 space-y-3 max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="font-bold text-base">Edit Weight</h3>
+              <button onClick={() => setEditingWeight(null)} className="w-8 h-8 rounded-full bg-golden-50 flex items-center justify-center"><X size={16} className="text-golden-700" /></button>
+            </div>
+            <div>
+              <label className="text-xs text-muted block mb-1">Cat</label>
+              <p className="text-sm font-medium">{cats.find(c => c.id === editingWeight.cat_id)?.name}</p>
+            </div>
+            <div>
+              <label className="text-xs text-muted block mb-1">Weight (kg)</label>
+              <input type="number" step="0.01" value={editWeight} onChange={e => setEditWeight(e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs text-muted block mb-1">Date</label>
+              <input type="date" value={editDate} onChange={e => setEditDate(e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs text-muted block mb-1">Notes</label>
+              <textarea rows={2} placeholder="Optional notes..." value={editNotes} onChange={e => setEditNotes(e.target.value)} />
+            </div>
+            <div className="flex gap-2">
+              <button onClick={handleEditSave} disabled={editSaving || !editWeight} className="flex-1 py-2.5 rounded-xl golden-gradient text-white text-sm font-semibold shadow-md disabled:opacity-50">
+                {editSaving ? "Saving..." : "Update Weight"}
+              </button>
+              <button onClick={() => setEditingWeight(null)} className="px-4 py-2.5 rounded-xl bg-golden-50 text-golden-700 text-sm font-medium">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
