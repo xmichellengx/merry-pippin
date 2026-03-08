@@ -215,7 +215,7 @@ export default function BottomNav() {
   return (
     <>
       {showPinModal && <PinModal />}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-card-border z-50"
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-card-border z-50"
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
         <div className="max-w-lg mx-auto flex items-center justify-around h-12">
           {tabs.map((tab) => {
