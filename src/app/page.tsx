@@ -23,7 +23,7 @@ import { format, differenceInDays, differenceInMonths } from "date-fns";
 import { getCats, getWeightRecords, getHealthRecords, getFoodLogs, updateCat } from "@/lib/data";
 import { supabase } from "@/lib/supabase";
 import type { Cat, WeightRecord, HealthRecord, FoodLog } from "@/lib/supabase";
-import { TwoCatsSitting, CatSleeping } from "@/components/CatIllustrations";
+import { TwoCatsSitting, TwoCatsSilhouette, CatSleeping } from "@/components/CatIllustrations";
 import { useAdmin } from "@/components/AdminContext";
 
 function getAge(dob: string | null) {
@@ -475,8 +475,8 @@ export default function Dashboard() {
           <p className="text-white/80 text-sm">Growth Tracker</p>
           <p className="text-white/60 text-xs mt-1">{format(new Date(), "EEEE, MMMM d, yyyy")}</p>
         </div>
-        <div className="absolute -right-2 -bottom-2 opacity-15" style={{ filter: "brightness(2)" }}>
-          <TwoCatsSitting size={140} />
+        <div className="absolute -right-2 -bottom-2 opacity-20">
+          <TwoCatsSilhouette size={140} />
         </div>
         {/* Dropdown menu */}
         {showMenu && (
