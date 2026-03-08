@@ -26,7 +26,8 @@ Guidelines:
 - Reference vaccine/deworming brands available in Malaysia (Purevax, Nobivac, Revolution Plus, Broadline, Drontal).
 - Note any patterns in the food logs and notes.
 - Keep it warm but substantive. Use one cat emoji max.
-- Use dashes for bullet points, keep each point to 1-2 sentences.`
+- Use dashes for bullet points, keep each point to 1-2 sentences.
+- IMPORTANT: Output plain text only. Do NOT use markdown headers (###), bold (**text**), or any markdown formatting. Just plain dashes and text.`
 
     const response = await client.chat.completions.create({
       model: 'gpt-4o-mini',

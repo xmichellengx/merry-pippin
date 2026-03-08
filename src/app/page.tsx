@@ -61,14 +61,13 @@ function AiHealthInsights({ context }: { context: string }) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        message: `Analyze my cats' data and give me 4-6 specific, actionable insights. Be data-driven — reference actual numbers, dates, and trends from the data. Include:
-1. Daily food intake analysis — are they eating enough/too much based on their age, weight, and breed? What should the target daily intake be in grams?
-2. Weight trend analysis — is the growth rate healthy for their age? Any concerns?
-3. Upcoming health tasks — what vaccines/deworming are due soon with exact dates?
-4. Any concerns from the notes I've logged (e.g., food preferences, appetite changes, supplements)
-5. One specific breed-relevant tip for Golden British Shorthairs at their current age
-
-Do NOT give generic advice like "keep an eye on growth" or "regular playtime helps". Every point must reference specific data. Use dashes for bullet points.`,
+        message: `Analyze my cats' data and give me 4-6 specific, actionable insights as a simple list. Rules:
+- Each point starts with a dash and is 1-2 sentences max
+- Reference actual numbers, dates, and trends
+- Include: daily food intake vs recommended for their weight/age, weight trend, upcoming health tasks with dates, any concerns from logged notes
+- Do NOT use markdown headers (###), bold (**), or any formatting — plain text only
+- Do NOT give generic advice like "keep an eye on growth" or "monitor regularly"
+- Every point must cite specific data from the records`,
         context,
       }),
     })
@@ -104,10 +103,10 @@ Do NOT give generic advice like "keep an eye on growth" or "regular playtime hel
         </div>
       ) : (
         <div className="space-y-1.5">
-          {insights.split("\n").filter(l => l.trim()).map((line, i) => (
+          {insights.split("\n").filter(l => l.trim()).map((line) => line.replace(/^[-•*]\s*/, "").replace(/#{1,4}\s*/g, "").replace(/\*{1,2}/g, "").trim()).filter(l => l.length > 0).map((line, i) => (
             <div key={i} className="flex gap-2 items-start">
               <AlertCircle size={14} className="text-golden-500 mt-0.5 shrink-0" />
-              <p className="text-xs text-foreground/80 leading-relaxed">{line.replace(/^[-•*]\s*/, "")}</p>
+              <p className="text-xs text-foreground/80 leading-relaxed">{line}</p>
             </div>
           ))}
         </div>
