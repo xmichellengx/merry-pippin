@@ -158,7 +158,7 @@ export async function addLitterBoxLog(record: {
   return data
 }
 
-export async function updateLitterBoxLog(id: string, updates: { ai_analysis?: string }) {
+export async function updateLitterBoxLog(id: string, updates: { ai_analysis?: string; photo_url?: string | null }) {
   const { data, error } = await supabase.from('litter_box_logs').update(updates).eq('id', id).select().single()
   if (error) throw error
   return data

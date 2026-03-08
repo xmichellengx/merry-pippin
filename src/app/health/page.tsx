@@ -655,7 +655,10 @@ export default function HealthPage() {
 
   const loadData = () => {
     Promise.all([getCats(), getHealthRecords(), getLitterBoxLogs()])
-      .then(([c, h, l]) => { setCats(c); setRecords(h); setLitterLogs(l); })
+      .then(([c, h, l]) => {
+        setCats(c); setRecords(h); setLitterLogs(l);
+        cleanupOldLitterPhotos(l);
+      })
       .finally(() => setLoading(false));
   };
 
@@ -736,13 +739,36 @@ export default function HealthPage() {
       });
       const data = await res.json();
       if (data.analysis) {
-        await updateLitterBoxLog(id, { ai_analysis: data.analysis });
+        // Check if AI flagged alarming issues
+        const lower = data.analysis.toLowerCase();
+        const isAlarming = ["concern", "alarming", "vet", "blood", "parasit", "worm", "diarrhea", "urgent", "abnormal", "warning", "immediate"].some(w => lower.includes(w));
+        // If not alarming, clear photo immediately; otherwise keep it
+        await updateLitterBoxLog(id, {
+          ai_analysis: data.analysis,
+          ...(!isAlarming ? { photo_url: null } : {}),
+        });
         loadData();
       }
     } catch (err) {
       console.error("Analysis failed:", err);
     } finally { setAnalyzingId(null); }
   };
+
+  // Auto-cleanup: remove photos older than 48h that aren't alarming
+  const cleanupOldLitterPhotos = useCallback(async (logs: LitterBoxLog[]) => {
+    const TWO_DAYS = 48 * 60 * 60 * 1000;
+    for (const log of logs) {
+      if (!log.photo_url || !log.created_at) continue;
+      const age = Date.now() - new Date(log.created_at).getTime();
+      if (age > TWO_DAYS) {
+        const lower = (log.ai_analysis || "").toLowerCase();
+        const isAlarming = ["concern", "alarming", "vet", "blood", "parasit", "worm", "diarrhea", "urgent", "abnormal", "warning", "immediate"].some(w => lower.includes(w));
+        if (!isAlarming) {
+          await updateLitterBoxLog(log.id, { photo_url: null });
+        }
+      }
+    }
+  }, []);
 
   const handleLitterDelete = async (id: string) => {
     await deleteLitterBoxLog(id);
