@@ -187,7 +187,7 @@ function PinModal() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <PawLocked size={20} className="text-golden-600" />
-            <h2 className="text-base font-bold">Meowmy Login</h2>
+            <h2 className="text-base font-bold">Meowmeee Login</h2>
           </div>
           <button onClick={() => setShowPinModal(false)} className="w-8 h-8 rounded-full bg-golden-50 flex items-center justify-center">
             <X size={16} className="text-muted" />
@@ -260,7 +260,7 @@ export default function BottomNav() {
               <PawLocked size={24} />
             )}
             <span className={`text-[10px] font-medium ${isAdmin ? "text-golden-600 font-bold" : ""}`}>
-              Meowmy
+              Meowmeee
             </span>
           </button>
         </div>

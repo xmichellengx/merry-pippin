@@ -1,54 +1,45 @@
-// Cute Golden British Shorthair 2D illustrations
-// Round chubby face, small ears, big round eyes, golden/amber coat, stocky body
+// Mofusand-style Golden British Shorthair illustrations
+// Blob-like bodies, big round dark eyes with highlights, tiny nose, no neck, stubby paws
 
 export function CatSitting({ size = 120, className = "" }: { size?: number; className?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 120 120" fill="none" className={className}>
-      {/* Body */}
-      <ellipse cx="60" cy="85" rx="28" ry="22" fill="#E8B86D" />
-      <ellipse cx="60" cy="85" rx="24" ry="18" fill="#F0C87A" />
-      {/* Chest fluff */}
-      <ellipse cx="60" cy="78" rx="14" ry="10" fill="#F5DBA3" />
-      {/* Head */}
-      <circle cx="60" cy="48" r="26" fill="#E8B86D" />
-      <circle cx="60" cy="48" r="23" fill="#F0C87A" />
-      {/* Left ear */}
-      <path d="M38 30 L42 12 L52 28Z" fill="#E8B86D" />
-      <path d="M40 28 L43 16 L50 27Z" fill="#F5B8C4" />
-      {/* Right ear */}
-      <path d="M82 30 L78 12 L68 28Z" fill="#E8B86D" />
-      <path d="M80 28 L77 16 L70 27Z" fill="#F5B8C4" />
-      {/* Eyes */}
-      <circle cx="50" cy="45" r="6" fill="white" />
-      <circle cx="70" cy="45" r="6" fill="white" />
-      <circle cx="51" cy="44" r="4" fill="#D4853C" />
-      <circle cx="71" cy="44" r="4" fill="#D4853C" />
-      <circle cx="52" cy="43" r="1.5" fill="white" />
-      <circle cx="72" cy="43" r="1.5" fill="white" />
-      <circle cx="51" cy="44" r="2" fill="#2D1B0E" />
-      <circle cx="71" cy="44" r="2" fill="#2D1B0E" />
-      <circle cx="52" cy="43" r="0.8" fill="white" />
-      <circle cx="72" cy="43" r="0.8" fill="white" />
-      {/* Nose */}
-      <ellipse cx="60" cy="52" rx="3" ry="2" fill="#F5A0B0" />
-      {/* Mouth */}
-      <path d="M57 54 Q60 57 63 54" stroke="#C68A5B" strokeWidth="1" fill="none" strokeLinecap="round" />
-      {/* Whiskers */}
-      <line x1="35" y1="50" x2="47" y2="51" stroke="#D4A96A" strokeWidth="0.8" />
-      <line x1="35" y1="53" x2="47" y2="53" stroke="#D4A96A" strokeWidth="0.8" />
-      <line x1="85" y1="50" x2="73" y2="51" stroke="#D4A96A" strokeWidth="0.8" />
-      <line x1="85" y1="53" x2="73" y2="53" stroke="#D4A96A" strokeWidth="0.8" />
-      {/* Front paws */}
-      <ellipse cx="48" cy="100" rx="8" ry="5" fill="#E8B86D" />
-      <ellipse cx="72" cy="100" rx="8" ry="5" fill="#E8B86D" />
-      <ellipse cx="48" cy="100" rx="6" ry="3.5" fill="#F0C87A" />
-      <ellipse cx="72" cy="100" rx="6" ry="3.5" fill="#F0C87A" />
-      {/* Tail */}
-      <path d="M88 85 Q100 75 95 60" stroke="#E8B86D" strokeWidth="8" fill="none" strokeLinecap="round" />
-      <path d="M88 85 Q100 75 95 60" stroke="#F0C87A" strokeWidth="5" fill="none" strokeLinecap="round" />
+      {/* Body - bean/blob shape */}
+      <ellipse cx="60" cy="78" rx="30" ry="28" fill="#E8C872" />
+      {/* Head - big round, no neck */}
+      <circle cx="60" cy="42" r="28" fill="#E8C872" />
+      {/* Ears - small rounded triangles */}
+      <path d="M38 22 Q36 8 46 18" fill="#E8C872" stroke="#D4A843" strokeWidth="1" />
+      <path d="M40 20 Q39 12 45 18" fill="#F5B8C4" />
+      <path d="M82 22 Q84 8 74 18" fill="#E8C872" stroke="#D4A843" strokeWidth="1" />
+      <path d="M80 20 Q81 12 75 18" fill="#F5B8C4" />
+      {/* Eyes - big, round, dark with highlight */}
+      <circle cx="48" cy="42" r="6.5" fill="#1A1008" />
+      <circle cx="72" cy="42" r="6.5" fill="#1A1008" />
+      <circle cx="51" cy="39" r="2.2" fill="white" />
+      <circle cx="75" cy="39" r="2.2" fill="white" />
+      <circle cx="47" cy="44" r="1" fill="white" opacity="0.5" />
+      <circle cx="71" cy="44" r="1" fill="white" opacity="0.5" />
+      {/* Nose - tiny triangle */}
+      <path d="M58 50 L60 53 L62 50Z" fill="#F5A0B0" />
+      {/* Mouth - tiny W shape */}
+      <path d="M57 54 Q58.5 56 60 54 Q61.5 56 63 54" stroke="#C68A5B" strokeWidth="0.8" fill="none" strokeLinecap="round" />
       {/* Blush */}
-      <circle cx="42" cy="53" r="4" fill="#F5C4C4" opacity="0.4" />
-      <circle cx="78" cy="53" r="4" fill="#F5C4C4" opacity="0.4" />
+      <circle cx="40" cy="50" r="4.5" fill="#F5C4C4" opacity="0.35" />
+      <circle cx="80" cy="50" r="4.5" fill="#F5C4C4" opacity="0.35" />
+      {/* Stubby front paws */}
+      <ellipse cx="44" cy="98" rx="9" ry="6" fill="#E8C872" />
+      <ellipse cx="76" cy="98" rx="9" ry="6" fill="#E8C872" />
+      {/* Paw beans */}
+      <circle cx="42" cy="99" r="2" fill="#F0D89A" />
+      <circle cx="46" cy="100" r="1.5" fill="#F0D89A" />
+      <circle cx="74" cy="99" r="2" fill="#F0D89A" />
+      <circle cx="78" cy="100" r="1.5" fill="#F0D89A" />
+      {/* Tail - short curved */}
+      <path d="M90 80 Q98 70 94 58" stroke="#E8C872" strokeWidth="8" fill="none" strokeLinecap="round" />
+      {/* Tabby stripe hints */}
+      <path d="M50 28 Q60 24 70 28" stroke="#D4A843" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.3" />
+      <path d="M48 32 Q60 28 72 32" stroke="#D4A843" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.2" />
     </svg>
   );
 }
@@ -56,38 +47,35 @@ export function CatSitting({ size = 120, className = "" }: { size?: number; clas
 export function CatSleeping({ size = 120, className = "" }: { size?: number; className?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 140 80" fill="none" className={className}>
-      {/* Body - curled up */}
-      <ellipse cx="70" cy="55" rx="45" ry="22" fill="#E8B86D" />
-      <ellipse cx="70" cy="55" rx="40" ry="18" fill="#F0C87A" />
-      {/* Head resting */}
-      <circle cx="35" cy="45" r="20" fill="#E8B86D" />
-      <circle cx="35" cy="45" r="17" fill="#F0C87A" />
-      {/* Left ear */}
-      <path d="M20 30 L22 18 L30 28Z" fill="#E8B86D" />
-      <path d="M22 29 L23 21 L28 27Z" fill="#F5B8C4" />
-      {/* Right ear */}
-      <path d="M50 30 L48 18 L40 28Z" fill="#E8B86D" />
-      <path d="M48 29 L47 21 L42 27Z" fill="#F5B8C4" />
-      {/* Closed eyes - happy sleeping */}
-      <path d="M27 42 Q30 39 33 42" stroke="#2D1B0E" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-      <path d="M37 42 Q40 39 43 42" stroke="#2D1B0E" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      {/* Body - big round blob curled up */}
+      <ellipse cx="75" cy="52" rx="48" ry="24" fill="#E8C872" />
+      {/* Head resting on body */}
+      <circle cx="38" cy="42" r="24" fill="#E8C872" />
+      {/* Ears */}
+      <path d="M20 26 Q17 12 28 22" fill="#E8C872" stroke="#D4A843" strokeWidth="1" />
+      <path d="M22 24 Q20 15 27 22" fill="#F5B8C4" />
+      <path d="M56 26 Q59 12 48 22" fill="#E8C872" stroke="#D4A843" strokeWidth="1" />
+      <path d="M54 24 Q56 15 49 22" fill="#F5B8C4" />
+      {/* Closed eyes - happy arcs */}
+      <path d="M27 40 Q32 35 37 40" stroke="#1A1008" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+      <path d="M39 40 Q44 35 49 40" stroke="#1A1008" strokeWidth="2.5" fill="none" strokeLinecap="round" />
       {/* Nose */}
-      <ellipse cx="35" cy="48" rx="2.5" ry="1.5" fill="#F5A0B0" />
-      {/* Mouth */}
-      <path d="M33 50 Q35 52 37 50" stroke="#C68A5B" strokeWidth="0.8" fill="none" strokeLinecap="round" />
+      <path d="M36 46 L38 49 L40 46Z" fill="#F5A0B0" />
+      {/* Tiny smile */}
+      <path d="M36 50 Q38 52 40 50" stroke="#C68A5B" strokeWidth="0.8" fill="none" strokeLinecap="round" />
       {/* Blush */}
-      <circle cx="25" cy="48" r="3" fill="#F5C4C4" opacity="0.4" />
-      <circle cx="45" cy="48" r="3" fill="#F5C4C4" opacity="0.4" />
-      {/* Front paw tucked */}
-      <ellipse cx="50" cy="62" rx="7" ry="4" fill="#E8B86D" />
-      <ellipse cx="50" cy="62" rx="5" ry="3" fill="#F0C87A" />
+      <circle cx="24" cy="47" r="3.5" fill="#F5C4C4" opacity="0.35" />
+      <circle cx="52" cy="47" r="3.5" fill="#F5C4C4" opacity="0.35" />
+      {/* Front paw peeking out */}
+      <ellipse cx="58" cy="60" rx="8" ry="5" fill="#E8C872" />
+      <circle cx="56" cy="61" r="1.5" fill="#F0D89A" />
+      <circle cx="59" cy="62" r="1.2" fill="#F0D89A" />
       {/* Tail curled around */}
-      <path d="M115 55 Q125 40 115 30 Q108 25 105 35" stroke="#E8B86D" strokeWidth="7" fill="none" strokeLinecap="round" />
-      <path d="M115 55 Q125 40 115 30 Q108 25 105 35" stroke="#F0C87A" strokeWidth="4" fill="none" strokeLinecap="round" />
+      <path d="M118 48 Q128 35 120 22" stroke="#E8C872" strokeWidth="9" fill="none" strokeLinecap="round" />
       {/* Zzz */}
-      <text x="55" y="25" fontSize="10" fill="#D4A96A" opacity="0.6" fontWeight="bold">z</text>
-      <text x="63" y="18" fontSize="12" fill="#D4A96A" opacity="0.4" fontWeight="bold">z</text>
-      <text x="73" y="10" fontSize="14" fill="#D4A96A" opacity="0.3" fontWeight="bold">z</text>
+      <text x="60" y="22" fontSize="11" fill="#D4A843" opacity="0.5" fontWeight="bold" fontFamily="sans-serif">z</text>
+      <text x="69" y="14" fontSize="14" fill="#D4A843" opacity="0.35" fontWeight="bold" fontFamily="sans-serif">z</text>
+      <text x="80" y="6" fontSize="17" fill="#D4A843" opacity="0.25" fontWeight="bold" fontFamily="sans-serif">z</text>
     </svg>
   );
 }
@@ -95,51 +83,43 @@ export function CatSleeping({ size = 120, className = "" }: { size?: number; cla
 export function CatWaving({ size = 120, className = "" }: { size?: number; className?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 120 120" fill="none" className={className}>
-      {/* Body */}
-      <ellipse cx="60" cy="88" rx="26" ry="20" fill="#E8B86D" />
-      <ellipse cx="60" cy="88" rx="22" ry="16" fill="#F0C87A" />
-      {/* Chest fluff */}
-      <ellipse cx="60" cy="82" rx="12" ry="9" fill="#F5DBA3" />
+      {/* Body blob */}
+      <ellipse cx="60" cy="82" rx="28" ry="26" fill="#E8C872" />
       {/* Head */}
-      <circle cx="60" cy="48" r="24" fill="#E8B86D" />
-      <circle cx="60" cy="48" r="21" fill="#F0C87A" />
-      {/* Left ear */}
-      <path d="M40 30 L43 14 L52 28Z" fill="#E8B86D" />
-      <path d="M42 28 L44 18 L50 27Z" fill="#F5B8C4" />
-      {/* Right ear */}
-      <path d="M80 30 L77 14 L68 28Z" fill="#E8B86D" />
-      <path d="M78 28 L76 18 L70 27Z" fill="#F5B8C4" />
-      {/* Eyes - happy */}
-      <circle cx="50" cy="45" r="5.5" fill="white" />
-      <circle cx="70" cy="45" r="5.5" fill="white" />
-      <circle cx="51" cy="44" r="3.5" fill="#D4853C" />
-      <circle cx="71" cy="44" r="3.5" fill="#D4853C" />
-      <circle cx="51" cy="44" r="1.8" fill="#2D1B0E" />
-      <circle cx="71" cy="44" r="1.8" fill="#2D1B0E" />
-      <circle cx="52" cy="43" r="0.7" fill="white" />
-      <circle cx="72" cy="43" r="0.7" fill="white" />
+      <circle cx="60" cy="42" r="26" fill="#E8C872" />
+      {/* Ears */}
+      <path d="M39 22 Q36 8 47 18" fill="#E8C872" stroke="#D4A843" strokeWidth="1" />
+      <path d="M41 20 Q39 12 46 18" fill="#F5B8C4" />
+      <path d="M81 22 Q84 8 73 18" fill="#E8C872" stroke="#D4A843" strokeWidth="1" />
+      <path d="M79 20 Q81 12 74 18" fill="#F5B8C4" />
+      {/* Eyes - sparkly */}
+      <circle cx="48" cy="42" r="6" fill="#1A1008" />
+      <circle cx="72" cy="42" r="6" fill="#1A1008" />
+      <circle cx="51" cy="39" r="2" fill="white" />
+      <circle cx="75" cy="39" r="2" fill="white" />
+      <circle cx="47" cy="44" r="1" fill="white" opacity="0.4" />
+      <circle cx="71" cy="44" r="1" fill="white" opacity="0.4" />
       {/* Nose */}
-      <ellipse cx="60" cy="51" rx="2.5" ry="1.8" fill="#F5A0B0" />
-      {/* Happy mouth */}
-      <path d="M56 53 Q60 57 64 53" stroke="#C68A5B" strokeWidth="1" fill="none" strokeLinecap="round" />
-      {/* Whiskers */}
-      <line x1="37" y1="49" x2="47" y2="50" stroke="#D4A96A" strokeWidth="0.7" />
-      <line x1="37" y1="52" x2="47" y2="52" stroke="#D4A96A" strokeWidth="0.7" />
-      <line x1="83" y1="49" x2="73" y2="50" stroke="#D4A96A" strokeWidth="0.7" />
-      <line x1="83" y1="52" x2="73" y2="52" stroke="#D4A96A" strokeWidth="0.7" />
-      {/* Waving paw (right, raised) */}
-      <path d="M82 75 Q90 62 85 52" stroke="#E8B86D" strokeWidth="10" fill="none" strokeLinecap="round" />
-      <path d="M82 75 Q90 62 85 52" stroke="#F0C87A" strokeWidth="7" fill="none" strokeLinecap="round" />
-      <ellipse cx="85" cy="50" rx="5" ry="4" fill="#F0C87A" transform="rotate(-15 85 50)" />
-      {/* Left paw */}
-      <ellipse cx="46" cy="102" rx="7" ry="4.5" fill="#E8B86D" />
-      <ellipse cx="46" cy="102" rx="5.5" ry="3" fill="#F0C87A" />
-      {/* Tail */}
-      <path d="M35 90 Q22 80 25 65" stroke="#E8B86D" strokeWidth="7" fill="none" strokeLinecap="round" />
-      <path d="M35 90 Q22 80 25 65" stroke="#F0C87A" strokeWidth="4.5" fill="none" strokeLinecap="round" />
+      <path d="M58 50 L60 53 L62 50Z" fill="#F5A0B0" />
+      {/* Open happy mouth */}
+      <ellipse cx="60" cy="56" rx="4" ry="2.5" fill="#C68A5B" opacity="0.3" />
+      <path d="M56 55 Q60 60 64 55" stroke="#C68A5B" strokeWidth="0.8" fill="none" strokeLinecap="round" />
       {/* Blush */}
-      <circle cx="42" cy="52" r="3.5" fill="#F5C4C4" opacity="0.4" />
-      <circle cx="78" cy="52" r="3.5" fill="#F5C4C4" opacity="0.4" />
+      <circle cx="40" cy="50" r="4" fill="#F5C4C4" opacity="0.35" />
+      <circle cx="80" cy="50" r="4" fill="#F5C4C4" opacity="0.35" />
+      {/* Waving paw (right, raised) */}
+      <path d="M86 72 Q95 58 90 45" stroke="#E8C872" strokeWidth="12" fill="none" strokeLinecap="round" />
+      <ellipse cx="90" cy="43" rx="6" ry="5" fill="#E8C872" />
+      {/* Paw beans on waving paw */}
+      <circle cx="88" cy="42" r="1.5" fill="#F5B8C4" />
+      <circle cx="91" cy="40" r="1.2" fill="#F5B8C4" />
+      <circle cx="93" cy="43" r="1.2" fill="#F5B8C4" />
+      {/* Left paw */}
+      <ellipse cx="44" cy="102" rx="9" ry="6" fill="#E8C872" />
+      {/* Tail */}
+      <path d="M34 85 Q22 75 26 60" stroke="#E8C872" strokeWidth="8" fill="none" strokeLinecap="round" />
+      {/* Sparkles around waving paw */}
+      <path d="M100 38 L102 34 L104 38 L108 36 L104 40 L102 44 L100 40 L96 36Z" fill="#F5C67E" opacity="0.5" />
     </svg>
   );
 }
@@ -148,36 +128,36 @@ export function CatEating({ size = 100, className = "" }: { size?: number; class
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" fill="none" className={className}>
       {/* Bowl */}
-      <ellipse cx="50" cy="82" rx="22" ry="6" fill="#D4A96A" />
-      <path d="M28 78 Q28 88 50 88 Q72 88 72 78" fill="#E8C87D" />
-      <ellipse cx="50" cy="78" rx="22" ry="6" fill="#F0D89A" />
-      {/* Food in bowl */}
-      <ellipse cx="50" cy="78" rx="16" ry="4" fill="#8B6914" />
-      {/* Body leaning forward */}
-      <ellipse cx="50" cy="60" rx="20" ry="16" fill="#E8B86D" />
-      <ellipse cx="50" cy="60" rx="17" ry="13" fill="#F0C87A" />
-      {/* Head (tilted down eating) */}
-      <circle cx="50" cy="40" r="18" fill="#E8B86D" />
-      <circle cx="50" cy="40" r="15.5" fill="#F0C87A" />
+      <ellipse cx="50" cy="82" rx="24" ry="7" fill="#D97A1E" />
+      <path d="M26 78 Q26 89 50 89 Q74 89 74 78" fill="#E8932B" />
+      <ellipse cx="50" cy="78" rx="24" ry="7" fill="#F0C87A" />
+      <ellipse cx="50" cy="78" rx="17" ry="4.5" fill="#8B6914" opacity="0.5" />
+      {/* Body leaning into bowl */}
+      <ellipse cx="50" cy="60" rx="22" ry="18" fill="#E8C872" />
+      {/* Head (big, tilted down) */}
+      <circle cx="50" cy="36" r="22" fill="#E8C872" />
       {/* Ears */}
-      <path d="M35 26 L37 14 L44 24Z" fill="#E8B86D" />
-      <path d="M37 25 L38 17 L42 24Z" fill="#F5B8C4" />
-      <path d="M65 26 L63 14 L56 24Z" fill="#E8B86D" />
-      <path d="M63 25 L62 17 L58 24Z" fill="#F5B8C4" />
-      {/* Happy closed eyes */}
-      <path d="M42 38 Q45 35 48 38" stroke="#2D1B0E" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-      <path d="M52 38 Q55 35 58 38" stroke="#2D1B0E" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      <path d="M33 18 Q30 4 41 14" fill="#E8C872" stroke="#D4A843" strokeWidth="1" />
+      <path d="M35 16 Q33 8 40 14" fill="#F5B8C4" />
+      <path d="M67 18 Q70 4 59 14" fill="#E8C872" stroke="#D4A843" strokeWidth="1" />
+      <path d="M65 16 Q67 8 60 14" fill="#F5B8C4" />
+      {/* Happy closed eyes (eating bliss) */}
+      <path d="M38 34 Q43 29 48 34" stroke="#1A1008" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+      <path d="M52 34 Q57 29 62 34" stroke="#1A1008" strokeWidth="2.5" fill="none" strokeLinecap="round" />
       {/* Nose */}
-      <ellipse cx="50" cy="43" rx="2" ry="1.5" fill="#F5A0B0" />
+      <path d="M48 40 L50 43 L52 40Z" fill="#F5A0B0" />
+      {/* Nom nom mouth */}
+      <path d="M46 44 Q50 48 54 44" stroke="#C68A5B" strokeWidth="1" fill="none" strokeLinecap="round" />
       {/* Blush */}
-      <circle cx="38" cy="43" r="3" fill="#F5C4C4" opacity="0.4" />
-      <circle cx="62" cy="43" r="3" fill="#F5C4C4" opacity="0.4" />
-      {/* Paws beside bowl */}
-      <ellipse cx="36" cy="76" rx="5" ry="3.5" fill="#F0C87A" />
-      <ellipse cx="64" cy="76" rx="5" ry="3.5" fill="#F0C87A" />
-      {/* Tail */}
-      <path d="M70 60 Q82 50 78 38" stroke="#E8B86D" strokeWidth="6" fill="none" strokeLinecap="round" />
-      <path d="M70 60 Q82 50 78 38" stroke="#F0C87A" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+      <circle cx="34" cy="40" r="3.5" fill="#F5C4C4" opacity="0.4" />
+      <circle cx="66" cy="40" r="3.5" fill="#F5C4C4" opacity="0.4" />
+      {/* Stubby paws beside bowl */}
+      <ellipse cx="34" cy="76" rx="6" ry="4" fill="#E8C872" />
+      <ellipse cx="66" cy="76" rx="6" ry="4" fill="#E8C872" />
+      {/* Tail up happily */}
+      <path d="M72 58 Q84 48 80 34" stroke="#E8C872" strokeWidth="7" fill="none" strokeLinecap="round" />
+      {/* Small heart - food is yummy */}
+      <path d="M78 24 C78 22 76 21 75 23 C74 21 72 22 72 24 C72 27 75 29 75 29 C75 29 78 27 78 24Z" fill="#F5A0B0" opacity="0.6" />
     </svg>
   );
 }
@@ -185,39 +165,39 @@ export function CatEating({ size = 100, className = "" }: { size?: number; class
 export function CatWithHeart({ size = 80, className = "" }: { size?: number; className?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 80 80" fill="none" className={className}>
-      {/* Body */}
-      <ellipse cx="40" cy="58" rx="18" ry="14" fill="#E8B86D" />
-      <ellipse cx="40" cy="58" rx="15" ry="11" fill="#F0C87A" />
+      {/* Body blob */}
+      <ellipse cx="40" cy="54" rx="20" ry="18" fill="#E8C872" />
       {/* Head */}
-      <circle cx="40" cy="32" r="16" fill="#E8B86D" />
-      <circle cx="40" cy="32" r="14" fill="#F0C87A" />
+      <circle cx="40" cy="28" r="18" fill="#E8C872" />
       {/* Ears */}
-      <path d="M27 20 L29 10 L35 18Z" fill="#E8B86D" />
-      <path d="M29 19 L30 13 L33 18Z" fill="#F5B8C4" />
-      <path d="M53 20 L51 10 L45 18Z" fill="#E8B86D" />
-      <path d="M51 19 L50 13 L47 18Z" fill="#F5B8C4" />
-      {/* Eyes */}
-      <circle cx="34" cy="30" r="3.5" fill="white" />
-      <circle cx="46" cy="30" r="3.5" fill="white" />
-      <circle cx="35" cy="29.5" r="2" fill="#D4853C" />
-      <circle cx="47" cy="29.5" r="2" fill="#D4853C" />
-      <circle cx="35" cy="29.5" r="1.2" fill="#2D1B0E" />
-      <circle cx="47" cy="29.5" r="1.2" fill="#2D1B0E" />
+      <path d="M26 14 Q23 2 33 11" fill="#E8C872" stroke="#D4A843" strokeWidth="1" />
+      <path d="M28 13 Q26 6 32 11" fill="#F5B8C4" />
+      <path d="M54 14 Q57 2 47 11" fill="#E8C872" stroke="#D4A843" strokeWidth="1" />
+      <path d="M52 13 Q54 6 48 11" fill="#F5B8C4" />
+      {/* Big sparkly eyes */}
+      <circle cx="33" cy="28" r="5" fill="#1A1008" />
+      <circle cx="47" cy="28" r="5" fill="#1A1008" />
+      <circle cx="35" cy="26" r="1.8" fill="white" />
+      <circle cx="49" cy="26" r="1.8" fill="white" />
+      <circle cx="32" cy="30" r="0.8" fill="white" opacity="0.4" />
+      <circle cx="46" cy="30" r="0.8" fill="white" opacity="0.4" />
       {/* Nose */}
-      <ellipse cx="40" cy="34" rx="1.8" ry="1.2" fill="#F5A0B0" />
+      <path d="M39 34 L40 36 L41 34Z" fill="#F5A0B0" />
       {/* Mouth */}
-      <path d="M38 36 Q40 38 42 36" stroke="#C68A5B" strokeWidth="0.8" fill="none" strokeLinecap="round" />
+      <path d="M38 37 Q40 39 42 37" stroke="#C68A5B" strokeWidth="0.7" fill="none" strokeLinecap="round" />
       {/* Blush */}
-      <circle cx="30" cy="35" r="2.5" fill="#F5C4C4" opacity="0.4" />
-      <circle cx="50" cy="35" r="2.5" fill="#F5C4C4" opacity="0.4" />
-      {/* Heart floating */}
-      <path d="M62 15 C62 12 58 10 56 13 C54 10 50 12 50 15 C50 20 56 23 56 23 C56 23 62 20 62 15Z" fill="#F5A0B0" opacity="0.8" />
-      {/* Paws */}
-      <ellipse cx="33" cy="68" rx="5" ry="3" fill="#F0C87A" />
-      <ellipse cx="47" cy="68" rx="5" ry="3" fill="#F0C87A" />
+      <circle cx="27" cy="33" r="3" fill="#F5C4C4" opacity="0.35" />
+      <circle cx="53" cy="33" r="3" fill="#F5C4C4" opacity="0.35" />
+      {/* Heart floating above */}
+      <path d="M62 10 C62 6 58 4 56 8 C54 4 50 6 50 10 C50 15 56 19 56 19 C56 19 62 15 62 10Z" fill="#F5A0B0" opacity="0.7" />
+      {/* Small sparkles near heart */}
+      <circle cx="64" cy="6" r="1" fill="#F5C67E" opacity="0.5" />
+      <circle cx="48" cy="5" r="0.8" fill="#F5C67E" opacity="0.4" />
+      {/* Stubby paws */}
+      <ellipse cx="32" cy="68" rx="7" ry="4.5" fill="#E8C872" />
+      <ellipse cx="48" cy="68" rx="7" ry="4.5" fill="#E8C872" />
       {/* Tail */}
-      <path d="M58 58 Q65 50 62 42" stroke="#E8B86D" strokeWidth="5" fill="none" strokeLinecap="round" />
-      <path d="M58 58 Q65 50 62 42" stroke="#F0C87A" strokeWidth="3" fill="none" strokeLinecap="round" />
+      <path d="M60 54 Q68 45 65 35" stroke="#E8C872" strokeWidth="6" fill="none" strokeLinecap="round" />
     </svg>
   );
 }
@@ -226,81 +206,68 @@ export function TwoCatsSitting({ size = 200, className = "" }: { size?: number; 
   return (
     <svg width={size} height={size * 0.6} viewBox="0 0 200 120" fill="none" className={className}>
       {/* Cat 1 (Merry - left, slightly bigger) */}
-      <ellipse cx="65" cy="90" rx="24" ry="18" fill="#E8B86D" />
-      <ellipse cx="65" cy="90" rx="20" ry="14" fill="#F0C87A" />
-      <circle cx="65" cy="55" r="22" fill="#E8B86D" />
-      <circle cx="65" cy="55" r="19" fill="#F0C87A" />
-      {/* Merry ears */}
-      <path d="M47 40 L49 24 L57 37Z" fill="#E8B86D" />
-      <path d="M49 38 L50 28 L55 36Z" fill="#F5B8C4" />
-      <path d="M83 40 L81 24 L73 37Z" fill="#E8B86D" />
-      <path d="M81 38 L80 28 L75 36Z" fill="#F5B8C4" />
+      {/* Body blob */}
+      <ellipse cx="65" cy="85" rx="26" ry="24" fill="#E8C872" />
+      {/* Head */}
+      <circle cx="65" cy="48" r="24" fill="#E8C872" />
+      {/* Ears */}
+      <path d="M46 32 Q43 18 54 28" fill="#E8C872" stroke="#D4A843" strokeWidth="1" />
+      <path d="M48 30 Q46 22 53 28" fill="#F5B8C4" />
+      <path d="M84 32 Q87 18 76 28" fill="#E8C872" stroke="#D4A843" strokeWidth="1" />
+      <path d="M82 30 Q84 22 77 28" fill="#F5B8C4" />
       {/* Merry eyes */}
-      <circle cx="56" cy="52" r="4.5" fill="white" />
-      <circle cx="74" cy="52" r="4.5" fill="white" />
-      <circle cx="57" cy="51.5" r="3" fill="#D4853C" />
-      <circle cx="75" cy="51.5" r="3" fill="#D4853C" />
-      <circle cx="57" cy="51.5" r="1.5" fill="#2D1B0E" />
-      <circle cx="75" cy="51.5" r="1.5" fill="#2D1B0E" />
-      <circle cx="58" cy="50.5" r="0.6" fill="white" />
-      <circle cx="76" cy="50.5" r="0.6" fill="white" />
+      <circle cx="55" cy="48" r="5.5" fill="#1A1008" />
+      <circle cx="75" cy="48" r="5.5" fill="#1A1008" />
+      <circle cx="57" cy="45" r="1.8" fill="white" />
+      <circle cx="77" cy="45" r="1.8" fill="white" />
+      <circle cx="54" cy="50" r="0.8" fill="white" opacity="0.4" />
+      <circle cx="74" cy="50" r="0.8" fill="white" opacity="0.4" />
       {/* Merry nose & mouth */}
-      <ellipse cx="65" cy="58" rx="2.5" ry="1.8" fill="#F5A0B0" />
-      <path d="M62 60 Q65 63 68 60" stroke="#C68A5B" strokeWidth="0.8" fill="none" strokeLinecap="round" />
-      {/* Merry whiskers */}
-      <line x1="42" y1="56" x2="52" y2="57" stroke="#D4A96A" strokeWidth="0.6" />
-      <line x1="42" y1="59" x2="52" y2="59" stroke="#D4A96A" strokeWidth="0.6" />
-      <line x1="88" y1="56" x2="78" y2="57" stroke="#D4A96A" strokeWidth="0.6" />
-      <line x1="88" y1="59" x2="78" y2="59" stroke="#D4A96A" strokeWidth="0.6" />
+      <path d="M63 55 L65 58 L67 55Z" fill="#F5A0B0" />
+      <path d="M62 59 Q63.5 61 65 59 Q66.5 61 68 59" stroke="#C68A5B" strokeWidth="0.7" fill="none" strokeLinecap="round" />
       {/* Merry blush */}
-      <circle cx="50" cy="59" r="3" fill="#F5C4C4" opacity="0.35" />
-      <circle cx="80" cy="59" r="3" fill="#F5C4C4" opacity="0.35" />
+      <circle cx="47" cy="55" r="3.5" fill="#F5C4C4" opacity="0.3" />
+      <circle cx="83" cy="55" r="3.5" fill="#F5C4C4" opacity="0.3" />
       {/* Merry paws */}
-      <ellipse cx="54" cy="104" rx="6" ry="3.5" fill="#F0C87A" />
-      <ellipse cx="76" cy="104" rx="6" ry="3.5" fill="#F0C87A" />
+      <ellipse cx="52" cy="104" rx="8" ry="5" fill="#E8C872" />
+      <ellipse cx="78" cy="104" rx="8" ry="5" fill="#E8C872" />
       {/* Merry tail */}
-      <path d="M42 92 Q30 82 33 68" stroke="#E8B86D" strokeWidth="6" fill="none" strokeLinecap="round" />
-      <path d="M42 92 Q30 82 33 68" stroke="#F0C87A" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+      <path d="M40 88 Q28 78 32 62" stroke="#E8C872" strokeWidth="7" fill="none" strokeLinecap="round" />
 
-      {/* Cat 2 (Pippin - right, slightly smaller) */}
-      <ellipse cx="135" cy="92" rx="22" ry="16" fill="#DBA85E" />
-      <ellipse cx="135" cy="92" rx="18" ry="13" fill="#EDBE72" />
-      <circle cx="135" cy="60" r="20" fill="#DBA85E" />
-      <circle cx="135" cy="60" r="17" fill="#EDBE72" />
-      {/* Pippin ears */}
-      <path d="M119 46 L121 32 L128 44Z" fill="#DBA85E" />
-      <path d="M121 44 L122 35 L126 43Z" fill="#F5B8C4" />
-      <path d="M151 46 L149 32 L142 44Z" fill="#DBA85E" />
-      <path d="M149 44 L148 35 L144 43Z" fill="#F5B8C4" />
+      {/* Cat 2 (Pippin - right, slightly smaller, slightly different gold) */}
+      {/* Body blob */}
+      <ellipse cx="138" cy="88" rx="24" ry="22" fill="#DDB560" />
+      {/* Head */}
+      <circle cx="138" cy="52" r="22" fill="#DDB560" />
+      {/* Ears */}
+      <path d="M121 36 Q118 22 129 32" fill="#DDB560" stroke="#C9A040" strokeWidth="1" />
+      <path d="M123 34 Q121 26 128 32" fill="#F5B8C4" />
+      <path d="M155 36 Q158 22 147 32" fill="#DDB560" stroke="#C9A040" strokeWidth="1" />
+      <path d="M153 34 Q155 26 148 32" fill="#F5B8C4" />
       {/* Pippin eyes */}
-      <circle cx="128" cy="57" r="4" fill="white" />
-      <circle cx="142" cy="57" r="4" fill="white" />
-      <circle cx="129" cy="56.5" r="2.8" fill="#C9792F" />
-      <circle cx="143" cy="56.5" r="2.8" fill="#C9792F" />
-      <circle cx="129" cy="56.5" r="1.4" fill="#2D1B0E" />
-      <circle cx="143" cy="56.5" r="1.4" fill="#2D1B0E" />
-      <circle cx="130" cy="55.5" r="0.5" fill="white" />
-      <circle cx="144" cy="55.5" r="0.5" fill="white" />
+      <circle cx="130" cy="52" r="5" fill="#1A1008" />
+      <circle cx="146" cy="52" r="5" fill="#1A1008" />
+      <circle cx="132" cy="49" r="1.6" fill="white" />
+      <circle cx="148" cy="49" r="1.6" fill="white" />
+      <circle cx="129" cy="54" r="0.7" fill="white" opacity="0.4" />
+      <circle cx="145" cy="54" r="0.7" fill="white" opacity="0.4" />
       {/* Pippin nose & mouth */}
-      <ellipse cx="135" cy="63" rx="2.2" ry="1.5" fill="#F5A0B0" />
-      <path d="M133 65 Q135 67 137 65" stroke="#C68A5B" strokeWidth="0.8" fill="none" strokeLinecap="round" />
-      {/* Pippin whiskers */}
-      <line x1="115" y1="61" x2="124" y2="62" stroke="#D4A96A" strokeWidth="0.6" />
-      <line x1="115" y1="64" x2="124" y2="64" stroke="#D4A96A" strokeWidth="0.6" />
-      <line x1="155" y1="61" x2="146" y2="62" stroke="#D4A96A" strokeWidth="0.6" />
-      <line x1="155" y1="64" x2="146" y2="64" stroke="#D4A96A" strokeWidth="0.6" />
+      <path d="M136 58 L138 61 L140 58Z" fill="#F5A0B0" />
+      <path d="M135 62 Q136.5 64 138 62 Q139.5 64 141 62" stroke="#C68A5B" strokeWidth="0.7" fill="none" strokeLinecap="round" />
       {/* Pippin blush */}
-      <circle cx="123" cy="64" r="2.5" fill="#F5C4C4" opacity="0.35" />
-      <circle cx="147" cy="64" r="2.5" fill="#F5C4C4" opacity="0.35" />
+      <circle cx="123" cy="58" r="3" fill="#F5C4C4" opacity="0.3" />
+      <circle cx="153" cy="58" r="3" fill="#F5C4C4" opacity="0.3" />
       {/* Pippin paws */}
-      <ellipse cx="126" cy="104" rx="5.5" ry="3" fill="#EDBE72" />
-      <ellipse cx="144" cy="104" rx="5.5" ry="3" fill="#EDBE72" />
+      <ellipse cx="128" cy="106" rx="7" ry="4.5" fill="#DDB560" />
+      <ellipse cx="148" cy="106" rx="7" ry="4.5" fill="#DDB560" />
       {/* Pippin tail */}
-      <path d="M157 92 Q168 82 165 70" stroke="#DBA85E" strokeWidth="5.5" fill="none" strokeLinecap="round" />
-      <path d="M157 92 Q168 82 165 70" stroke="#EDBE72" strokeWidth="3" fill="none" strokeLinecap="round" />
+      <path d="M160 88 Q172 78 168 64" stroke="#DDB560" strokeWidth="6.5" fill="none" strokeLinecap="round" />
 
       {/* Heart between them */}
-      <path d="M103 48 C103 44 98 42 96 46 C94 42 89 44 89 48 C89 54 96 58 96 58 C96 58 103 54 103 48Z" fill="#F5A0B0" opacity="0.5" />
+      <path d="M105 40 C105 35 100 33 98 38 C96 33 91 35 91 40 C91 46 98 50 98 50 C98 50 105 46 105 40Z" fill="#F5A0B0" opacity="0.5" />
+      {/* Sparkles */}
+      <circle cx="88" cy="32" r="1.2" fill="#F5C67E" opacity="0.4" />
+      <circle cx="108" cy="35" r="1" fill="#F5C67E" opacity="0.35" />
     </svg>
   );
 }
@@ -309,40 +276,42 @@ export function CatOnScale({ size = 100, className = "" }: { size?: number; clas
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" fill="none" className={className}>
       {/* Scale base */}
-      <rect x="20" y="78" rx="4" ry="4" width="60" height="8" fill="#D4A96A" />
-      <rect x="25" y="72" rx="6" ry="6" width="50" height="10" fill="#E8C87D" />
+      <rect x="18" y="80" rx="5" ry="5" width="64" height="8" fill="#D4A843" />
+      <rect x="22" y="72" rx="6" ry="6" width="56" height="12" fill="#E8C87D" />
       {/* Scale display */}
-      <rect x="38" y="74" rx="2" ry="2" width="24" height="6" fill="#B8E6B8" />
-      {/* Cat sitting on scale */}
-      <ellipse cx="50" cy="62" rx="18" ry="12" fill="#E8B86D" />
-      <ellipse cx="50" cy="62" rx="15" ry="9" fill="#F0C87A" />
-      <circle cx="50" cy="38" r="16" fill="#E8B86D" />
-      <circle cx="50" cy="38" r="13.5" fill="#F0C87A" />
+      <rect x="36" y="75" rx="2" ry="2" width="28" height="6" fill="#B8E6B8" />
+      <text x="50" y="80" fontSize="5" fill="#2E7D32" textAnchor="middle" fontFamily="sans-serif" fontWeight="bold">3.2kg</text>
+      {/* Cat blob sitting on scale */}
+      <ellipse cx="50" cy="58" rx="22" ry="16" fill="#E8C872" />
+      {/* Head */}
+      <circle cx="50" cy="32" r="20" fill="#E8C872" />
       {/* Ears */}
-      <path d="M37 26 L39 14 L45 24Z" fill="#E8B86D" />
-      <path d="M39 25 L40 18 L43 24Z" fill="#F5B8C4" />
-      <path d="M63 26 L61 14 L55 24Z" fill="#E8B86D" />
-      <path d="M61 25 L60 18 L57 24Z" fill="#F5B8C4" />
-      {/* Eyes - looking at scale number */}
-      <circle cx="44" cy="36" r="3.5" fill="white" />
-      <circle cx="56" cy="36" r="3.5" fill="white" />
-      <circle cx="44.5" cy="37" r="2" fill="#D4853C" />
-      <circle cx="56.5" cy="37" r="2" fill="#D4853C" />
-      <circle cx="44.5" cy="37" r="1" fill="#2D1B0E" />
-      <circle cx="56.5" cy="37" r="1" fill="#2D1B0E" />
+      <path d="M34 16 Q31 2 42 12" fill="#E8C872" stroke="#D4A843" strokeWidth="1" />
+      <path d="M36 14 Q34 6 41 12" fill="#F5B8C4" />
+      <path d="M66 16 Q69 2 58 12" fill="#E8C872" stroke="#D4A843" strokeWidth="1" />
+      <path d="M64 14 Q66 6 59 12" fill="#F5B8C4" />
+      {/* Eyes - looking down at scale, slightly worried */}
+      <circle cx="42" cy="32" r="5.5" fill="#1A1008" />
+      <circle cx="58" cy="32" r="5.5" fill="#1A1008" />
+      <circle cx="44" cy="30" r="1.8" fill="white" />
+      <circle cx="60" cy="30" r="1.8" fill="white" />
+      {/* Looking down at display */}
+      <circle cx="42" cy="35" r="0.8" fill="white" opacity="0.4" />
+      <circle cx="58" cy="35" r="0.8" fill="white" opacity="0.4" />
       {/* Nose */}
-      <ellipse cx="50" cy="41" rx="2" ry="1.3" fill="#F5A0B0" />
-      {/* Mouth */}
-      <path d="M48 43 Q50 45 52 43" stroke="#C68A5B" strokeWidth="0.8" fill="none" strokeLinecap="round" />
+      <path d="M48 39 L50 42 L52 39Z" fill="#F5A0B0" />
+      {/* Mouth - tiny worried pout */}
+      <path d="M47 43 Q50 45 53 43" stroke="#C68A5B" strokeWidth="0.8" fill="none" strokeLinecap="round" />
       {/* Blush */}
-      <circle cx="39" cy="42" r="2.5" fill="#F5C4C4" opacity="0.4" />
-      <circle cx="61" cy="42" r="2.5" fill="#F5C4C4" opacity="0.4" />
-      {/* Paws */}
-      <ellipse cx="42" cy="72" rx="5" ry="3" fill="#F0C87A" />
-      <ellipse cx="58" cy="72" rx="5" ry="3" fill="#F0C87A" />
+      <circle cx="35" cy="39" r="3" fill="#F5C4C4" opacity="0.35" />
+      <circle cx="65" cy="39" r="3" fill="#F5C4C4" opacity="0.35" />
+      {/* Stubby paws */}
+      <ellipse cx="38" cy="70" rx="7" ry="4.5" fill="#E8C872" />
+      <ellipse cx="62" cy="70" rx="7" ry="4.5" fill="#E8C872" />
       {/* Tail */}
-      <path d="M68 60 Q76 52 74 42" stroke="#E8B86D" strokeWidth="5" fill="none" strokeLinecap="round" />
-      <path d="M68 60 Q76 52 74 42" stroke="#F0C87A" strokeWidth="3" fill="none" strokeLinecap="round" />
+      <path d="M72 56 Q82 46 78 34" stroke="#E8C872" strokeWidth="6" fill="none" strokeLinecap="round" />
+      {/* Sweat drop - oh no the weight */}
+      <path d="M72 18 Q74 14 72 10" stroke="#87CEEB" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.5" />
     </svg>
   );
 }
@@ -350,42 +319,44 @@ export function CatOnScale({ size = 100, className = "" }: { size?: number; clas
 export function CatWithCamera({ size = 100, className = "" }: { size?: number; className?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" fill="none" className={className}>
-      {/* Body */}
-      <ellipse cx="50" cy="68" rx="20" ry="16" fill="#E8B86D" />
-      <ellipse cx="50" cy="68" rx="17" ry="13" fill="#F0C87A" />
+      {/* Body blob */}
+      <ellipse cx="50" cy="65" rx="22" ry="18" fill="#E8C872" />
       {/* Head */}
-      <circle cx="50" cy="38" r="18" fill="#E8B86D" />
-      <circle cx="50" cy="38" r="15.5" fill="#F0C87A" />
+      <circle cx="50" cy="34" r="20" fill="#E8C872" />
       {/* Ears */}
-      <path d="M35 24 L37 12 L44 22Z" fill="#E8B86D" />
-      <path d="M37 23 L38 16 L42 22Z" fill="#F5B8C4" />
-      <path d="M65 24 L63 12 L56 22Z" fill="#E8B86D" />
-      <path d="M63 23 L62 16 L58 22Z" fill="#F5B8C4" />
-      {/* Winking eyes */}
-      <circle cx="43" cy="36" r="3.5" fill="white" />
-      <circle cx="44" cy="35.5" r="2" fill="#D4853C" />
-      <circle cx="44" cy="35.5" r="1" fill="#2D1B0E" />
-      <path d="M54 35 Q57 32 60 35" stroke="#2D1B0E" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      <path d="M34 18 Q31 4 42 14" fill="#E8C872" stroke="#D4A843" strokeWidth="1" />
+      <path d="M36 16 Q34 8 41 14" fill="#F5B8C4" />
+      <path d="M66 18 Q69 4 58 14" fill="#E8C872" stroke="#D4A843" strokeWidth="1" />
+      <path d="M64 16 Q66 8 59 14" fill="#F5B8C4" />
+      {/* Eyes - one open, one winking */}
+      <circle cx="42" cy="34" r="5" fill="#1A1008" />
+      <circle cx="44" cy="31" r="1.7" fill="white" />
+      <circle cx="41" cy="36" r="0.7" fill="white" opacity="0.4" />
+      {/* Wink eye */}
+      <path d="M54 33 Q58 29 62 33" stroke="#1A1008" strokeWidth="2.5" fill="none" strokeLinecap="round" />
       {/* Nose */}
-      <ellipse cx="50" cy="41" rx="2" ry="1.3" fill="#F5A0B0" />
-      {/* Tongue out */}
-      <path d="M48 43 Q50 45 52 43" stroke="#C68A5B" strokeWidth="0.8" fill="none" strokeLinecap="round" />
-      <ellipse cx="50" cy="45" rx="2" ry="1.5" fill="#F5A0B0" />
+      <path d="M48 40 L50 43 L52 40Z" fill="#F5A0B0" />
+      {/* Tongue out - playful */}
+      <path d="M48 44 Q50 46 52 44" stroke="#C68A5B" strokeWidth="0.8" fill="none" strokeLinecap="round" />
+      <ellipse cx="50" cy="46.5" rx="2.5" ry="1.8" fill="#F5A0B0" />
       {/* Blush */}
-      <circle cx="38" cy="41" r="2.5" fill="#F5C4C4" opacity="0.4" />
-      <circle cx="62" cy="41" r="2.5" fill="#F5C4C4" opacity="0.4" />
-      {/* Camera held by paw */}
-      <rect x="25" y="58" rx="3" ry="3" width="16" height="11" fill="#555" />
-      <circle cx="33" cy="63" r="4" fill="#333" />
-      <circle cx="33" cy="63" r="2.5" fill="#6B8EAE" />
-      <rect x="28" y="56" rx="1" ry="1" width="8" height="3" fill="#444" />
-      {/* Paw holding camera */}
-      <ellipse cx="38" cy="66" rx="5" ry="4" fill="#F0C87A" />
-      {/* Other paw */}
-      <ellipse cx="60" cy="80" rx="5.5" ry="3" fill="#F0C87A" />
-      {/* Tail */}
-      <path d="M70 68 Q80 58 76 46" stroke="#E8B86D" strokeWidth="5.5" fill="none" strokeLinecap="round" />
-      <path d="M70 68 Q80 58 76 46" stroke="#F0C87A" strokeWidth="3" fill="none" strokeLinecap="round" />
+      <circle cx="35" cy="39" r="3" fill="#F5C4C4" opacity="0.35" />
+      <circle cx="65" cy="39" r="3" fill="#F5C4C4" opacity="0.35" />
+      {/* Camera held by both paws */}
+      <rect x="32" y="58" rx="3" ry="3" width="18" height="13" fill="#555" />
+      <circle cx="41" cy="64" r="4.5" fill="#333" />
+      <circle cx="41" cy="64" r="2.8" fill="#6B8EAE" />
+      <circle cx="40" cy="63" r="1" fill="white" opacity="0.4" />
+      <rect x="35" y="55.5" rx="1.5" ry="1.5" width="10" height="3.5" fill="#444" />
+      {/* Flash */}
+      <circle cx="43" cy="56" r="1.2" fill="#FFE082" opacity="0.7" />
+      {/* Paws holding camera */}
+      <ellipse cx="30" cy="66" rx="6" ry="5" fill="#E8C872" />
+      <ellipse cx="52" cy="66" rx="6" ry="5" fill="#E8C872" />
+      {/* Tail up excitedly */}
+      <path d="M72 62 Q82 50 78 36" stroke="#E8C872" strokeWidth="6.5" fill="none" strokeLinecap="round" />
+      {/* Camera sparkle */}
+      <path d="M24 54 L25 51 L26 54 L29 53 L26 56 L25 59 L24 56 L21 53Z" fill="#FFE082" opacity="0.4" />
     </svg>
   );
 }
