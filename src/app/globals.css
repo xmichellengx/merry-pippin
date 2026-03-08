@@ -63,7 +63,7 @@ body {
 
 /* Mobile-first: safe area for bottom nav (nav is h-12 = 3rem) */
 .pb-safe {
-  padding-bottom: calc(3.25rem + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(3rem + env(safe-area-inset-bottom, 0px));
 }
 
 /* Smooth card shadows */

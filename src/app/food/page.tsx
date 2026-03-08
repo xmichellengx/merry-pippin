@@ -220,45 +220,50 @@ export default function FoodPage() {
       </div>
 
       {isAdmin && showAddForm && (
-        <div className="card p-4 space-y-3 border-golden-300 border-2">
-          <h3 className="font-semibold text-sm">Log Meal</h3>
-          <div>
-            <label className="text-xs text-muted block mb-1">Cat</label>
-            <select value={formCatId} onChange={e => setFormCatId(e.target.value)}>
-              <option value="" disabled>Select cat...</option>
-              {cats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="text-xs text-muted block mb-1">Food Name</label>
-            <input type="text" placeholder="e.g., Royal Canin British Shorthair" value={formFoodName} onChange={e => setFormFoodName(e.target.value)} />
-          </div>
-          <div>
-            <label className="text-xs text-muted block mb-1">Type (tap to select, can pick multiple)</label>
-            <FoodTypeChips selected={formFoodTypes} onChange={setFormFoodTypes} />
-          </div>
-          <div>
-            <label className="text-xs text-muted block mb-1">Meal Time</label>
-            <select value={formMealTime} onChange={e => setFormMealTime(e.target.value)}>
-              <option value="breakfast">Breakfast</option>
-              <option value="lunch">Lunch</option>
-              <option value="snack">Snack</option>
-              <option value="dinner">Dinner</option>
-            </select>
-          </div>
-          <div>
-            <label className="text-xs text-muted block mb-1">Amount (grams)</label>
-            <input type="number" placeholder="e.g., 85" value={formAmount} onChange={e => setFormAmount(e.target.value)} />
-          </div>
-          <div>
-            <label className="text-xs text-muted block mb-1">Notes</label>
-            <textarea rows={2} placeholder="Optional notes..." value={formNotes} onChange={e => setFormNotes(e.target.value)} />
-          </div>
-          <div className="flex gap-2">
-            <button onClick={handleSave} disabled={saving || !formCatId || !formFoodName || formFoodTypes.length === 0} className="flex-1 py-2.5 rounded-xl golden-gradient text-white text-sm font-semibold shadow-md disabled:opacity-50">
-              {saving ? "Saving..." : "Save Meal"}
-            </button>
-            <button onClick={() => setShowAddForm(false)} className="px-4 py-2.5 rounded-xl bg-golden-50 text-golden-700 text-sm font-medium">Cancel</button>
+        <div className="fixed inset-0 bg-black/50 z-[60] flex items-end justify-center" onClick={() => setShowAddForm(false)}>
+          <div className="bg-white w-full max-w-lg rounded-t-3xl p-5 space-y-3 max-h-[90vh] overflow-y-auto animate-slide-up" style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" }} onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="font-bold text-base">Log Meal</h3>
+              <button onClick={() => setShowAddForm(false)} className="w-8 h-8 rounded-full bg-golden-50 flex items-center justify-center"><X size={16} className="text-golden-700" /></button>
+            </div>
+            <div>
+              <label className="text-xs text-muted block mb-1">Cat</label>
+              <select value={formCatId} onChange={e => setFormCatId(e.target.value)}>
+                <option value="" disabled>Select cat...</option>
+                {cats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-muted block mb-1">Food Name</label>
+              <input type="text" placeholder="e.g., Royal Canin British Shorthair" value={formFoodName} onChange={e => setFormFoodName(e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs text-muted block mb-1">Type (tap to select, can pick multiple)</label>
+              <FoodTypeChips selected={formFoodTypes} onChange={setFormFoodTypes} />
+            </div>
+            <div>
+              <label className="text-xs text-muted block mb-1">Meal Time</label>
+              <select value={formMealTime} onChange={e => setFormMealTime(e.target.value)}>
+                <option value="breakfast">Breakfast</option>
+                <option value="lunch">Lunch</option>
+                <option value="snack">Snack</option>
+                <option value="dinner">Dinner</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-muted block mb-1">Amount (grams)</label>
+              <input type="number" placeholder="e.g., 85" value={formAmount} onChange={e => setFormAmount(e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs text-muted block mb-1">Notes</label>
+              <textarea rows={2} placeholder="Optional notes..." value={formNotes} onChange={e => setFormNotes(e.target.value)} />
+            </div>
+            <div className="flex gap-2">
+              <button onClick={handleSave} disabled={saving || !formCatId || !formFoodName || formFoodTypes.length === 0} className="flex-1 py-2.5 rounded-xl golden-gradient text-white text-sm font-semibold shadow-md disabled:opacity-50">
+                {saving ? "Saving..." : "Save Meal"}
+              </button>
+              <button onClick={() => setShowAddForm(false)} className="px-4 py-2.5 rounded-xl bg-golden-50 text-golden-700 text-sm font-medium">Cancel</button>
+            </div>
           </div>
         </div>
       )}
