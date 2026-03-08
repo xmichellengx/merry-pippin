@@ -120,6 +120,20 @@ input:not([type="checkbox"]):focus, select:focus, textarea:focus {
   -webkit-overflow-scrolling: touch;
 }
 
+/* Fix iOS Safari 100vh issue */
+@supports (-webkit-touch-callout: none) {
+  .min-h-screen {
+    min-height: -webkit-fill-available;
+  }
+}
+
+/* Fix inputs zooming on iOS (font-size < 16px causes auto-zoom) */
+@media screen and (max-width: 768px) {
+  input:not([type="checkbox"]), select, textarea {
+    font-size: 16px !important;
+  }
+}
+
 /* Slide-up animation for PIN modal */
 @keyframes slide-up {
   from { transform: translateY(100%); }

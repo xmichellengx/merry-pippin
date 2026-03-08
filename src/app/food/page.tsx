@@ -302,7 +302,7 @@ export default function FoodPage() {
       {/* Edit Meal Modal */}
       {editingMeal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center" onClick={() => setEditingMeal(null)}>
-          <div className="bg-card w-full max-w-md rounded-t-3xl p-5 space-y-3 max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-card w-full max-w-md rounded-t-3xl p-5 space-y-3 max-h-[90vh] overflow-y-auto" style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" }} onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-1">
               <h3 className="font-bold text-base">Edit Meal</h3>
               <button onClick={() => setEditingMeal(null)} className="w-8 h-8 rounded-full bg-golden-50 flex items-center justify-center"><X size={16} className="text-golden-700" /></button>
