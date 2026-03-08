@@ -464,8 +464,8 @@ export default function Dashboard() {
       <div className="golden-gradient rounded-2xl p-5 text-white shadow-lg relative overflow-hidden">
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-1">
-            <img src="/cat-face-icon.png" alt="cat" width={28} height={28} />
             <h1 className="text-xl font-bold">Merry & Pippin</h1>
+            <img src="/cat-face-icon.png" alt="cat" width={42} height={42} />
           </div>
           <p className="text-white/80 text-sm">Growth Tracker</p>
           <p className="text-white/60 text-xs mt-1">{format(new Date(), "EEEE, MMMM d, yyyy")}</p>
