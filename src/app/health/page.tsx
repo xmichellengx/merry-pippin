@@ -28,6 +28,7 @@ import NextImage from "next/image";
 import { format, differenceInDays } from "date-fns";
 import { getCats, getHealthRecords, addHealthRecords, updateHealthRecord, deleteHealthRecord, getLitterBoxLogs, addLitterBoxLog, updateLitterBoxLog, deleteLitterBoxLog } from "@/lib/data";
 import { supabase } from "@/lib/supabase";
+import { compressImage, compressImageToBlob } from "@/lib/compress-image";
 import type { Cat, HealthRecord, LitterBoxLog } from "@/lib/supabase";
 import { TwoCatsSitting } from "@/components/CatIllustrations";
 import { useAdmin } from "@/components/AdminContext";
@@ -65,38 +66,18 @@ const dewormBrands = [
   { value: "Other deworm", label: "Other (type manually)" },
 ];
 
-function compressImage(file: File, maxWidth = 800, quality = 0.7): Promise<string> {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        let w = img.width, h = img.height;
-        if (w > maxWidth) { h = (h * maxWidth) / w; w = maxWidth; }
-        canvas.width = w;
-        canvas.height = h;
-        canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL("image/jpeg", quality));
-      };
-      img.src = reader.result as string;
-    };
-    reader.readAsDataURL(file);
-  });
-}
-
 async function uploadHealthPhoto(file: File): Promise<string> {
-  const fileExt = file.name.split('.').pop();
-  const fileName = `health-${Date.now()}.${fileExt}`;
+  const fileName = `health-${Date.now()}.jpg`;
+  const compressed = await compressImageToBlob(file, 800, 0.7);
 
-  const { error } = await supabase.storage.from('photos').upload(fileName, file);
+  const { error } = await supabase.storage.from('photos').upload(fileName, compressed, { contentType: 'image/jpeg' });
   if (!error) {
     const { data: { publicUrl } } = supabase.storage.from('photos').getPublicUrl(fileName);
     return publicUrl;
   }
 
   // Fallback to compressed data URL if storage not configured
-  return compressImage(file);
+  return compressImage(file, 800, 0.7);
 }
 
 function PhotoUpload({

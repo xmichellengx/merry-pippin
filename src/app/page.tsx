@@ -25,6 +25,7 @@ import { supabase } from "@/lib/supabase";
 import type { Cat, WeightRecord, HealthRecord, FoodLog } from "@/lib/supabase";
 import { TwoCatsSitting } from "@/components/CatIllustrations";
 import { useAdmin } from "@/components/AdminContext";
+import { compressImage, compressImageToBlob } from "@/lib/compress-image";
 
 function getAge(dob: string | null) {
   if (!dob) return "Unknown age";
@@ -243,19 +244,16 @@ function EditCatModal({ cat, onClose, onSaved }: { cat: Cat; onClose: () => void
     if (!file) return;
     setUploading(true);
 
-    const fileExt = file.name.split('.').pop();
-    const fileName = `cat-${cat.id}-${Date.now()}.${fileExt}`;
+    const fileName = `cat-${cat.id}-${Date.now()}.jpg`;
+    const compressed = await compressImageToBlob(file);
 
-    const { error: uploadError } = await supabase.storage.from('photos').upload(fileName, file);
+    const { error: uploadError } = await supabase.storage.from('photos').upload(fileName, compressed, { contentType: 'image/jpeg' });
 
     if (uploadError) {
-      // Fallback to data URL if storage not set up
-      const reader = new FileReader();
-      reader.onload = () => {
-        setPhotoUrl(reader.result as string);
-        setUploading(false);
-      };
-      reader.readAsDataURL(file);
+      // Fallback to compressed data URL if storage not set up
+      const dataUrl = await compressImage(file);
+      setPhotoUrl(dataUrl);
+      setUploading(false);
       return;
     }
 

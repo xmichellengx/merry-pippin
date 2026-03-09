@@ -8,6 +8,7 @@ import { supabase } from "@/lib/supabase";
 import type { Cat, Photo } from "@/lib/supabase";
 import { CatWithCamera, TwoCatsSitting } from "@/components/CatIllustrations";
 import { useAdmin } from "@/components/AdminContext";
+import { compressImage, compressImageToBlob } from "@/lib/compress-image";
 
 export default function PhotosPage() {
   const [cats, setCats] = useState<Cat[]>([]);
@@ -35,26 +36,23 @@ export default function PhotosPage() {
     setUploading(true);
 
     for (const file of Array.from(files)) {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
 
+      // Compress before uploading
+      const compressed = await compressImageToBlob(file);
       const { error: uploadError } = await supabase.storage
         .from('photos')
-        .upload(fileName, file);
+        .upload(fileName, compressed, { contentType: 'image/jpeg' });
 
       if (uploadError) {
-        // If storage bucket doesn't exist, use data URL as fallback
-        const reader = new FileReader();
-        reader.onload = async () => {
-          const dataUrl = reader.result as string;
-          await addPhoto({
-            url: dataUrl,
-            ...(selectedCatId ? { cat_id: selectedCatId } : {}),
-            ...(caption ? { caption } : {}),
-          });
-          loadData();
-        };
-        reader.readAsDataURL(file);
+        // If storage bucket doesn't exist, use compressed data URL as fallback
+        const dataUrl = await compressImage(file);
+        await addPhoto({
+          url: dataUrl,
+          ...(selectedCatId ? { cat_id: selectedCatId } : {}),
+          ...(caption ? { caption } : {}),
+        });
+        loadData();
         continue;
       }
 
