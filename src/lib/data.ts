@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { Cat, WeightRecord, HealthRecord, FoodLog, GroomingLog, LitterBoxLog } from './supabase'
+import type { Cat, WeightRecord, HealthRecord, FoodLog, GroomingTask, GroomingLog, LitterBoxLog } from './supabase'
 
 // ── Cats ──
 
@@ -124,14 +124,34 @@ export async function deleteFoodLog(id: string) {
   if (error) throw error
 }
 
-// ── Grooming Logs ──
+// ── Grooming Tasks ──
 
-export const GROOMING_TASKS = [
-  { type: 'fur_brushing', label: 'Fur Brushing', frequencyDays: 2 },
-  { type: 'teeth_brushing', label: 'Teeth Brushing', frequencyDays: 3 },
-  { type: 'ear_cleaning', label: 'Ear Cleaning', frequencyDays: 7 },
-  { type: 'nail_cutting', label: 'Nail Cutting', frequencyDays: 14 },
-] as const
+export async function getGroomingTasks(): Promise<GroomingTask[]> {
+  const { data, error } = await supabase.from('grooming_tasks').select('*').order('sort_order')
+  if (error) { console.error('getGroomingTasks:', error.message); return []; }
+  return data ?? []
+}
+
+export async function addGroomingTask(task: { type: string; label: string; icon: string; frequency_days: number }) {
+  const { data: maxOrder } = await supabase.from('grooming_tasks').select('sort_order').order('sort_order', { ascending: false }).limit(1)
+  const nextOrder = (maxOrder?.[0]?.sort_order ?? -1) + 1
+  const { data, error } = await supabase.from('grooming_tasks').insert({ ...task, sort_order: nextOrder }).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function updateGroomingTask(id: string, updates: { label?: string; icon?: string; frequency_days?: number }) {
+  const { data, error } = await supabase.from('grooming_tasks').update(updates).eq('id', id).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function deleteGroomingTask(id: string) {
+  const { error } = await supabase.from('grooming_tasks').delete().eq('id', id)
+  if (error) throw error
+}
+
+// ── Grooming Logs ──
 
 export async function getGroomingLogs(catId?: string): Promise<GroomingLog[]> {
   let query = supabase.from('grooming_logs').select('*').order('completed_at', { ascending: false })

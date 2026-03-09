@@ -1,34 +1,15 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { ArrowLeft, Loader2, Trash2, Check, Settings, X } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { ArrowLeft, Loader2, Trash2, Check, Settings, X, Plus, Pencil } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { format, differenceInDays } from "date-fns";
-import { getCats, getGroomingLogs, addGroomingLog, deleteGroomingLog, GROOMING_TASKS } from "@/lib/data";
-import type { Cat, GroomingLog } from "@/lib/supabase";
+import { getCats, getGroomingLogs, addGroomingLog, deleteGroomingLog, getGroomingTasks, addGroomingTask, updateGroomingTask, deleteGroomingTask } from "@/lib/data";
+import type { Cat, GroomingLog, GroomingTask } from "@/lib/supabase";
 import { useAdmin } from "@/components/AdminContext";
 
-const taskIcons: Record<string, string> = {
-  fur_brushing: "\uD83E\uDEB6",
-  teeth_brushing: "\u2728",
-  ear_cleaning: "\uD83D\uDC42",
-  nail_cutting: "\u2702\uFE0F",
-};
-
-const FREQ_STORAGE_KEY = "grooming-frequencies";
-
-function loadFrequencies(): Record<string, number> {
-  if (typeof window === "undefined") return {};
-  try {
-    const saved = localStorage.getItem(FREQ_STORAGE_KEY);
-    return saved ? JSON.parse(saved) : {};
-  } catch { return {}; }
-}
-
-function saveFrequencies(freqs: Record<string, number>) {
-  localStorage.setItem(FREQ_STORAGE_KEY, JSON.stringify(freqs));
-}
+const ICON_OPTIONS = ["🪶", "✨", "👂", "✂️", "🧴", "🛁", "🐾", "💅", "🪥", "👃", "👁️", "💊"];
 
 function getTaskStatus(logs: GroomingLog[], catId: string, taskType: string, frequencyDays: number) {
   const lastLog = logs.find(l => l.cat_id === catId && l.task_type === taskType);
@@ -42,29 +23,22 @@ function getTaskStatus(logs: GroomingLog[], catId: string, taskType: string, fre
 export default function GroomingPage() {
   const [cats, setCats] = useState<Cat[]>([]);
   const [logs, setLogs] = useState<GroomingLog[]>([]);
+  const [tasks, setTasks] = useState<GroomingTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [selectedCat, setSelectedCat] = useState<string>("all");
-  const [customFreqs, setCustomFreqs] = useState<Record<string, number>>({});
+  const [editingTask, setEditingTask] = useState<GroomingTask | null>(null);
+  const [showAddTask, setShowAddTask] = useState(false);
+  const [newLabel, setNewLabel] = useState("");
+  const [newIcon, setNewIcon] = useState("✨");
+  const [newFreq, setNewFreq] = useState(7);
   const { isAdmin } = useAdmin();
 
-  useEffect(() => { setCustomFreqs(loadFrequencies()); }, []);
-
-  const getFrequency = useCallback((taskType: string, defaultDays: number) => {
-    return customFreqs[taskType] ?? defaultDays;
-  }, [customFreqs]);
-
-  const updateFrequency = (taskType: string, days: number) => {
-    const next = { ...customFreqs, [taskType]: days };
-    setCustomFreqs(next);
-    saveFrequencies(next);
-  };
-
   const loadData = () => {
-    Promise.all([getCats(), getGroomingLogs()])
-      .then(([c, g]) => { setCats(c); setLogs(g); })
+    Promise.all([getCats(), getGroomingLogs(), getGroomingTasks()])
+      .then(([c, g, t]) => { setCats(c); setLogs(g); setTasks(t); })
       .finally(() => setLoading(false));
   };
 
@@ -82,13 +56,52 @@ export default function GroomingPage() {
       loadData();
     } catch (err) {
       const msg = err instanceof Error ? err.message : typeof err === "object" && err !== null && "message" in err ? (err as { message: string }).message : JSON.stringify(err);
-      alert("Failed to save: " + msg + "\n\nMake sure the grooming_logs table exists in Supabase.");
+      alert("Failed to save: " + msg);
     } finally { setSaving(null); }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDeleteLog = async (id: string) => {
     await deleteGroomingLog(id);
     setLogs(prev => prev.filter(l => l.id !== id));
+  };
+
+  const handleAddTask = async () => {
+    if (!newLabel.trim()) return;
+    setSaving("add-task");
+    try {
+      const type = newLabel.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+      await addGroomingTask({ type, label: newLabel.trim(), icon: newIcon, frequency_days: newFreq });
+      setShowAddTask(false);
+      setNewLabel("");
+      setNewIcon("✨");
+      setNewFreq(7);
+      loadData();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : JSON.stringify(err);
+      alert("Failed to add task: " + msg);
+    } finally { setSaving(null); }
+  };
+
+  const handleUpdateTask = async (task: GroomingTask, updates: Partial<Pick<GroomingTask, "label" | "icon" | "frequency_days">>) => {
+    try {
+      await updateGroomingTask(task.id, updates);
+      setTasks(prev => prev.map(t => t.id === task.id ? { ...t, ...updates } : t));
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : JSON.stringify(err);
+      alert("Failed to update: " + msg);
+    }
+  };
+
+  const handleDeleteTask = async (task: GroomingTask) => {
+    if (!confirm(`Delete "${task.label}"? This won't delete existing logs.`)) return;
+    try {
+      await deleteGroomingTask(task.id);
+      setTasks(prev => prev.filter(t => t.id !== task.id));
+      if (editingTask?.id === task.id) setEditingTask(null);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : JSON.stringify(err);
+      alert("Failed to delete: " + msg);
+    }
   };
 
   const filteredCats = useMemo(() =>
@@ -136,90 +149,185 @@ export default function GroomingPage() {
       )}
 
       {showSettings ? (
-        /* Frequency settings */
+        /* Settings: manage tasks */
         <div className="card p-4 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold">Task Frequency</h2>
-            <button onClick={() => setShowSettings(false)} className="w-7 h-7 rounded-full bg-golden-50 flex items-center justify-center">
+            <h2 className="text-sm font-semibold">Manage Tasks</h2>
+            <button onClick={() => { setShowSettings(false); setEditingTask(null); setShowAddTask(false); }} className="w-7 h-7 rounded-full bg-golden-50 flex items-center justify-center">
               <X size={14} className="text-golden-700" />
             </button>
           </div>
-          <p className="text-[10px] text-muted">Set how often each grooming task should be done.</p>
-          <div className="space-y-3">
-            {GROOMING_TASKS.map(task => {
-              const freq = getFrequency(task.type, task.frequencyDays);
-              return (
-                <div key={task.type} className="flex items-center justify-between py-2 border-b border-card-border last:border-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">{taskIcons[task.type]}</span>
-                    <span className="text-sm font-medium">{task.label}</span>
+          <p className="text-[10px] text-muted">Add, edit, or remove grooming tasks and set their frequency.</p>
+
+          <div className="space-y-2">
+            {tasks.map(task => (
+              <div key={task.id}>
+                {editingTask?.id === task.id ? (
+                  /* Editing inline */
+                  <div className="p-3 bg-golden-50/50 rounded-xl space-y-3">
+                    <div className="flex items-center gap-2">
+                      <input
+                        value={editingTask.label}
+                        onChange={e => setEditingTask({ ...editingTask, label: e.target.value })}
+                        className="flex-1 text-sm font-medium bg-white rounded-lg px-3 py-1.5 border border-card-border"
+                      />
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {ICON_OPTIONS.map(icon => (
+                        <button
+                          key={icon}
+                          onClick={() => setEditingTask({ ...editingTask, icon })}
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center text-base ${editingTask.icon === icon ? "bg-golden-200 ring-2 ring-golden-400" : "bg-white"}`}
+                        >{icon}</button>
+                      ))}
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted">Frequency</span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setEditingTask({ ...editingTask, frequency_days: Math.max(1, editingTask.frequency_days - 1) })}
+                          className="w-7 h-7 rounded-full bg-white flex items-center justify-center text-golden-700 font-bold text-sm border border-card-border"
+                        >-</button>
+                        <span className="text-sm font-semibold w-10 text-center">{editingTask.frequency_days}d</span>
+                        <button
+                          onClick={() => setEditingTask({ ...editingTask, frequency_days: editingTask.frequency_days + 1 })}
+                          className="w-7 h-7 rounded-full bg-white flex items-center justify-center text-golden-700 font-bold text-sm border border-card-border"
+                        >+</button>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          handleUpdateTask(task, { label: editingTask.label, icon: editingTask.icon, frequency_days: editingTask.frequency_days });
+                          setEditingTask(null);
+                        }}
+                        className="flex-1 py-1.5 rounded-full golden-gradient text-white text-xs font-medium"
+                      >Save</button>
+                      <button onClick={() => setEditingTask(null)} className="px-3 py-1.5 rounded-full bg-white text-xs font-medium border border-card-border">Cancel</button>
+                      <button onClick={() => handleDeleteTask(task)} className="px-3 py-1.5 rounded-full text-xs font-medium text-danger bg-danger/10">Delete</button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => updateFrequency(task.type, Math.max(1, freq - 1))}
-                      className="w-7 h-7 rounded-full bg-golden-50 flex items-center justify-center text-golden-700 font-bold text-sm"
-                    >-</button>
-                    <span className="text-sm font-semibold w-12 text-center">{freq}d</span>
-                    <button
-                      onClick={() => updateFrequency(task.type, freq + 1)}
-                      className="w-7 h-7 rounded-full bg-golden-50 flex items-center justify-center text-golden-700 font-bold text-sm"
-                    >+</button>
+                ) : (
+                  /* Display row */
+                  <div className="flex items-center justify-between py-2.5 border-b border-card-border last:border-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">{task.icon}</span>
+                      <div>
+                        <span className="text-sm font-medium">{task.label}</span>
+                        <p className="text-[10px] text-muted">Every {task.frequency_days} days</p>
+                      </div>
+                    </div>
+                    <button onClick={() => setEditingTask({ ...task })} className="w-8 h-8 rounded-full bg-golden-50 flex items-center justify-center text-golden-700">
+                      <Pencil size={13} />
+                    </button>
                   </div>
-                </div>
-              );
-            })}
+                )}
+              </div>
+            ))}
           </div>
+
+          {/* Add new task */}
+          {showAddTask ? (
+            <div className="p-3 bg-golden-50/50 rounded-xl space-y-3">
+              <input
+                value={newLabel}
+                onChange={e => setNewLabel(e.target.value)}
+                placeholder="Task name..."
+                className="w-full text-sm bg-white rounded-lg px-3 py-1.5 border border-card-border"
+                autoFocus
+              />
+              <div className="flex flex-wrap gap-1.5">
+                {ICON_OPTIONS.map(icon => (
+                  <button
+                    key={icon}
+                    onClick={() => setNewIcon(icon)}
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center text-base ${newIcon === icon ? "bg-golden-200 ring-2 ring-golden-400" : "bg-white"}`}
+                  >{icon}</button>
+                ))}
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted">Frequency</span>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => setNewFreq(Math.max(1, newFreq - 1))} className="w-7 h-7 rounded-full bg-white flex items-center justify-center text-golden-700 font-bold text-sm border border-card-border">-</button>
+                  <span className="text-sm font-semibold w-10 text-center">{newFreq}d</span>
+                  <button onClick={() => setNewFreq(newFreq + 1)} className="w-7 h-7 rounded-full bg-white flex items-center justify-center text-golden-700 font-bold text-sm border border-card-border">+</button>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleAddTask}
+                  disabled={!newLabel.trim() || saving === "add-task"}
+                  className="flex-1 py-1.5 rounded-full golden-gradient text-white text-xs font-medium disabled:opacity-50"
+                >{saving === "add-task" ? "Adding..." : "Add Task"}</button>
+                <button onClick={() => { setShowAddTask(false); setNewLabel(""); }} className="px-3 py-1.5 rounded-full bg-white text-xs font-medium border border-card-border">Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowAddTask(true)}
+              className="w-full py-2.5 rounded-xl border-2 border-dashed border-golden-200 text-golden-600 text-xs font-medium flex items-center justify-center gap-1.5 hover:bg-golden-50/50 transition-colors"
+            >
+              <Plus size={14} /> Add Grooming Task
+            </button>
+          )}
         </div>
       ) : !showHistory ? (
         /* Task checklist view */
         <div className="space-y-3">
-          {GROOMING_TASKS.map(task => {
-            const freq = getFrequency(task.type, task.frequencyDays);
-            return (
-              <div key={task.type} className="card p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-lg">{taskIcons[task.type]}</span>
-                  <div>
-                    <h3 className="text-sm font-semibold">{task.label}</h3>
-                    <p className="text-[10px] text-muted">Every {freq} days</p>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  {filteredCats.map(cat => {
-                    const { status, daysAgo, lastDate } = getTaskStatus(logs, cat.id, task.type, freq);
-                    const savingKey = `${cat.id}-${task.type}`;
-                    return (
-                      <div key={cat.id} className="flex items-center justify-between py-1.5 border-t border-card-border first:border-0">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full ${status === "overdue" ? "bg-danger" : status === "due" ? "bg-warning" : "bg-success"}`} />
-                          <div>
-                            <p className="text-xs font-medium">{cat.name}</p>
-                            <p className="text-[10px] text-muted">
-                              {lastDate ? `Last: ${format(new Date(lastDate), "MMM d")} (${daysAgo}d ago)` : "Never done"}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className={`badge ${status === "overdue" ? "badge-danger" : status === "due" ? "badge-warning" : "badge-success"}`}>
-                            {status === "overdue" ? (daysAgo !== null ? `${daysAgo - freq}d late` : "Due") : status === "due" ? "Due today" : `${freq - (daysAgo ?? 0)}d left`}
-                          </span>
-                          {isAdmin && (
-                            <button
-                              onClick={() => handleMarkDone(cat.id, task.type)}
-                              disabled={saving === savingKey}
-                              className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center text-success hover:bg-success/20 disabled:opacity-50"
-                            >
-                              {saving === savingKey ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
+          {tasks.map(task => (
+            <div key={task.id} className="card p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-lg">{task.icon}</span>
+                <div>
+                  <h3 className="text-sm font-semibold">{task.label}</h3>
+                  <p className="text-[10px] text-muted">Every {task.frequency_days} days</p>
                 </div>
               </div>
-            );
-          })}
+              <div className="space-y-2">
+                {filteredCats.map(cat => {
+                  const { status, daysAgo, lastDate } = getTaskStatus(logs, cat.id, task.type, task.frequency_days);
+                  const savingKey = `${cat.id}-${task.type}`;
+                  return (
+                    <div key={cat.id} className="flex items-center justify-between py-1.5 border-t border-card-border first:border-0">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${status === "overdue" ? "bg-danger" : status === "due" ? "bg-warning" : "bg-success"}`} />
+                        <div>
+                          <p className="text-xs font-medium">{cat.name}</p>
+                          <p className="text-[10px] text-muted">
+                            {lastDate ? `Last: ${format(new Date(lastDate), "MMM d")} (${daysAgo}d ago)` : "Never done"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`badge ${status === "overdue" ? "badge-danger" : status === "due" ? "badge-warning" : "badge-success"}`}>
+                          {status === "overdue" ? (daysAgo !== null ? `${daysAgo - task.frequency_days}d late` : "Due") : status === "due" ? "Due today" : `${task.frequency_days - (daysAgo ?? 0)}d left`}
+                        </span>
+                        {isAdmin && (
+                          <button
+                            onClick={() => handleMarkDone(cat.id, task.type)}
+                            disabled={saving === savingKey}
+                            className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center text-success hover:bg-success/20 disabled:opacity-50"
+                          >
+                            {saving === savingKey ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+          {tasks.length === 0 && (
+            <div className="card p-8 text-center">
+              <p className="text-sm text-muted mb-3">No grooming tasks yet.</p>
+              {isAdmin && (
+                <button onClick={() => setShowSettings(true)} className="px-4 py-2 rounded-full golden-gradient text-white text-xs font-medium">
+                  <Plus size={14} className="inline mr-1" /> Add Tasks
+                </button>
+              )}
+            </div>
+          )}
         </div>
       ) : (
         /* History view */
@@ -235,17 +343,17 @@ export default function GroomingPage() {
               .slice(0, 30)
               .map(log => {
                 const cat = cats.find(c => c.id === log.cat_id);
-                const task = GROOMING_TASKS.find(t => t.type === log.task_type);
+                const task = tasks.find(t => t.type === log.task_type);
                 return (
                   <div key={log.id} className="card p-3 card-hover">
                     <div className="flex items-center gap-3">
-                      <span className="text-lg">{taskIcons[log.task_type] || "?"}</span>
+                      <span className="text-lg">{task?.icon || "?"}</span>
                       <div className="flex-1">
                         <p className="text-xs font-medium">{task?.label || log.task_type}</p>
                         <p className="text-[10px] text-muted">{cat?.name} &middot; {format(new Date(log.completed_at), "MMM d, yyyy")}</p>
                       </div>
                       {isAdmin && (
-                        <button onClick={() => handleDelete(log.id)} className="text-muted hover:text-danger"><Trash2 size={14} /></button>
+                        <button onClick={() => handleDeleteLog(log.id)} className="text-muted hover:text-danger"><Trash2 size={14} /></button>
                       )}
                     </div>
                     {log.notes && <p className="text-xs text-muted mt-1 pl-9">{log.notes}</p>}

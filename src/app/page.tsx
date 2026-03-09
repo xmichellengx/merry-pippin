@@ -19,9 +19,9 @@ import {
 import Link from "next/link";
 import Image from "next/image";
 import { format, differenceInDays, differenceInMonths } from "date-fns";
-import { getCats, getWeightRecords, getHealthRecords, getFoodLogs, updateCat, getGroomingLogs, GROOMING_TASKS } from "@/lib/data";
+import { getCats, getWeightRecords, getHealthRecords, getFoodLogs, updateCat, getGroomingLogs, getGroomingTasks } from "@/lib/data";
 import { supabase } from "@/lib/supabase";
-import type { Cat, WeightRecord, HealthRecord, FoodLog, GroomingLog } from "@/lib/supabase";
+import type { Cat, WeightRecord, HealthRecord, FoodLog, GroomingTask, GroomingLog } from "@/lib/supabase";
 import { TwoCatsSitting } from "@/components/CatIllustrations";
 import { useAdmin } from "@/components/AdminContext";
 import { compressImage, compressImageToBlob } from "@/lib/compress-image";
@@ -288,6 +288,7 @@ export default function Dashboard() {
   const [todayFood, setTodayFood] = useState<FoodLog[]>([]);
   const [recentFood, setRecentFood] = useState<FoodLog[]>([]);
   const [groomingLogs, setGroomingLogs] = useState<GroomingLog[]>([]);
+  const [groomingTasks, setGroomingTasks] = useState<GroomingTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingCat, setEditingCat] = useState<Cat | null>(null);
   const [showMenu, setShowMenu] = useState(false);
@@ -295,8 +296,8 @@ export default function Dashboard() {
 
   const loadData = () => {
     const todayStr = format(new Date(), "yyyy-MM-dd");
-    Promise.all([getCats(), getWeightRecords(), getHealthRecords(), getFoodLogs(todayStr), getFoodLogs(undefined, undefined, 50), getGroomingLogs()])
-      .then(([c, w, h, f, allFood, g]) => { setCats(c); setWeights(w); setHealth(h); setTodayFood(f); setRecentFood(allFood); setGroomingLogs(g); })
+    Promise.all([getCats(), getWeightRecords(), getHealthRecords(), getFoodLogs(todayStr), getFoodLogs(undefined, undefined, 50), getGroomingLogs(), getGroomingTasks()])
+      .then(([c, w, h, f, allFood, g, gt]) => { setCats(c); setWeights(w); setHealth(h); setTodayFood(f); setRecentFood(allFood); setGroomingLogs(g); setGroomingTasks(gt); })
       .finally(() => setLoading(false));
   };
 
@@ -555,14 +556,13 @@ export default function Dashboard() {
 
       {/* Grooming Status */}
       {(() => {
-        const taskIcons: Record<string, string> = { fur_brushing: "\uD83E\uDEB6", teeth_brushing: "\u2728", ear_cleaning: "\uD83D\uDC42", nail_cutting: "\u2702\uFE0F" };
-        const dueItems: { cat: Cat; task: typeof GROOMING_TASKS[number]; daysLate: number }[] = [];
+        const dueItems: { cat: Cat; task: GroomingTask; daysLate: number }[] = [];
         cats.forEach(cat => {
-          GROOMING_TASKS.forEach(task => {
+          groomingTasks.forEach(task => {
             const lastLog = groomingLogs.find(l => l.cat_id === cat.id && l.task_type === task.type);
             const daysAgo = lastLog ? differenceInDays(new Date(), new Date(lastLog.completed_at)) : 999;
-            if (daysAgo >= task.frequencyDays) {
-              dueItems.push({ cat, task, daysLate: daysAgo === 999 ? -1 : daysAgo - task.frequencyDays });
+            if (daysAgo >= task.frequency_days) {
+              dueItems.push({ cat, task, daysLate: daysAgo === 999 ? -1 : daysAgo - task.frequency_days });
             }
           });
         });
@@ -589,7 +589,7 @@ export default function Dashboard() {
                 {dueItems.slice(0, 4).map((item, i) => (
                   <div key={i} className="flex items-center justify-between py-1.5 border-b border-card-border last:border-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm">{taskIcons[item.task.type]}</span>
+                      <span className="text-sm">{item.task.icon}</span>
                       <div>
                         <p className="text-xs font-medium">{item.task.label}</p>
                         <p className="text-[10px] text-muted">{item.cat.name}</p>
