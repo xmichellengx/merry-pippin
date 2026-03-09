@@ -10,7 +10,6 @@ import type { Cat, WeightRecord } from "@/lib/supabase";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
-import { CatOnScale, TwoCatsSitting } from "@/components/CatIllustrations";
 import { useAdmin } from "@/components/AdminContext";
 import { AiInsights } from "@/components/AiInsights";
 

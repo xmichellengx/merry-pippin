@@ -7,7 +7,6 @@ import Image from "next/image";
 import { format, subDays } from "date-fns";
 import { getCats, getFoodLogs, addFoodLog, deleteFoodLog, updateFoodLog } from "@/lib/data";
 import type { Cat, FoodLog } from "@/lib/supabase";
-import { TwoCatsSitting } from "@/components/CatIllustrations";
 import { useAdmin } from "@/components/AdminContext";
 import { AiInsights } from "@/components/AiInsights";
 import { getWeightRecords } from "@/lib/data";

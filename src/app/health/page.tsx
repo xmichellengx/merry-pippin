@@ -30,7 +30,6 @@ import { getCats, getHealthRecords, addHealthRecords, updateHealthRecord, delete
 import { supabase } from "@/lib/supabase";
 import { compressImage, compressImageToBlob } from "@/lib/compress-image";
 import type { Cat, HealthRecord, LitterBoxLog } from "@/lib/supabase";
-import { TwoCatsSitting } from "@/components/CatIllustrations";
 import { useAdmin } from "@/components/AdminContext";
 import { AiInsights } from "@/components/AiInsights";
 
