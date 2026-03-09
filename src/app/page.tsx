@@ -14,13 +14,14 @@ import {
   Lock,
   Unlock,
   Menu,
+  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { format, differenceInDays, differenceInMonths } from "date-fns";
-import { getCats, getWeightRecords, getHealthRecords, getFoodLogs, updateCat } from "@/lib/data";
+import { getCats, getWeightRecords, getHealthRecords, getFoodLogs, updateCat, getGroomingLogs, GROOMING_TASKS } from "@/lib/data";
 import { supabase } from "@/lib/supabase";
-import type { Cat, WeightRecord, HealthRecord, FoodLog } from "@/lib/supabase";
+import type { Cat, WeightRecord, HealthRecord, FoodLog, GroomingLog } from "@/lib/supabase";
 import { TwoCatsSitting } from "@/components/CatIllustrations";
 import { useAdmin } from "@/components/AdminContext";
 import { compressImage, compressImageToBlob } from "@/lib/compress-image";
@@ -286,6 +287,7 @@ export default function Dashboard() {
   const [health, setHealth] = useState<HealthRecord[]>([]);
   const [todayFood, setTodayFood] = useState<FoodLog[]>([]);
   const [recentFood, setRecentFood] = useState<FoodLog[]>([]);
+  const [groomingLogs, setGroomingLogs] = useState<GroomingLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingCat, setEditingCat] = useState<Cat | null>(null);
   const [showMenu, setShowMenu] = useState(false);
@@ -293,8 +295,8 @@ export default function Dashboard() {
 
   const loadData = () => {
     const todayStr = format(new Date(), "yyyy-MM-dd");
-    Promise.all([getCats(), getWeightRecords(), getHealthRecords(), getFoodLogs(todayStr), getFoodLogs(undefined, undefined, 50)])
-      .then(([c, w, h, f, allFood]) => { setCats(c); setWeights(w); setHealth(h); setTodayFood(f); setRecentFood(allFood); })
+    Promise.all([getCats(), getWeightRecords(), getHealthRecords(), getFoodLogs(todayStr), getFoodLogs(undefined, undefined, 50), getGroomingLogs()])
+      .then(([c, w, h, f, allFood, g]) => { setCats(c); setWeights(w); setHealth(h); setTodayFood(f); setRecentFood(allFood); setGroomingLogs(g); })
       .finally(() => setLoading(false));
   };
 
@@ -547,6 +549,62 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      {/* Ornate divider */}
+      <div className="lotr-divider-ornate mx-6"><span className="text-elvish-gold opacity-40 text-xs px-2">&loz;</span></div>
+
+      {/* Grooming Status */}
+      {(() => {
+        const taskIcons: Record<string, string> = { fur_brushing: "\uD83E\uDEB6", teeth_brushing: "\u2728", ear_cleaning: "\uD83D\uDC42", nail_cutting: "\u2702\uFE0F" };
+        const dueItems: { cat: Cat; task: typeof GROOMING_TASKS[number]; daysLate: number }[] = [];
+        cats.forEach(cat => {
+          GROOMING_TASKS.forEach(task => {
+            const lastLog = groomingLogs.find(l => l.cat_id === cat.id && l.task_type === task.type);
+            const daysAgo = lastLog ? differenceInDays(new Date(), new Date(lastLog.completed_at)) : 999;
+            if (daysAgo >= task.frequencyDays) {
+              dueItems.push({ cat, task, daysLate: daysAgo === 999 ? -1 : daysAgo - task.frequencyDays });
+            }
+          });
+        });
+        dueItems.sort((a, b) => b.daysLate - a.daysLate);
+
+        return (
+          <div className="card p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Sparkles size={16} className="text-golden-600" />
+                <h2 className="font-semibold text-sm">Grooming</h2>
+              </div>
+              <Link href="/grooming" className="text-golden-600 text-xs font-medium flex items-center gap-0.5">
+                View all <ChevronRight size={12} />
+              </Link>
+            </div>
+            {dueItems.length === 0 ? (
+              <div className="flex items-center gap-2 py-1">
+                <div className="w-2 h-2 rounded-full bg-success" />
+                <p className="text-xs text-muted">All groomed up! The hobbits are looking fine.</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {dueItems.slice(0, 4).map((item, i) => (
+                  <div key={i} className="flex items-center justify-between py-1.5 border-b border-card-border last:border-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">{taskIcons[item.task.type]}</span>
+                      <div>
+                        <p className="text-xs font-medium">{item.task.label}</p>
+                        <p className="text-[10px] text-muted">{item.cat.name}</p>
+                      </div>
+                    </div>
+                    <span className={`badge ${item.daysLate > 0 ? "badge-danger" : "badge-warning"}`}>
+                      {item.daysLate < 0 ? "Never done" : item.daysLate === 0 ? "Due today" : `${item.daysLate}d late`}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Ornate divider */}
       <div className="lotr-divider-ornate mx-6"><span className="text-elvish-gold opacity-40 text-xs px-2">&loz;</span></div>

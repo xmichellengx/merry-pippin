@@ -91,6 +91,28 @@ function IconFood({ size = 24, active = false }: { size?: number; active?: boole
   );
 }
 
+function IconGroom({ size = 24, active = false }: { size?: number; active?: boolean }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      {/* Brush handle */}
+      <rect x="10" y="2" width="4" height="10" rx="2" fill={active ? "#E8932B" : "currentColor"} opacity={active ? 1 : 0.45} />
+      {/* Brush head */}
+      <rect x="7" y="11" width="10" height="6" rx="2" fill={active ? "#F0C87A" : "currentColor"} opacity={active ? 0.9 : 0.4} />
+      {/* Bristles */}
+      <line x1="9" y1="17" x2="9" y2="20" stroke={active ? "#D97A1E" : "currentColor"} strokeWidth="1.2" strokeLinecap="round" opacity={active ? 0.8 : 0.35} />
+      <line x1="11" y1="17" x2="11" y2="21" stroke={active ? "#D97A1E" : "currentColor"} strokeWidth="1.2" strokeLinecap="round" opacity={active ? 0.8 : 0.35} />
+      <line x1="13" y1="17" x2="13" y2="21" stroke={active ? "#D97A1E" : "currentColor"} strokeWidth="1.2" strokeLinecap="round" opacity={active ? 0.8 : 0.35} />
+      <line x1="15" y1="17" x2="15" y2="20" stroke={active ? "#D97A1E" : "currentColor"} strokeWidth="1.2" strokeLinecap="round" opacity={active ? 0.8 : 0.35} />
+      {/* Sparkles when active */}
+      {active && <>
+        <circle cx="5" cy="8" r="0.8" fill="#F5C67E" opacity="0.7" />
+        <circle cx="19" cy="6" r="0.6" fill="#F5C67E" opacity="0.5" />
+        <circle cx="18" cy="10" r="0.5" fill="#F5C67E" opacity="0.6" />
+      </>}
+    </svg>
+  );
+}
+
 function PawLocked({ size = 22, className = "" }: { size?: number; className?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
@@ -112,6 +134,7 @@ const tabs = [
   { href: "/weight", label: "Weight", Icon: IconWeight },
   { href: "/", label: "Home", Icon: IconHome },
   { href: "/food", label: "Food", Icon: IconFood },
+  { href: "/grooming", label: "Groom", Icon: IconGroom },
 ];
 
 function PinModal() {

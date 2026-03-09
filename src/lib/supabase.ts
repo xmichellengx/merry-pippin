@@ -56,6 +56,15 @@ export type FoodLog = {
   created_at: string
 }
 
+export type GroomingLog = {
+  id: string
+  cat_id: string
+  task_type: 'nail_cutting' | 'ear_cleaning' | 'teeth_brushing' | 'fur_brushing'
+  completed_at: string
+  notes: string | null
+  created_at: string
+}
+
 export type LitterBoxLog = {
   id: string
   date: string

@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { Cat, WeightRecord, HealthRecord, FoodLog, LitterBoxLog } from './supabase'
+import type { Cat, WeightRecord, HealthRecord, FoodLog, GroomingLog, LitterBoxLog } from './supabase'
 
 // ── Cats ──
 
@@ -121,6 +121,34 @@ export async function updateFoodLog(id: string, updates: {
 
 export async function deleteFoodLog(id: string) {
   const { error } = await supabase.from('food_logs').delete().eq('id', id)
+  if (error) throw error
+}
+
+// ── Grooming Logs ──
+
+export const GROOMING_TASKS = [
+  { type: 'fur_brushing', label: 'Fur Brushing', frequencyDays: 2 },
+  { type: 'teeth_brushing', label: 'Teeth Brushing', frequencyDays: 3 },
+  { type: 'ear_cleaning', label: 'Ear Cleaning', frequencyDays: 7 },
+  { type: 'nail_cutting', label: 'Nail Cutting', frequencyDays: 14 },
+] as const
+
+export async function getGroomingLogs(catId?: string): Promise<GroomingLog[]> {
+  let query = supabase.from('grooming_logs').select('*').order('completed_at', { ascending: false })
+  if (catId) query = query.eq('cat_id', catId)
+  const { data, error } = await query
+  if (error) { console.error('getGroomingLogs:', error.message); return []; }
+  return data ?? []
+}
+
+export async function addGroomingLog(record: { cat_id: string; task_type: string; completed_at: string; notes?: string }) {
+  const { data, error } = await supabase.from('grooming_logs').insert(record).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function deleteGroomingLog(id: string) {
+  const { error } = await supabase.from('grooming_logs').delete().eq('id', id)
   if (error) throw error
 }
 
