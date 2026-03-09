@@ -285,8 +285,7 @@ export default function Dashboard() {
   const [cats, setCats] = useState<Cat[]>([]);
   const [weights, setWeights] = useState<WeightRecord[]>([]);
   const [health, setHealth] = useState<HealthRecord[]>([]);
-  const [todayFood, setTodayFood] = useState<FoodLog[]>([]);
-  const [recentFood, setRecentFood] = useState<FoodLog[]>([]);
+  const [allFood, setAllFood] = useState<FoodLog[]>([]);
   const [groomingLogs, setGroomingLogs] = useState<GroomingLog[]>([]);
   const [groomingTasks, setGroomingTasks] = useState<GroomingTask[]>([]);
   const [loading, setLoading] = useState(true);
@@ -295,11 +294,13 @@ export default function Dashboard() {
   const { isAdmin, logout, setShowPinModal } = useAdmin();
 
   const loadData = () => {
-    const todayStr = format(new Date(), "yyyy-MM-dd");
-    Promise.all([getCats(), getWeightRecords(), getHealthRecords(), getFoodLogs(todayStr), getFoodLogs(undefined, undefined, 50), getGroomingLogs(), getGroomingTasks()])
-      .then(([c, w, h, f, allFood, g, gt]) => { setCats(c); setWeights(w); setHealth(h); setTodayFood(f); setRecentFood(allFood); setGroomingLogs(g); setGroomingTasks(gt); })
+    Promise.all([getCats(), getWeightRecords(), getHealthRecords(), getFoodLogs(undefined, undefined, 50), getGroomingLogs(), getGroomingTasks()])
+      .then(([c, w, h, f, g, gt]) => { setCats(c); setWeights(w); setHealth(h); setAllFood(f); setGroomingLogs(g); setGroomingTasks(gt); })
       .finally(() => setLoading(false));
   };
+
+  const todayStr = format(new Date(), "yyyy-MM-dd");
+  const todayFood = useMemo(() => allFood.filter(f => f.date === todayStr), [allFood, todayStr]);
 
   useEffect(() => { loadData(); }, []);
 
@@ -314,7 +315,7 @@ export default function Dashboard() {
     cats.forEach(cat => {
       const catWeights = weights.filter(w => w.cat_id === cat.id).sort((a, b) => a.recorded_at.localeCompare(b.recorded_at));
       const catHealth = health.filter(h => h.cat_id === cat.id);
-      const catFood = recentFood.filter(f => f.cat_id === cat.id);
+      const catFood = allFood.filter(f => f.cat_id === cat.id);
 
       lines.push(`\n## ${cat.name}`);
       lines.push(`Breed: ${cat.breed}, Color: ${cat.color}, Gender: ${cat.gender || "unknown"}, DOB: ${cat.date_of_birth || "unknown"}, Age: ${getAge(cat.date_of_birth)}`);
@@ -364,7 +365,7 @@ export default function Dashboard() {
     lines.push(`\nToday (${format(new Date(), "yyyy-MM-dd")}): ${todayFood.length > 0 ? todayFood.map(f => `${f.food_name} (${f.food_type}, ${f.amount_grams || "?"}g) for ${cats.find(c => c.id === f.cat_id)?.name || "cat"}${f.notes ? ` [${f.notes}]` : ""}`).join("; ") : "no meals logged yet"}`);
 
     return lines.join("\n");
-  }, [cats, weights, health, todayFood, recentFood]);
+  }, [cats, weights, health, todayFood, allFood]);
 
   if (loading) {
     return (
