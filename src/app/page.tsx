@@ -453,6 +453,9 @@ export default function Dashboard() {
         />
       )}
 
+      {/* Ornate divider */}
+      <div className="lotr-divider-ornate mx-6"><span className="text-elvish-gold opacity-40 text-xs px-2">&loz;</span></div>
+
       {/* Upcoming Events */}
       <div className="card p-4">
         <div className="flex items-center justify-between mb-3">
@@ -503,6 +506,9 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Ornate divider */}
+      <div className="lotr-divider-ornate mx-6"><span className="text-elvish-gold opacity-40 text-xs px-2">&loz;</span></div>
+
       {/* Today's Food Summary */}
       <div className="card p-4">
         <div className="flex items-center justify-between mb-3">
@@ -542,13 +548,30 @@ export default function Dashboard() {
         )}
       </div>
 
+      {/* Ornate divider */}
+      <div className="lotr-divider-ornate mx-6"><span className="text-elvish-gold opacity-40 text-xs px-2">&loz;</span></div>
+
       {/* AI Chat */}
       <AiChatCard context={aiContext} />
 
-      {/* Footer */}
-      <div className="text-center py-4 opacity-30">
-        <div className="lotr-divider mx-8 mb-3" />
-        <p className="text-[10px] text-muted italic tracking-wide">&ldquo;What about second breakfast?&rdquo;</p>
+      {/* Footer — rotating Merry & Pippin quotes */}
+      <div className="text-center py-5 opacity-40">
+        <div className="lotr-divider-ornate mx-6 mb-3"><span className="text-elvish-gold text-[10px] px-2">&loz;</span></div>
+        <p className="text-[10px] text-muted italic tracking-wide leading-relaxed px-8">
+          &ldquo;{[
+            "What about second breakfast?",
+            "We've had one, yes. But what about second breakfast?",
+            "I don't think he knows about second breakfast, Pip.",
+            "Anyway, you need people of intelligence on this sort of mission... quest... thing.",
+            "That doesn't make sense to me. But then again, you are very small.",
+            "The closer we are to danger, the farther we are from harm.",
+            "It comes in pints? I'm getting one!",
+            "Where are we going?",
+            "You smoke too much, Pip.",
+            "I feel like I'm back at the Green Dragon after a hard day's work.",
+          ][Math.floor(Date.now() / 86400000) % 10]}&rdquo;
+        </p>
+        <p className="text-[9px] text-muted mt-1 tracking-wider opacity-70">— Merry &amp; Pippin</p>
       </div>
     </div>
   );

@@ -69,12 +69,38 @@ body {
 .text-\[9px\] { font-size: 0.6875rem !important; }
 .text-sm { font-size: 0.9375rem !important; }
 
-/* Card with parchment feel */
+/* ── Card with elvish corner filigree ── */
 .card {
   background: var(--card-bg);
-  border: 1px solid var(--card-border);
+  border: 1.5px solid var(--card-border);
   border-radius: 0.875rem;
   box-shadow: 0 1px 4px rgba(44, 36, 22, 0.06), 0 1px 2px rgba(44, 36, 22, 0.03);
+  position: relative;
+}
+
+/* Elvish corner ornaments — subtle gold filigree on cards */
+.card::before,
+.card::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  opacity: 0.25;
+  pointer-events: none;
+}
+.card::before {
+  top: 4px;
+  left: 4px;
+  border-top: 2px solid var(--elvish-gold);
+  border-left: 2px solid var(--elvish-gold);
+  border-top-left-radius: 6px;
+}
+.card::after {
+  bottom: 4px;
+  right: 4px;
+  border-bottom: 2px solid var(--elvish-gold);
+  border-right: 2px solid var(--elvish-gold);
+  border-bottom-right-radius: 6px;
 }
 
 .card-hover:active {
@@ -146,25 +172,34 @@ input:not([type="checkbox"]):focus, select:focus, textarea:focus {
   animation: slide-up 0.3s ease-out;
 }
 
-/* Subtle decorative ring border for section separators */
+/* ── Elvish decorative divider ── */
 .lotr-divider {
   height: 1px;
   background: linear-gradient(90deg, transparent 0%, var(--elvish-gold) 30%, var(--card-border) 50%, var(--elvish-gold) 70%, transparent 100%);
-  opacity: 0.4;
+  opacity: 0.5;
+  margin: 0.75rem 0;
 }
 
-/* Elvish-inspired thin card accent — top border shimmer */
-.card-accent {
-  position: relative;
+/* Ornate divider with diamond center */
+.lotr-divider-ornate {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  opacity: 0.4;
 }
-.card-accent::before {
+.lotr-divider-ornate::before,
+.lotr-divider-ornate::after {
   content: '';
-  position: absolute;
-  top: 0;
-  left: 1.5rem;
-  right: 1.5rem;
+  flex: 1;
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--elvish-gold), transparent);
-  opacity: 0.3;
-  border-radius: 1px;
+  background: linear-gradient(90deg, transparent, var(--elvish-gold));
+}
+.lotr-divider-ornate::after {
+  background: linear-gradient(90deg, var(--elvish-gold), transparent);
+}
+
+/* ── Section headers with elvish style ── */
+.section-title {
+  font-weight: 600;
+  letter-spacing: 0.03em;
 }
