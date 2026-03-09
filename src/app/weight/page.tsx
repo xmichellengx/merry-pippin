@@ -7,10 +7,13 @@ import Image from "next/image";
 import { format } from "date-fns";
 import { getCats, getWeightRecords, addWeightRecord, deleteWeightRecord, updateWeightRecord } from "@/lib/data";
 import type { Cat, WeightRecord } from "@/lib/supabase";
-import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
-} from "recharts";
+import dynamic from "next/dynamic";
 import { useAdmin } from "@/components/AdminContext";
+
+const WeightChart = dynamic(() => import("@/components/WeightChart"), {
+  loading: () => <div className="h-56 flex items-center justify-center"><Loader2 size={20} className="animate-spin text-golden-400" /></div>,
+  ssr: false,
+});
 import { AiInsights } from "@/components/AiInsights";
 
 export default function WeightPage() {
@@ -112,8 +115,6 @@ export default function WeightPage() {
     return entry;
   });
 
-  const colors = ["#E8932B", "#D97A1E"];
-
   return (
     <div className="px-4 pt-12 space-y-4">
       <div className="flex items-center justify-between">
@@ -153,18 +154,7 @@ Plain text only, no markdown. Jump straight into insights, no intro.`}
         <div className="card p-4">
           <h2 className="font-semibold text-sm mb-3">Growth Chart</h2>
           <div className="h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#F3E8D8" />
-                <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="#9C8B7A" />
-                <YAxis tick={{ fontSize: 10 }} stroke="#9C8B7A" unit="kg" />
-                <Tooltip contentStyle={{ background: "white", border: "1px solid #F3E8D8", borderRadius: "0.75rem", fontSize: "12px" }} />
-                <Legend wrapperStyle={{ fontSize: "11px" }} />
-                {cats.filter(c => selectedCat === "all" || selectedCat === c.id).map((cat, i) => (
-                  <Line key={cat.id} type="monotone" dataKey={cat.name} stroke={colors[i % colors.length]} strokeWidth={2.5} dot={{ r: 4, fill: colors[i % colors.length] }} activeDot={{ r: 6 }} />
-                ))}
-              </LineChart>
-            </ResponsiveContainer>
+            <WeightChart chartData={chartData} cats={cats} selectedCat={selectedCat} />
           </div>
         </div>
       )}
