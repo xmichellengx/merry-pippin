@@ -814,10 +814,6 @@ export default function HealthPage() {
     setLitterLogs(prev => prev.filter(l => l.id !== id));
   };
 
-  if (loading) {
-    return <div className="flex flex-col items-center pt-40 gap-3"><TwoCatsSitting size={120} className="opacity-30" /><Loader2 size={32} className="text-golden-500 animate-spin" /></div>;
-  }
-
   const filtered = records
     .filter(r => selectedCat === "all" || r.cat_id === selectedCat)
     .filter(r => filterType === "all" || r.record_type === filterType);
@@ -869,11 +865,12 @@ export default function HealthPage() {
   const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set());
 
   // Auto-expand the most recent month when data changes
+  const latestMonthKey = monthGroups.length > 0 ? monthGroups[0].key : "";
   useEffect(() => {
-    if (monthGroups.length > 0) {
-      setExpandedMonths(new Set([monthGroups[0].key]));
+    if (latestMonthKey) {
+      setExpandedMonths(new Set([latestMonthKey]));
     }
-  }, [monthGroups.length > 0 ? monthGroups[0]?.key : ""]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [latestMonthKey]);
 
   const toggleMonth = (key: string) => {
     setExpandedMonths(prev => {
@@ -883,6 +880,10 @@ export default function HealthPage() {
       return next;
     });
   };
+
+  if (loading) {
+    return <div className="flex flex-col items-center pt-40 gap-3"><TwoCatsSitting size={120} className="opacity-30" /><Loader2 size={32} className="text-golden-500 animate-spin" /></div>;
+  }
 
   return (
     <div className="px-4 pt-12 space-y-4">
