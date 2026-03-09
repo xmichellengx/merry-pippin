@@ -181,8 +181,7 @@ export default function FoodPage() {
 
   const foodContext = useMemo(() => {
     if (cats.length === 0 || recentFood.length === 0) return "";
-    const today = format(new Date(), "yyyy-MM-dd");
-    const lines: string[] = [`Today: ${today}`];
+    const lines: string[] = [];
     cats.forEach(cat => {
       const cw = catWeights.filter(w => w.cat_id === cat.id).sort((a, b) => a.recorded_at.localeCompare(b.recorded_at));
       const latestWeight = cw.length > 0 ? cw[cw.length - 1] : null;

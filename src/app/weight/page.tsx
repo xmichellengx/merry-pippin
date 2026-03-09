@@ -84,7 +84,7 @@ export default function WeightPage() {
 
   const weightContext = useMemo(() => {
     if (cats.length === 0) return "";
-    const lines: string[] = [`Today: ${format(new Date(), "yyyy-MM-dd")}`];
+    const lines: string[] = [];
     cats.forEach(cat => {
       const catWeights = weights.filter(w => w.cat_id === cat.id).sort((a, b) => a.recorded_at.localeCompare(b.recorded_at));
       lines.push(`\n${cat.name} — ${cat.breed}, DOB: ${cat.date_of_birth || "unknown"}, Gender: ${cat.gender || "unknown"}`);

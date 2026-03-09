@@ -809,7 +809,7 @@ export default function HealthPage() {
 
   const healthContext = useMemo(() => {
     if (cats.length === 0 || (records.length === 0 && litterLogs.length === 0)) return "";
-    const lines: string[] = [`Today: ${format(new Date(), "yyyy-MM-dd")}`];
+    const lines: string[] = [];
     cats.forEach(cat => {
       const catRecords = records.filter(r => r.cat_id === cat.id);
       lines.push(`\n${cat.name} — ${cat.breed}, DOB: ${cat.date_of_birth || "unknown"}`);
