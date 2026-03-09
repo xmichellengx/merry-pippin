@@ -191,35 +191,30 @@ export default function FoodPage() {
 
       const catFood = recentFood.filter(f => f.cat_id === cat.id);
       if (catFood.length > 0) {
-        const dailyTotals: Record<string, { dryG: number; wetG: number; otherG: number; meals: string[] }> = {};
+        // Group by day
+        const dailyMeals: Record<string, string[]> = {};
+        const dailyNotes: string[] = [];
         catFood.forEach(f => {
-          if (!dailyTotals[f.date]) dailyTotals[f.date] = { dryG: 0, wetG: 0, otherG: 0, meals: [] };
-          const g = f.amount_grams || 0;
-          const types = f.food_type.toLowerCase();
-          if (types.includes("dry")) dailyTotals[f.date].dryG += g;
-          else if (types.includes("wet")) dailyTotals[f.date].wetG += g;
-          else dailyTotals[f.date].otherG += g;
-          dailyTotals[f.date].meals.push(`${f.food_name} (${f.food_type}, ${g || "?"}g, ${f.meal_time})${f.notes ? ` [note: ${f.notes}]` : ""}`);
+          if (!dailyMeals[f.date]) dailyMeals[f.date] = [];
+          dailyMeals[f.date].push(`${f.food_name} (${f.food_type}, ${f.meal_time})`);
+          if (f.notes) dailyNotes.push(`${f.date}: ${f.notes}`);
         });
-        const sortedDays = Object.entries(dailyTotals).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 7);
+        const sortedDays = Object.entries(dailyMeals).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 7);
 
-        // Calculate calorie-equivalent intake (dry ~3.5kcal/g, wet ~1kcal/g)
-        // Growing BSH kittens need ~50-70 kcal/kg/day
-        const dailyKcals = sortedDays.map(([, d]) => d.dryG * 3.5 + d.wetG * 1.0 + d.otherG * 2.0);
-        const avgKcal = Math.round(dailyKcals.reduce((s, k) => s + k, 0) / dailyKcals.length);
+        // Simple verdict based on meal count and variety
+        const avgMeals = Math.round(sortedDays.reduce((s, [, m]) => s + m.length, 0) / sortedDays.length * 10) / 10;
+        const hasWet = catFood.some(f => f.food_type.toLowerCase().includes("wet"));
+        const hasDry = catFood.some(f => f.food_type.toLowerCase().includes("dry"));
+        const mixType = hasWet && hasDry ? "mixed (wet + dry)" : hasWet ? "wet only" : hasDry ? "dry only" : "unknown";
 
-        if (weightKg > 0) {
-          const recKcal = Math.round(weightKg * 60); // ~60 kcal/kg/day for growing kittens
-          const pct = Math.round((avgKcal / recKcal) * 100);
-          const verdict = avgKcal > recKcal * 1.15 ? "OVER" : avgKcal < recKcal * 0.85 ? "UNDER" : "OK";
-          lines.push(`>>> FEEDING VERDICT: ${verdict} — ${cat.name} averages ${avgKcal} kcal/day, recommended ~${recKcal} kcal/day (${pct}% of target). NOTE: You cannot compare raw grams between wet and dry food. 100g wet = ~100kcal, 100g dry = ~350kcal. Only kcal matters. <<<`);
+        lines.push(`Eating pattern: ~${avgMeals} meals/day, diet is ${mixType}`);
+        lines.push(`Recent meals:`);
+        sortedDays.forEach(([date, meals]) => {
+          lines.push(`- ${date}: ${meals.join(", ")}`);
+        });
+        if (dailyNotes.length > 0) {
+          lines.push(`Owner notes: ${dailyNotes.join("; ")}`);
         }
-
-        lines.push(`Daily breakdown:`);
-        sortedDays.forEach(([date, { dryG, wetG, otherG, meals }]) => {
-          const kcal = Math.round(dryG * 3.5 + wetG * 1.0 + otherG * 2.0);
-          lines.push(`- ${date}: ${dryG}g dry + ${wetG}g wet = ~${kcal}kcal — ${meals.join(", ")}`);
-        });
       }
     });
     return lines.join("\n");
@@ -244,17 +239,15 @@ export default function FoodPage() {
         title="Nutrition Summary"
         loadingText="Analyzing feeding patterns..."
         context={foodContext}
-        prompt={`You are a vet nutritionist for Golden British Shorthair Munchkin kittens. Give 2-3 insights as a dash-separated list.
+        prompt={`You are a friendly vet nutritionist for Golden British Shorthair Munchkin kittens. Give 2-3 simple observations as a dash-separated list.
 
-ABSOLUTE RULE: The data contains a "FEEDING VERDICT" line for each cat that says OK, OVER, or UNDER with exact kcal numbers. You MUST repeat that verdict exactly. If it says OK, the cat is NOT being overfed — say their intake is healthy. NEVER contradict the verdict.
+Keep it simple and conversational — no grams, no calories, no numbers. Just tell the owner:
+- Are the cats eating regularly and consistently? (look at meal frequency and any gaps)
+- Is the wet/dry mix good? (a mix of both is ideal for hydration and dental health)
+- Any concerns from the owner's notes? (picky eating, vomiting, appetite changes — flag these)
+- Any positive patterns to call out? (e.g., consistent routine, good variety)
 
-DO NOT compare raw gram totals between wet and dry food — they have completely different calorie densities (dry ~3.5kcal/g, wet ~1kcal/g). A cat eating 100g of wet food is eating far less calories than one eating 100g of dry food. The kcal calculation already accounts for this.
-
-Rules:
-- State each cat's actual kcal vs recommended kcal and the verdict (OK/OVER/UNDER).
-- Comment on wet vs dry balance if relevant.
-- Mention any owner notes (e.g., "didn't eat", "vomited") as important signals.
-- If verdict is OK, say intake is healthy. Do not suggest overfeeding.
+Do NOT mention grams, calories, kcal, or overfeeding/underfeeding calculations. Think of it as a quick chat with the owner about how feeding is going.
 
 Plain text only, no markdown. No intro.`}
       />
