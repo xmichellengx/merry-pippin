@@ -11,20 +11,38 @@ import { useAdmin } from "./AdminContext";
 function IconHome({ size = 24, active = false }: { size?: number; active?: boolean }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      {/* House body */}
-      <rect x="5" y="12" width="14" height="9" rx="2" fill={active ? "#E8932B" : "currentColor"} opacity={active ? 1 : 0.45} />
-      {/* Roof */}
-      <path d="M3 13L12 4L21 13" stroke={active ? "#D97A1E" : "currentColor"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-      {/* Cat ears on roof */}
-      <path d="M8.5 8L7 4.5L10 7" fill={active ? "#E8932B" : "currentColor"} opacity={active ? 1 : 0.5} />
-      <path d="M15.5 8L17 4.5L14 7" fill={active ? "#E8932B" : "currentColor"} opacity={active ? 1 : 0.5} />
-      {/* Door / window - cat face */}
-      <circle cx="12" cy="17" r="2.5" fill={active ? "#FFF8EE" : "white"} opacity="0.9" />
-      {/* Cat eyes in window */}
-      <circle cx="11" cy="16.5" r="0.6" fill={active ? "#D97A1E" : "currentColor"} opacity="0.7" />
-      <circle cx="13" cy="16.5" r="0.6" fill={active ? "#D97A1E" : "currentColor"} opacity="0.7" />
-      {/* Cat nose */}
-      <ellipse cx="12" cy="17.5" rx="0.4" ry="0.3" fill="#F5A0B0" />
+      {/* Grassy hill */}
+      <ellipse cx="12" cy="18" rx="11" ry="6" fill={active ? "#6B8F5E" : "currentColor"} opacity={active ? 0.85 : 0.35} />
+      {/* Hill highlight / grass texture */}
+      <ellipse cx="12" cy="17" rx="10" ry="5" fill={active ? "#7DA36E" : "currentColor"} opacity={active ? 0.5 : 0.15} />
+      {/* Round hobbit door */}
+      <circle cx="12" cy="16" r="5" fill={active ? "#96742A" : "currentColor"} opacity={active ? 1 : 0.5} />
+      {/* Door inner - warm wood */}
+      <circle cx="12" cy="16" r="4.2" fill={active ? "#B08D3A" : "currentColor"} opacity={active ? 0.85 : 0.4} />
+      {/* Door frame ring */}
+      <circle cx="12" cy="16" r="4.6" stroke={active ? "#7A5C22" : "currentColor"} strokeWidth="0.8" fill="none" opacity={active ? 0.7 : 0.3} />
+      {/* Door panels - cross */}
+      <line x1="12" y1="11.8" x2="12" y2="20.2" stroke={active ? "#7A5C22" : "currentColor"} strokeWidth="0.6" opacity={active ? 0.4 : 0.2} />
+      <line x1="7.8" y1="16" x2="16.2" y2="16" stroke={active ? "#7A5C22" : "currentColor"} strokeWidth="0.6" opacity={active ? 0.4 : 0.2} />
+      {/* Door knob */}
+      <circle cx="14" cy="16" r="0.7" fill={active ? "#C9A84C" : "white"} opacity={active ? 1 : 0.6} />
+      {/* Cat ears poking from behind the hill */}
+      <path d="M7 12.5L5.5 8.5L9 11.5" fill={active ? "#D4BC82" : "currentColor"} opacity={active ? 0.9 : 0.4} />
+      <path d="M17 12.5L18.5 8.5L15 11.5" fill={active ? "#D4BC82" : "currentColor"} opacity={active ? 0.9 : 0.4} />
+      {/* Ear pink inner */}
+      <path d="M7.3 12L6.3 9.5L8.5 11.3" fill="#F5B8C4" opacity={active ? 0.5 : 0.2} />
+      <path d="M16.7 12L17.7 9.5L15.5 11.3" fill="#F5B8C4" opacity={active ? 0.5 : 0.2} />
+      {/* Cat eyes peeking over hill */}
+      <circle cx="10" cy="13.2" r="0.7" fill={active ? "#2C2416" : "currentColor"} opacity={active ? 0.8 : 0.4} />
+      <circle cx="14" cy="13.2" r="0.7" fill={active ? "#2C2416" : "currentColor"} opacity={active ? 0.8 : 0.4} />
+      {/* Eye shine */}
+      <circle cx="10.2" cy="13" r="0.25" fill="white" opacity={active ? 0.7 : 0.3} />
+      <circle cx="14.2" cy="13" r="0.25" fill="white" opacity={active ? 0.7 : 0.3} />
+      {/* Tiny chimney smoke */}
+      {active && <>
+        <path d="M17 10Q17.5 8.5 17 7" stroke="#D4BC82" strokeWidth="0.6" strokeLinecap="round" opacity="0.35" />
+        <path d="M18 9Q18.3 7.5 18 6.5" stroke="#D4BC82" strokeWidth="0.4" strokeLinecap="round" opacity="0.25" />
+      </>}
     </svg>
   );
 }
