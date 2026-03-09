@@ -36,40 +36,49 @@ function getAge(dob: string | null) {
   return rem > 0 ? `${years}y ${rem}m` : `${years}y`;
 }
 
+function hashContext(str: string): string {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) {
+    h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+  }
+  return h.toString(36);
+}
+
 function AiHealthInsights({ context }: { context: string }) {
   const CACHE_KEY = "ai_health_insights";
-  const CACHE_TS_KEY = "ai_health_insights_ts";
-  const ONE_DAY = 24 * 60 * 60 * 1000;
+  const CACHE_HASH_KEY = "ai_health_insights_hash";
 
-  // Check cache synchronously on first render
+  const contextHash = hashContext(context);
+
+  // Check cache — valid only if data hasn't changed
   const cachedInsights = (() => {
     try {
       const cached = localStorage.getItem(CACHE_KEY);
-      const cachedTs = localStorage.getItem(CACHE_TS_KEY);
-      if (cached && cachedTs && Date.now() - parseInt(cachedTs) < ONE_DAY) return cached;
+      const cachedHash = localStorage.getItem(CACHE_HASH_KEY);
+      if (cached && cachedHash === contextHash) return cached;
     } catch { /* ignore */ }
     return "";
   })();
 
   const [insights, setInsights] = useState<string>(cachedInsights);
   const [loading, setLoading] = useState(!cachedInsights);
-  const hasFetched = useRef(!!cachedInsights);
+  const fetchedHash = useRef(cachedInsights ? contextHash : "");
 
   useEffect(() => {
-    if (hasFetched.current || !context) return;
-    hasFetched.current = true;
+    if (!context || fetchedHash.current === contextHash) return;
+    fetchedHash.current = contextHash;
+    setLoading(true);
 
     fetch("/api/ai-chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        message: `Give me exactly 4-5 insights as a dash-separated list. Rules:
-- Jump straight into the insights. Do NOT start with an intro line like "Here's a summary" or "Sure!" — go directly to the first dash point.
-- Each point starts with a dash and is 1-2 sentences max.
-- Every single point MUST reference a specific number, date, or calculated value from the data. No exceptions.
-- Include: calculated ideal daily food intake in grams for each cat based on their current weight, weight gain rate compared to BSH growth curves, next vaccine/deworming due dates.
-- Do NOT say things like "monitor their weight", "keep track of nutrition", "it's good to monitor", or any vague suggestion. If you can't give a specific actionable recommendation with a number, don't include it.
-- Plain text only, no markdown formatting.`,
+        message: `Give me 3-4 key insights as a dash-separated list. Rules:
+- Jump straight into insights. No intro line.
+- Each point: 1 sentence max, MUST include a specific number/date from the data.
+- Focus on: anything overdue or due soon, today's feeding vs recommended intake, any weight concerns.
+- Only flag issues or actions needed. Skip anything that looks normal/on track.
+- Plain text only, no markdown.`,
         context,
       }),
     })
@@ -79,15 +88,15 @@ function AiHealthInsights({ context }: { context: string }) {
           setInsights(data.reply);
           try {
             localStorage.setItem(CACHE_KEY, data.reply);
-            localStorage.setItem(CACHE_TS_KEY, Date.now().toString());
+            localStorage.setItem(CACHE_HASH_KEY, contextHash);
           } catch { /* storage full */ }
         } else {
-          setInsights("Could not generate insights right now. Check back later!");
+          setInsights("Could not generate insights right now.");
         }
       })
-      .catch(() => setInsights("Could not connect to AI. Check back later!"))
+      .catch(() => setInsights("Could not connect to AI."))
       .finally(() => setLoading(false));
-  }, [context]);
+  }, [context, contextHash]);
 
   return (
     <div className="card p-4">
