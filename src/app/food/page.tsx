@@ -108,19 +108,21 @@ export default function FoodPage() {
     getFoodLogs(date).then(f => setLogs(f)).finally(() => setLoading(false));
   }, []);
 
-  // Load page data immediately
+  // Load page data — cats + today's logs are critical path
   useEffect(() => {
     getCats().then(c => setCats(c));
     loadLogs(selectedDate);
   }, [selectedDate, loadLogs]);
 
-  // Defer AI context data loading so it doesn't block the page
+  // Load AI context data in one batch so context only changes once (avoids double AI call)
   useEffect(() => {
-    const t = setTimeout(() => {
-      getFoodLogs(undefined, undefined, 50).then(f => setRecentFood(f));
-      getWeightRecords(undefined, 10).then(w => setCatWeights(w));
-    }, 100);
-    return () => clearTimeout(t);
+    Promise.all([
+      getFoodLogs(undefined, undefined, 50),
+      getWeightRecords(undefined, 10),
+    ]).then(([food, weights]) => {
+      setRecentFood(food);
+      setCatWeights(weights);
+    });
   }, []);
 
   const handleSave = async () => {

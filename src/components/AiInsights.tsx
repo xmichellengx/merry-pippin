@@ -43,12 +43,15 @@ export function AiInsights({
   // Show any cached result immediately (even if stale), only show spinner if no cache at all
   const [insights, setInsights] = useState<string>(cachedInsights);
   const [loading, setLoading] = useState(!cachedInsights);
+  const [refreshing, setRefreshing] = useState(false);
   const fetchedHash = useRef(cachedHash === contextHash ? contextHash : "");
 
   useEffect(() => {
     if (!context || fetchedHash.current === contextHash) return;
     fetchedHash.current = contextHash;
-    setLoading(true);
+    // Only show spinner if we have nothing cached; otherwise silently refresh
+    if (!insights) setLoading(true);
+    setRefreshing(true);
 
     fetch("/api/ai-chat", {
       method: "POST",
@@ -67,8 +70,8 @@ export function AiInsights({
           setInsights("Could not generate insights right now.");
         }
       })
-      .catch(() => setInsights("Could not connect to AI."))
-      .finally(() => setLoading(false));
+      .catch(() => { if (!insights) setInsights("Could not connect to AI."); })
+      .finally(() => { setLoading(false); setRefreshing(false); });
   }, [context, contextHash, prompt]);
 
   if (!context) return null;
@@ -81,6 +84,7 @@ export function AiInsights({
         </div>
         <h2 className="font-semibold text-sm">{title}</h2>
         <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-golden-50 text-golden-600 font-medium">AI</span>
+        {refreshing && !loading && <Loader2 size={12} className="animate-spin text-golden-400 ml-auto" />}
       </div>
       {loading ? (
         <div className="flex items-center gap-2 py-2">
