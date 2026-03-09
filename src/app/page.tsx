@@ -598,8 +598,8 @@ export default function Dashboard() {
         </div>
         {todayFood.length === 0 ? (
           <div className="flex flex-col items-center py-2">
-            <TwoCatsSitting size={90} className="opacity-30 mb-1" />
-            <p className="text-xs text-muted">The pantry awaits, little hobbits.</p>
+            <Image src="/loading-food.webp" alt="" width={90} height={78} className="opacity-60 mb-1" />
+            <p className="text-xs text-muted">&quot;What about second breakfast?&quot; The pantry awaits!</p>
           </div>
         ) : (
           <div className="space-y-2">

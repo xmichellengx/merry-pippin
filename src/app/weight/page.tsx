@@ -205,8 +205,8 @@ Plain text only, no markdown. Jump straight into insights, no intro.`}
         const catWeights = weights.filter(w => w.cat_id === cat.id);
         if (catWeights.length === 0) return (
           <div key={cat.id} className="card p-6 text-center">
-            <CatOnScale size={80} className="mx-auto mb-2 opacity-40" />
-            <p className="text-sm text-muted">No weight records for {cat.name} yet.</p>
+            <Image src="/loading-weight.webp" alt="No records" width={100} height={96} className="mx-auto mb-2 opacity-60" />
+            <p className="text-sm text-muted">&quot;A wizard is never late...&quot; but {cat.name}&apos;s first weigh-in is overdue!</p>
           </div>
         );
         const latest = catWeights[catWeights.length - 1];

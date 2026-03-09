@@ -1091,8 +1091,8 @@ Plain text only, no markdown. Jump straight into insights, no intro.`}
 
       {filtered.length === 0 ? (
         <div className="card p-8 text-center">
-          <NextImage src="/cat-face-icon.webp" alt="No records" width={110} height={110} className="mx-auto mb-2 opacity-40" />
-          <p className="text-muted text-sm">{loadError ? "Failed to load records." : "No records found."}</p>
+          <NextImage src="/loading-health.webp" alt="No records" width={120} height={98} className="mx-auto mb-2 opacity-70" />
+          <p className="text-muted text-sm">{loadError ? "Failed to load records." : "\"Not all who wander are lost...\" but no records were found here."}</p>
           {loadError && (
             <button onClick={() => { setLoading(true); loadData(); }} className="mt-3 px-4 py-2 rounded-xl golden-gradient text-white text-sm font-medium shadow-md">
               Retry
@@ -1242,7 +1242,8 @@ Plain text only, no markdown. Jump straight into insights, no intro.`}
         <div className="space-y-2">
           {litterLogs.length === 0 ? (
             <div className="card p-6 text-center">
-              <p className="text-muted text-xs">No litter box logs yet. Tap + to log a scoop.</p>
+              <NextImage src="/loading-grooming.webp" alt="No logs" width={80} height={75} className="mx-auto mb-1 opacity-60" />
+              <p className="text-muted text-xs">&quot;One does not simply skip the scoop.&quot; No litter logs yet!</p>
             </div>
           ) : (
             litterLogs.slice(0, 10).map(log => (

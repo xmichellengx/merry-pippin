@@ -332,7 +332,8 @@ export default function GroomingPage() {
           ))}
           {tasks.length === 0 && (
             <div className="card p-8 text-center">
-              <p className="text-sm text-muted mb-3">No grooming tasks yet.</p>
+              <Image src="/loading-grooming.webp" alt="No tasks" width={100} height={93} className="mx-auto mb-2 opacity-60" />
+              <p className="text-sm text-muted mb-3">&quot;The ring awaits a bearer...&quot; Add some grooming tasks!</p>
               {isAdmin && (
                 <button onClick={() => setShowSettings(true)} className="px-4 py-2 rounded-full golden-gradient text-white text-xs font-medium">
                   <Plus size={14} className="inline mr-1" /> Add Tasks
@@ -345,8 +346,8 @@ export default function GroomingPage() {
         /* History view */
         logs.length === 0 ? (
           <div className="card p-8 text-center">
-            <Image src="/cat-face-icon.webp" alt="cat" width={110} height={110} className="mx-auto mb-2 opacity-60" />
-            <p className="text-sm text-muted">Even hobbits need grooming, precious.</p>
+            <Image src="/loading-grooming.webp" alt="No history" width={100} height={93} className="mx-auto mb-2 opacity-60" />
+            <p className="text-sm text-muted">&quot;My precious...&quot; No grooming history yet. Time to pamper!</p>
           </div>
         ) : (
           <div className="space-y-2">
