@@ -234,7 +234,7 @@ Plain text only, no markdown. Jump straight into insights, no intro.`}
               </div>
               <div className="text-right">
                 <p className="text-lg font-bold text-golden-600">{latest.weight_kg} kg</p>
-                {prev && (
+                {prev && change !== 0 && (
                   <div className={`flex items-center gap-0.5 justify-end ${isGain ? "text-success" : "text-danger"}`}>
                     {isGain ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
                     <span className="text-[10px] font-medium">{isGain ? "+" : ""}{change.toFixed(2)} kg</span>
