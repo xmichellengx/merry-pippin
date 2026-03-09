@@ -114,7 +114,7 @@ export default function GroomingPage() {
   }
 
   return (
-    <div className="px-4 pt-12 space-y-4">
+    <div className="px-4 pt-12 pb-6 space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           {showSettings || showHistory ? (

@@ -239,7 +239,7 @@ export default function FoodPage() {
   }
 
   return (
-    <div className="px-4 pt-12 space-y-4">
+    <div className="px-4 pt-12 pb-6 space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Link href="/" className="w-8 h-8 rounded-full bg-golden-100 flex items-center justify-center"><ArrowLeft size={16} className="text-golden-700" /></Link>

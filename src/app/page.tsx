@@ -377,7 +377,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="px-4 pt-12 space-y-5">
+    <div className="px-4 pt-12 pb-6 space-y-5">
       {/* Header */}
       <div className="relative">
       <div className="golden-gradient rounded-2xl p-5 text-white shadow-lg relative overflow-hidden">
