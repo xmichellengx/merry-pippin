@@ -207,22 +207,18 @@ export default function FoodPage() {
         // Growing BSH kittens need ~50-70 kcal/kg/day
         const dailyKcals = sortedDays.map(([, d]) => d.dryG * 3.5 + d.wetG * 1.0 + d.otherG * 2.0);
         const avgKcal = Math.round(dailyKcals.reduce((s, k) => s + k, 0) / dailyKcals.length);
-        const avgDry = Math.round(sortedDays.reduce((s, [, d]) => s + d.dryG, 0) / sortedDays.length);
-        const avgWet = Math.round(sortedDays.reduce((s, [, d]) => s + d.wetG, 0) / sortedDays.length);
 
         if (weightKg > 0) {
           const recKcal = Math.round(weightKg * 60); // ~60 kcal/kg/day for growing kittens
-          const recDryOnly = Math.round(recKcal / 3.5);
-          const recWetOnly = Math.round(recKcal / 1.0);
-          lines.push(`Recommended: ~${recKcal} kcal/day (~${recDryOnly}g if all dry, ~${recWetOnly}g if all wet)`);
-          lines.push(`Actual average: ~${avgKcal} kcal/day (${avgDry}g dry + ${avgWet}g wet per day) — ${avgKcal > recKcal * 1.15 ? "OVER by " + Math.round((avgKcal / recKcal - 1) * 100) + "%" : avgKcal < recKcal * 0.85 ? "UNDER by " + Math.round((1 - avgKcal / recKcal) * 100) + "%" : "WITHIN healthy range"}`);
+          const pct = Math.round((avgKcal / recKcal) * 100);
+          const verdict = avgKcal > recKcal * 1.15 ? "OVER" : avgKcal < recKcal * 0.85 ? "UNDER" : "OK";
+          lines.push(`>>> FEEDING VERDICT: ${verdict} — ${cat.name} averages ${avgKcal} kcal/day, recommended ~${recKcal} kcal/day (${pct}% of target). NOTE: You cannot compare raw grams between wet and dry food. 100g wet = ~100kcal, 100g dry = ~350kcal. Only kcal matters. <<<`);
         }
 
         lines.push(`Daily breakdown:`);
         sortedDays.forEach(([date, { dryG, wetG, otherG, meals }]) => {
-          const totalG = dryG + wetG + otherG;
           const kcal = Math.round(dryG * 3.5 + wetG * 1.0 + otherG * 2.0);
-          lines.push(`- ${date}: ${totalG}g (${dryG}g dry, ${wetG}g wet) = ~${kcal}kcal — ${meals.join(", ")}`);
+          lines.push(`- ${date}: ${dryG}g dry + ${wetG}g wet = ~${kcal}kcal — ${meals.join(", ")}`);
         });
       }
     });
@@ -248,19 +244,19 @@ export default function FoodPage() {
         title="Nutrition Summary"
         loadingText="Analyzing feeding patterns..."
         context={foodContext}
-        prompt={`You are a vet nutritionist for Golden British Shorthair Munchkin kittens. Analyze their feeding data and give 2-3 insights as a dash-separated list.
+        prompt={`You are a vet nutritionist for Golden British Shorthair Munchkin kittens. Give 2-3 insights as a dash-separated list.
 
-CRITICAL: The data includes pre-calculated calorie (kcal) comparisons. Wet food is ~1 kcal/g, dry food is ~3.5 kcal/g — so 100g wet ≠ 100g dry. Do NOT compare raw gram totals. Always use the kcal figures provided.
+ABSOLUTE RULE: The data contains a "FEEDING VERDICT" line for each cat that says OK, OVER, or UNDER with exact kcal numbers. You MUST repeat that verdict exactly. If it says OK, the cat is NOT being overfed — say their intake is healthy. NEVER contradict the verdict.
 
-The data already states whether intake is WITHIN range, OVER, or UNDER. Trust that assessment. Do NOT recalculate or contradict it.
+DO NOT compare raw gram totals between wet and dry food — they have completely different calorie densities (dry ~3.5kcal/g, wet ~1kcal/g). A cat eating 100g of wet food is eating far less calories than one eating 100g of dry food. The kcal calculation already accounts for this.
 
 Rules:
-- Quote the actual vs recommended kcal numbers from the data. If it says "WITHIN healthy range", confirm that — do not say they are overfeeding.
-- Note the wet vs dry balance. A mix is ideal.
-- Read any notes carefully (e.g., "didn't eat much", "vomited") — mention as important signals.
-- If everything looks good, say so. Don't invent problems.
+- State each cat's actual kcal vs recommended kcal and the verdict (OK/OVER/UNDER).
+- Comment on wet vs dry balance if relevant.
+- Mention any owner notes (e.g., "didn't eat", "vomited") as important signals.
+- If verdict is OK, say intake is healthy. Do not suggest overfeeding.
 
-Plain text only, no markdown. Jump straight into insights, no intro.`}
+Plain text only, no markdown. No intro.`}
       />
 
       <div className="flex gap-2 overflow-x-auto scroll-smooth pb-1">
