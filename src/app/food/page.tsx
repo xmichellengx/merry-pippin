@@ -226,7 +226,7 @@ export default function FoodPage() {
   }, [cats, recentFood, catWeights]);
 
   if (loading) {
-    return <div className="flex flex-col items-center pt-40 gap-3"><TwoCatsSitting size={120} className="opacity-30" /><Loader2 size={32} className="text-golden-500 animate-spin" /></div>;
+    return <div className="flex flex-col items-center pt-32 gap-3"><Image src="/loading-food.webp" alt="" width={180} height={180} priority className="opacity-80" /><Loader2 size={28} className="text-golden-500 animate-spin" /></div>;
   }
 
   return (
