@@ -9,15 +9,15 @@ import { useAdmin } from "./AdminContext";
 
 // ── Cute custom nav icons ──
 
-function IconHome({ size = 24, active = false }: { size?: number; active?: boolean }) {
+function IconHome({ size = 24 }: { size?: number; active?: boolean }) {
   return (
     <Image
       src="/hobbit-door.png"
       alt="Home"
       width={size}
       height={size}
-      className={active ? "" : "opacity-50 grayscale"}
-      style={{ objectFit: "contain" }}
+      className="w-full h-full"
+      style={{ objectFit: "cover" }}
     />
   );
 }
@@ -218,10 +218,10 @@ export default function BottomNav() {
               <Link
                 key={tab.href}
                 href={tab.href}
-                className={`flex flex-col items-center justify-center ${isHome ? "w-13 h-13 -mt-5 rounded-full golden-gradient shadow-lg border-4 border-white" : `w-14 py-0 rounded-lg transition-colors ${isActive ? "text-golden-600" : "text-muted"}`}`}
+                className={`flex flex-col items-center justify-center ${isHome ? "w-13 h-13 -mt-5 rounded-full shadow-lg border-2 border-white overflow-hidden" : `w-14 py-0 rounded-lg transition-colors ${isActive ? "text-golden-600" : "text-muted"}`}`}
               >
                 {isHome ? (
-                  <tab.Icon size={26} active={true} />
+                  <tab.Icon size={52} active={true} />
                 ) : (
                   <>
                     <tab.Icon size={26} active={isActive} />
