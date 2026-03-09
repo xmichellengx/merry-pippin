@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { ArrowLeft, Plus, UtensilsCrossed, Loader2, Trash2, Pencil, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -9,6 +9,9 @@ import { getCats, getFoodLogs, addFoodLog, deleteFoodLog, updateFoodLog } from "
 import type { Cat, FoodLog } from "@/lib/supabase";
 import { TwoCatsSitting } from "@/components/CatIllustrations";
 import { useAdmin } from "@/components/AdminContext";
+import { AiInsights } from "@/components/AiInsights";
+import { getWeightRecords } from "@/lib/data";
+import type { WeightRecord } from "@/lib/supabase";
 
 const foodTypeEmoji: Record<string, string> = {
   wet: "\uD83E\uDD6B",
@@ -98,12 +101,18 @@ export default function FoodPage() {
   const [editNotes, setEditNotes] = useState("");
   const [editSaving, setEditSaving] = useState(false);
 
+  // Recent food (last 50) + weights for AI context
+  const [recentFood, setRecentFood] = useState<FoodLog[]>([]);
+  const [catWeights, setCatWeights] = useState<WeightRecord[]>([]);
+
   const loadLogs = useCallback((date: string) => {
     getFoodLogs(date).then(f => setLogs(f)).finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
     getCats().then(c => setCats(c));
+    getFoodLogs(undefined, undefined, 50).then(f => setRecentFood(f));
+    getWeightRecords().then(w => setCatWeights(w));
     loadLogs(selectedDate);
   }, [selectedDate, loadLogs]);
 
@@ -170,6 +179,33 @@ export default function FoodPage() {
     return { value: format(d, "yyyy-MM-dd"), label: i === 0 ? "Today" : i === 1 ? "Yesterday" : format(d, "EEE"), date: format(d, "d") };
   });
 
+  const foodContext = useMemo(() => {
+    if (cats.length === 0 || recentFood.length === 0) return "";
+    const lines: string[] = [`Today: ${format(new Date(), "yyyy-MM-dd")}`];
+    cats.forEach(cat => {
+      const cw = catWeights.filter(w => w.cat_id === cat.id).sort((a, b) => a.recorded_at.localeCompare(b.recorded_at));
+      const latestWeight = cw.length > 0 ? cw[cw.length - 1] : null;
+      lines.push(`\n${cat.name} — ${cat.breed}, DOB: ${cat.date_of_birth || "unknown"}, Gender: ${cat.gender || "unknown"}${latestWeight ? `, Current weight: ${latestWeight.weight_kg}kg (${latestWeight.recorded_at})` : ""}`);
+
+      const catFood = recentFood.filter(f => f.cat_id === cat.id);
+      if (catFood.length > 0) {
+        // Daily totals
+        const dailyTotals: Record<string, { grams: number; meals: string[] }> = {};
+        catFood.forEach(f => {
+          if (!dailyTotals[f.date]) dailyTotals[f.date] = { grams: 0, meals: [] };
+          dailyTotals[f.date].grams += f.amount_grams || 0;
+          dailyTotals[f.date].meals.push(`${f.food_name} (${f.food_type}, ${f.amount_grams || "?"}g, ${f.meal_time})${f.notes ? ` [${f.notes}]` : ""}`);
+        });
+        const sortedDays = Object.entries(dailyTotals).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 7);
+        lines.push(`Recent daily intake:`);
+        sortedDays.forEach(([date, { grams, meals }]) => {
+          lines.push(`- ${date}: ${grams}g total — ${meals.join(", ")}`);
+        });
+      }
+    });
+    return lines.join("\n");
+  }, [cats, recentFood, catWeights]);
+
   if (loading) {
     return <div className="flex flex-col items-center pt-40 gap-3"><TwoCatsSitting size={120} className="opacity-30" /><Loader2 size={32} className="text-golden-500 animate-spin" /></div>;
   }
@@ -183,6 +219,24 @@ export default function FoodPage() {
         </div>
         {isAdmin && <button onClick={() => setShowAddForm(!showAddForm)} className="w-9 h-9 rounded-full golden-gradient flex items-center justify-center shadow-md"><Plus size={18} className="text-white" /></button>}
       </div>
+
+      <AiInsights
+        cacheKey="food"
+        title="Nutrition Summary"
+        loadingText="Analyzing feeding patterns..."
+        context={foodContext}
+        prompt={`You are a vet nutritionist for Golden British Shorthair Munchkin kittens. Analyze their feeding data and give 2-3 insights as a dash-separated list.
+
+Think practically:
+- Calculate recommended daily intake based on each cat's current weight and age (BSH kittens typically need 40-60g/kg/day of wet food equivalent, or ~20-30g/kg/day of dry food).
+- Compare their actual average daily intake over the last few days against the recommendation. Flag if consistently over/under by more than 15%.
+- Look at the wet vs dry food ratio — a mix is ideal, note if it's too skewed.
+- Pay attention to any notes the owner logged (e.g., "didn't eat much", "vomited") — these are important signals.
+- If intake looks healthy and balanced, say so briefly. Don't invent problems.
+- Be specific with numbers (actual vs recommended grams).
+
+Plain text only, no markdown. Jump straight into insights, no intro.`}
+      />
 
       <div className="flex gap-2 overflow-x-auto scroll-smooth pb-1">
         {dates.map(d => (

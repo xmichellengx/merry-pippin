@@ -4,8 +4,6 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import {
   UtensilsCrossed,
   Calendar,
-  AlertCircle,
-  Sparkles,
   ChevronRight,
   Loader2,
   Pencil,
@@ -34,100 +32,6 @@ function getAge(dob: string | null) {
   const years = Math.floor(months / 12);
   const rem = months % 12;
   return rem > 0 ? `${years}y ${rem}m` : `${years}y`;
-}
-
-function hashContext(str: string): string {
-  let h = 0;
-  for (let i = 0; i < str.length; i++) {
-    h = ((h << 5) - h + str.charCodeAt(i)) | 0;
-  }
-  return h.toString(36);
-}
-
-function AiHealthInsights({ context }: { context: string }) {
-  const CACHE_KEY = "ai_health_insights";
-  const CACHE_HASH_KEY = "ai_health_insights_hash";
-
-  const contextHash = hashContext(context);
-
-  // Check cache — valid only if data hasn't changed
-  const cachedInsights = (() => {
-    try {
-      const cached = localStorage.getItem(CACHE_KEY);
-      const cachedHash = localStorage.getItem(CACHE_HASH_KEY);
-      if (cached && cachedHash === contextHash) return cached;
-    } catch { /* ignore */ }
-    return "";
-  })();
-
-  const [insights, setInsights] = useState<string>(cachedInsights);
-  const [loading, setLoading] = useState(!cachedInsights);
-  const fetchedHash = useRef(cachedInsights ? contextHash : "");
-
-  useEffect(() => {
-    if (!context || fetchedHash.current === contextHash) return;
-    fetchedHash.current = contextHash;
-    setLoading(true);
-
-    fetch("/api/ai-chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        message: `You are an expert vet advisor for two Golden British Shorthair Munchkin kittens. Analyze the data and give me 3-4 genuinely useful insights as a dash-separated list.
-
-Think like a vet would — look at the BIG PICTURE, not day-to-day noise:
-- Weight: These kittens are weighed every few weeks, not daily. Compare the OVERALL growth trend across weeks/months against BSH growth curves. A single weigh-in dip means nothing — look at the trajectory. Flag only if the multi-week trend is concerning (stalling, losing over multiple weigh-ins, or growing too fast).
-- Feeding: Calculate recommended daily intake based on current weight and age, then compare against actual average daily intake over the last few days. Flag if consistently over/under by more than 15%.
-- Health: Flag vaccines/deworm that are overdue or due within 2 weeks. Don't mention things months away.
-- Be specific with numbers and dates. No vague advice like "monitor closely" or "keep tracking."
-- If everything looks healthy and on track, say so in one line and suggest what to watch for next.
-
-Plain text only, no markdown. Jump straight into the insights, no intro.`,
-        context,
-      }),
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data.reply) {
-          setInsights(data.reply);
-          try {
-            localStorage.setItem(CACHE_KEY, data.reply);
-            localStorage.setItem(CACHE_HASH_KEY, contextHash);
-          } catch { /* storage full */ }
-        } else {
-          setInsights("Could not generate insights right now.");
-        }
-      })
-      .catch(() => setInsights("Could not connect to AI."))
-      .finally(() => setLoading(false));
-  }, [context, contextHash]);
-
-  return (
-    <div className="card p-4">
-      <div className="flex items-center gap-2 mb-3">
-        <div className="w-7 h-7 rounded-full bg-golden-100 flex items-center justify-center">
-          <Sparkles size={14} className="text-golden-600" />
-        </div>
-        <h2 className="font-semibold text-sm">Health Insights</h2>
-        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-golden-50 text-golden-600 font-medium">AI</span>
-      </div>
-      {loading ? (
-        <div className="flex items-center gap-2 py-2">
-          <Loader2 size={14} className="animate-spin text-golden-500" />
-          <span className="text-xs text-muted">Analyzing your cats&apos; health data...</span>
-        </div>
-      ) : (
-        <div className="space-y-1.5">
-          {insights.split("\n").filter(l => l.trim()).map((line) => line.replace(/^[-•*]\s*/, "").replace(/#{1,4}\s*/g, "").replace(/\*{1,2}/g, "").trim()).filter(l => l.length > 0).map((line, i) => (
-            <div key={i} className="flex gap-2 items-start">
-              <AlertCircle size={14} className="text-golden-500 mt-0.5 shrink-0" />
-              <p className="text-xs text-foreground/80 leading-relaxed">{line}</p>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
 }
 
 type AiMessage = { role: "user" | "assistant"; text: string };
@@ -548,9 +452,6 @@ export default function Dashboard() {
           onSaved={loadData}
         />
       )}
-
-      {/* AI Health Insights */}
-      <AiHealthInsights context={aiContext} />
 
       {/* Upcoming Events */}
       <div className="card p-4">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { ArrowLeft, Plus, TrendingUp, TrendingDown, Loader2, Trash2, Pencil, X } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
@@ -11,6 +11,7 @@ import {
 } from "recharts";
 import { CatOnScale, TwoCatsSitting } from "@/components/CatIllustrations";
 import { useAdmin } from "@/components/AdminContext";
+import { AiInsights } from "@/components/AiInsights";
 
 export default function WeightPage() {
   const [cats, setCats] = useState<Cat[]>([]);
@@ -81,6 +82,19 @@ export default function WeightPage() {
     } finally { setEditSaving(false); }
   };
 
+  const weightContext = useMemo(() => {
+    if (cats.length === 0) return "";
+    const lines: string[] = [`Today: ${format(new Date(), "yyyy-MM-dd")}`];
+    cats.forEach(cat => {
+      const catWeights = weights.filter(w => w.cat_id === cat.id).sort((a, b) => a.recorded_at.localeCompare(b.recorded_at));
+      lines.push(`\n${cat.name} — ${cat.breed}, DOB: ${cat.date_of_birth || "unknown"}, Gender: ${cat.gender || "unknown"}`);
+      if (catWeights.length > 0) {
+        lines.push(`Weight history: ${catWeights.map(w => `${w.weight_kg}kg (${w.recorded_at})${w.notes ? ` [${w.notes}]` : ""}`).join(" → ")}`);
+      }
+    });
+    return lines.join("\n");
+  }, [cats, weights]);
+
   if (loading) {
     return <div className="flex flex-col items-center pt-40 gap-3"><TwoCatsSitting size={120} className="opacity-30" /><Loader2 size={32} className="text-golden-500 animate-spin" /></div>;
   }
@@ -109,6 +123,24 @@ export default function WeightPage() {
         </div>
         {isAdmin && <button onClick={() => setShowAddForm(!showAddForm)} className="w-9 h-9 rounded-full golden-gradient flex items-center justify-center shadow-md"><Plus size={18} className="text-white" /></button>}
       </div>
+
+      <AiInsights
+        cacheKey="weight"
+        title="Weight Summary"
+        loadingText="Analyzing growth trends..."
+        context={weightContext}
+        prompt={`You are a vet advisor for Golden British Shorthair Munchkin kittens. Analyze their weight data and give 2-3 insights as a dash-separated list.
+
+Think like a vet looking at a growth chart:
+- These kittens are weighed every few weeks. Look at the OVERALL multi-week/month trajectory, not individual weigh-ins.
+- Compare growth rate against typical BSH kitten growth curves for their age. BSH kittens typically gain ~100-150g/week in months 3-6, slowing to ~50-100g/week from 6-12 months.
+- If one cat is consistently heavier/lighter than the other, note the difference and whether it's normal variation or concerning.
+- Calculate their average monthly weight gain and comment on whether it's healthy.
+- If growth looks on track, say so briefly. Don't manufacture concerns.
+- Be specific with numbers. No vague advice.
+
+Plain text only, no markdown. Jump straight into insights, no intro.`}
+      />
 
       <div className="flex gap-2">
         <button onClick={() => setSelectedCat("all")} className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${selectedCat === "all" ? "golden-gradient text-white" : "bg-golden-50 text-golden-700"}`}>Compare</button>

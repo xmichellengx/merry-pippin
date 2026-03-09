@@ -32,6 +32,7 @@ import { compressImage, compressImageToBlob } from "@/lib/compress-image";
 import type { Cat, HealthRecord, LitterBoxLog } from "@/lib/supabase";
 import { TwoCatsSitting } from "@/components/CatIllustrations";
 import { useAdmin } from "@/components/AdminContext";
+import { AiInsights } from "@/components/AiInsights";
 
 const typeConfig: Record<string, { icon: typeof Syringe; color: string; bg: string; label: string }> = {
   vaccine: { icon: Syringe, color: "text-blue-600", bg: "bg-blue-50", label: "Vaccine" },
@@ -806,6 +807,26 @@ export default function HealthPage() {
     setLitterLogs(prev => prev.filter(l => l.id !== id));
   };
 
+  const healthContext = useMemo(() => {
+    if (cats.length === 0 || records.length === 0) return "";
+    const lines: string[] = [`Today: ${format(new Date(), "yyyy-MM-dd")}`];
+    cats.forEach(cat => {
+      const catRecords = records.filter(r => r.cat_id === cat.id);
+      lines.push(`\n${cat.name} — ${cat.breed}, DOB: ${cat.date_of_birth || "unknown"}`);
+      if (catRecords.length > 0) {
+        lines.push(`Health records:`);
+        catRecords.slice(0, 15).forEach(r => {
+          let rec = `- ${r.title} (${r.record_type}) on ${r.date}`;
+          if (r.next_due_date) rec += `, next due: ${r.next_due_date}`;
+          if (r.vet_name) rec += `, vet: ${r.vet_name}`;
+          if (r.description) rec += `, notes: ${r.description}`;
+          lines.push(rec);
+        });
+      }
+    });
+    return lines.join("\n");
+  }, [cats, records]);
+
   const filtered = records
     .filter(r => selectedCat === "all" || r.cat_id === selectedCat)
     .filter(r => filterType === "all" || r.record_type === filterType);
@@ -892,6 +913,24 @@ export default function HealthPage() {
           </button>
         )}
       </div>
+
+      <AiInsights
+        cacheKey="health"
+        title="Health Overview"
+        loadingText="Reviewing health records..."
+        context={healthContext}
+        prompt={`You are a vet advisor for Golden British Shorthair Munchkin kittens. Analyze their health records and give 2-3 insights as a dash-separated list.
+
+Focus on what the owner needs to know RIGHT NOW:
+- Flag any vaccines or deworm treatments that are overdue or due within the next 2 weeks, with the exact date.
+- If they're up to date on everything, confirm that and mention when the next thing is due.
+- Note if any record type seems missing (e.g., no deworm record at all, or no vet visit in a long time for kittens).
+- If there are any notes in the records that suggest ongoing issues, flag them.
+- Don't list every record back — the owner can see those. Give a high-level health status.
+- Be specific with dates. No vague advice.
+
+Plain text only, no markdown. Jump straight into insights, no intro.`}
+      />
 
       <div className="flex gap-2">
         <button onClick={() => setSelectedCat("all")} className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${selectedCat === "all" ? "golden-gradient text-white" : "bg-golden-50 text-golden-700"}`}>All</button>
