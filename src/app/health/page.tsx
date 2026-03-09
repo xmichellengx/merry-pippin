@@ -684,13 +684,24 @@ export default function HealthPage() {
     other: { checked: false, dueDate: "", brand: "", photo: "" },
   });
 
-  const loadData = () => {
-    Promise.all([getCats(), getHealthRecords(), getLitterBoxLogs()])
-      .then(([c, h, l]) => {
-        setCats(c); setRecords(h); setLitterLogs(l);
-        cleanupOldLitterPhotos(l);
-      })
-      .finally(() => setLoading(false));
+  const [loadError, setLoadError] = useState(false);
+
+  const loadData = async () => {
+    setLoadError(false);
+    try {
+      let [c, h, l] = await Promise.all([getCats(), getHealthRecords(), getLitterBoxLogs()]);
+      // Supabase can silently return [] on transient errors — retry once
+      if (h.length === 0) {
+        await new Promise(r => setTimeout(r, 500));
+        h = await getHealthRecords();
+      }
+      setCats(c); setRecords(h); setLitterLogs(l);
+      cleanupOldLitterPhotos(l);
+    } catch {
+      setLoadError(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { loadData(); }, []);
@@ -1051,7 +1062,12 @@ export default function HealthPage() {
       {filtered.length === 0 ? (
         <div className="card p-8 text-center">
           <NextImage src="/cat-face-icon.png" alt="No records" width={110} height={110} className="mx-auto mb-2 opacity-40" />
-          <p className="text-muted text-sm">No records found.</p>
+          <p className="text-muted text-sm">{loadError ? "Failed to load records." : "No records found."}</p>
+          {loadError && (
+            <button onClick={() => { setLoading(true); loadData(); }} className="mt-3 px-4 py-2 rounded-xl golden-gradient text-white text-sm font-medium shadow-md">
+              Retry
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-5">
