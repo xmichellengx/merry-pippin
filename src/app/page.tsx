@@ -468,7 +468,8 @@ export default function Dashboard() {
           groomingTasks.forEach(task => {
             const lastLog = groomingLogs.find(l => l.cat_id === cat.id && l.task_type === task.type);
             const daysAgo = lastLog ? differenceInDays(new Date(), new Date(lastLog.completed_at)) : 999;
-            if (daysAgo >= task.frequency_days) {
+            const isDue = daysAgo === 999 || daysAgo >= task.frequency_days || (daysAgo >= task.frequency_days - 1 && daysAgo > 0);
+            if (isDue) {
               const daysLate = daysAgo === 999 ? -1 : daysAgo - task.frequency_days;
               const existing = taskDueMap.get(task.type);
               if (existing) {
