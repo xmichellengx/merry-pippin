@@ -31,16 +31,19 @@ export function AiInsights({
 
   const cachedInsights = (() => {
     try {
-      const cached = localStorage.getItem(CACHE_DATA);
-      const cachedHash = localStorage.getItem(CACHE_HASH);
-      if (cached && cachedHash === contextHash) return cached;
-    } catch { /* ignore */ }
-    return "";
+      return localStorage.getItem(CACHE_DATA) || "";
+    } catch { return ""; }
+  })();
+  const cachedHash = (() => {
+    try {
+      return localStorage.getItem(CACHE_HASH) || "";
+    } catch { return ""; }
   })();
 
+  // Show any cached result immediately (even if stale), only show spinner if no cache at all
   const [insights, setInsights] = useState<string>(cachedInsights);
   const [loading, setLoading] = useState(!cachedInsights);
-  const fetchedHash = useRef(cachedInsights ? contextHash : "");
+  const fetchedHash = useRef(cachedHash === contextHash ? contextHash : "");
 
   useEffect(() => {
     if (!context || fetchedHash.current === contextHash) return;

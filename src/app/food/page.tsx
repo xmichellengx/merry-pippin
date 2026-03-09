@@ -108,12 +108,20 @@ export default function FoodPage() {
     getFoodLogs(date).then(f => setLogs(f)).finally(() => setLoading(false));
   }, []);
 
+  // Load page data immediately
   useEffect(() => {
     getCats().then(c => setCats(c));
-    getFoodLogs(undefined, undefined, 50).then(f => setRecentFood(f));
-    getWeightRecords().then(w => setCatWeights(w));
     loadLogs(selectedDate);
   }, [selectedDate, loadLogs]);
+
+  // Defer AI context data loading so it doesn't block the page
+  useEffect(() => {
+    const t = setTimeout(() => {
+      getFoodLogs(undefined, undefined, 50).then(f => setRecentFood(f));
+      getWeightRecords(undefined, 10).then(w => setCatWeights(w));
+    }, 100);
+    return () => clearTimeout(t);
+  }, []);
 
   const handleSave = async () => {
     if (!formCatId || !formFoodName || formFoodTypes.length === 0) return;

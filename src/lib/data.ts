@@ -20,9 +20,10 @@ export async function updateCat(id: string, updates: { name?: string; breed?: st
 
 // ── Weight Records ──
 
-export async function getWeightRecords(catId?: string): Promise<WeightRecord[]> {
+export async function getWeightRecords(catId?: string, limit?: number): Promise<WeightRecord[]> {
   let query = supabase.from('weight_records').select('*').order('recorded_at', { ascending: true })
   if (catId) query = query.eq('cat_id', catId)
+  if (limit) query = query.limit(limit)
   const { data, error } = await query
   if (error) { console.error('getWeightRecords:', error.message); return []; }
   return data ?? []
