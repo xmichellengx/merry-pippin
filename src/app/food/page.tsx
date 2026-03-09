@@ -181,40 +181,46 @@ export default function FoodPage() {
 
   const foodContext = useMemo(() => {
     if (cats.length === 0 || recentFood.length === 0) return "";
-    const lines: string[] = [`Today: ${format(new Date(), "yyyy-MM-dd")}`];
+    const today = format(new Date(), "yyyy-MM-dd");
+    const lines: string[] = [`Today: ${today}`];
     cats.forEach(cat => {
       const cw = catWeights.filter(w => w.cat_id === cat.id).sort((a, b) => a.recorded_at.localeCompare(b.recorded_at));
       const latestWeight = cw.length > 0 ? cw[cw.length - 1] : null;
       const weightKg = latestWeight?.weight_kg ?? 0;
 
-      lines.push(`\n${cat.name} — ${cat.breed}, DOB: ${cat.date_of_birth || "unknown"}, Gender: ${cat.gender || "unknown"}${latestWeight ? `, Current weight: ${weightKg}kg (as of ${latestWeight.recorded_at})` : ""}`);
+      // Calculate age in months
+      let ageMonths = "";
+      if (cat.date_of_birth) {
+        const dob = new Date(cat.date_of_birth);
+        const now = new Date();
+        const months = (now.getFullYear() - dob.getFullYear()) * 12 + (now.getMonth() - dob.getMonth());
+        ageMonths = `${months} months old`;
+      }
+
+      lines.push(`\n${cat.name} — ${cat.breed}, ${ageMonths || `DOB: ${cat.date_of_birth || "unknown"}`}, Gender: ${cat.gender || "unknown"}${latestWeight ? `, Current weight: ${weightKg}kg (as of ${latestWeight.recorded_at})` : ""}`);
 
       const catFood = recentFood.filter(f => f.cat_id === cat.id);
       if (catFood.length > 0) {
-        // Group by day
-        const dailyMeals: Record<string, string[]> = {};
-        const dailyNotes: string[] = [];
+        // Group by day with gram totals
+        const dailyData: Record<string, { meals: string[]; totalGrams: number; wetGrams: number; dryGrams: number; notes: string[] }> = {};
         catFood.forEach(f => {
-          if (!dailyMeals[f.date]) dailyMeals[f.date] = [];
-          dailyMeals[f.date].push(`${f.food_name} (${f.food_type}, ${f.meal_time})`);
-          if (f.notes) dailyNotes.push(`${f.date}: ${f.notes}`);
+          if (!dailyData[f.date]) dailyData[f.date] = { meals: [], totalGrams: 0, wetGrams: 0, dryGrams: 0, notes: [] };
+          const d = dailyData[f.date];
+          const grams = f.amount_grams ?? 0;
+          d.meals.push(`${f.food_name} (${f.food_type}, ${f.meal_time}${grams ? `, ${grams}g` : ""})`);
+          d.totalGrams += grams;
+          if (f.food_type.toLowerCase().includes("wet")) d.wetGrams += grams;
+          if (f.food_type.toLowerCase().includes("dry")) d.dryGrams += grams;
+          if (f.notes) d.notes.push(f.notes);
         });
-        const sortedDays = Object.entries(dailyMeals).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 7);
+        const sortedDays = Object.entries(dailyData).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 7);
 
-        // Simple verdict based on meal count and variety
-        const avgMeals = Math.round(sortedDays.reduce((s, [, m]) => s + m.length, 0) / sortedDays.length * 10) / 10;
-        const hasWet = catFood.some(f => f.food_type.toLowerCase().includes("wet"));
-        const hasDry = catFood.some(f => f.food_type.toLowerCase().includes("dry"));
-        const mixType = hasWet && hasDry ? "mixed (wet + dry)" : hasWet ? "wet only" : hasDry ? "dry only" : "unknown";
-
-        lines.push(`Eating pattern: ~${avgMeals} meals/day, diet is ${mixType}`);
-        lines.push(`Recent meals:`);
-        sortedDays.forEach(([date, meals]) => {
-          lines.push(`- ${date}: ${meals.join(", ")}`);
+        lines.push(`Daily intake (last ${sortedDays.length} days):`);
+        sortedDays.forEach(([date, d]) => {
+          const breakdown = [d.wetGrams > 0 ? `${d.wetGrams}g wet` : "", d.dryGrams > 0 ? `${d.dryGrams}g dry` : ""].filter(Boolean).join(" + ");
+          lines.push(`- ${date}: ${d.totalGrams}g total${breakdown ? ` (${breakdown})` : ""} — ${d.meals.length} meals`);
+          if (d.notes.length > 0) lines.push(`  Notes: ${d.notes.join("; ")}`);
         });
-        if (dailyNotes.length > 0) {
-          lines.push(`Owner notes: ${dailyNotes.join("; ")}`);
-        }
       }
     });
     return lines.join("\n");
@@ -239,15 +245,21 @@ export default function FoodPage() {
         title="Nutrition Summary"
         loadingText="Analyzing feeding patterns..."
         context={foodContext}
-        prompt={`You are a friendly vet nutritionist for Golden British Shorthair Munchkin kittens. Give 2-3 simple observations as a dash-separated list.
+        prompt={`You are an experienced feline nutritionist specializing in British Shorthair kittens. Give 2-3 concise observations as a dash-separated list.
 
-Keep it simple and conversational — no grams, no calories, no numbers. Just tell the owner:
-- Are the cats eating regularly and consistently? (look at meal frequency and any gaps)
-- Is the wet/dry mix good? (a mix of both is ideal for hydration and dental health)
-- Any concerns from the owner's notes? (picky eating, vomiting, appetite changes — flag these)
-- Any positive patterns to call out? (e.g., consistent routine, good variety)
+IMPORTANT GUIDELINES FOR GRAM RECOMMENDATIONS:
+- BSH kittens need roughly 40-65g of food per kg of body weight per day
+- BUT wet food is ~80% water while dry food is ~10% water, so you cannot compare them equally
+- A kitten eating mostly wet food will naturally eat MORE grams (because of water content) — this is normal and healthy, NOT overfeeding
+- Rough guide: ~20-30g dry food per kg/day OR ~60-80g wet food per kg/day, or a proportional mix
+- Only flag intake as concerning if it's significantly outside these ranges for their weight
 
-Do NOT mention grams, calories, kcal, or overfeeding/underfeeding calculations. Think of it as a quick chat with the owner about how feeding is going.
+Your observations should cover:
+- Is their daily gram intake appropriate for their age and weight? (use the ranges above, accounting for their wet/dry ratio)
+- Is the wet/dry balance good? (a mix is ideal for hydration + dental health)
+- Any concerns from owner notes? (appetite changes, vomiting, picky eating)
+
+Be specific — mention their actual intake numbers and whether it looks right. Do NOT mention calories or kcal. Keep it practical and reassuring unless there's a genuine concern.
 
 Plain text only, no markdown. No intro.`}
       />
