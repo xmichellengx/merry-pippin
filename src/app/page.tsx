@@ -555,24 +555,32 @@ export default function Dashboard() {
       <AiChatCard context={aiContext} />
 
       {/* Footer — rotating Merry & Pippin quotes */}
-      <div className="text-center py-5 opacity-40">
-        <div className="lotr-divider-ornate mx-6 mb-3"><span className="text-elvish-gold text-[10px] px-2">&loz;</span></div>
-        <p className="text-[10px] text-muted italic tracking-wide leading-relaxed px-8">
-          &ldquo;{[
-            "What about second breakfast?",
-            "We've had one, yes. But what about second breakfast?",
-            "I don't think he knows about second breakfast, Pip.",
-            "Anyway, you need people of intelligence on this sort of mission... quest... thing.",
-            "That doesn't make sense to me. But then again, you are very small.",
-            "The closer we are to danger, the farther we are from harm.",
-            "It comes in pints? I'm getting one!",
-            "Where are we going?",
-            "You smoke too much, Pip.",
-            "I feel like I'm back at the Green Dragon after a hard day's work.",
-          ][Math.floor(Date.now() / 86400000) % 10]}&rdquo;
-        </p>
-        <p className="text-[9px] text-muted mt-1 tracking-wider opacity-70">— Merry &amp; Pippin</p>
-      </div>
+      {(() => {
+        const quotes = [
+          { text: "What about second breakfast?", by: "Pippin" },
+          { text: "We've had one, yes. But what about second breakfast?", by: "Pippin" },
+          { text: "I don't think he knows about second breakfast, Pip.", by: "Merry" },
+          { text: "Anyway, you need people of intelligence on this sort of mission... quest... thing.", by: "Pippin" },
+          { text: "Short cuts make long delays.", by: "Pippin" },
+          { text: "The closer we are to danger, the farther we are from harm.", by: "Pippin" },
+          { text: "It comes in pints? I'm getting one!", by: "Pippin" },
+          { text: "That doesn't make sense to me. But then again, you are very small.", by: "Merry" },
+          { text: "I feel like I'm back at the Green Dragon after a hard day's work.", by: "Pippin" },
+          { text: "We are sitting on a field of victory, enjoying a few well-earned comforts.", by: "Pippin" },
+          { text: "You can trust us to stick to you through thick and thin.", by: "Merry" },
+          { text: "For the Shire!", by: "Merry & Pippin" },
+        ];
+        const q = quotes[Math.floor(Date.now() / 86400000) % quotes.length];
+        return (
+          <div className="text-center py-5 opacity-40">
+            <div className="lotr-divider-ornate mx-6 mb-3"><span className="text-elvish-gold text-[10px] px-2">&loz;</span></div>
+            <p className="text-[10px] text-muted italic tracking-wide leading-relaxed px-8">
+              &ldquo;{q.text}&rdquo;
+            </p>
+            <p className="text-[9px] text-muted mt-1 tracking-wider opacity-70">— {q.by}</p>
+          </div>
+        );
+      })()}
     </div>
   );
 }
