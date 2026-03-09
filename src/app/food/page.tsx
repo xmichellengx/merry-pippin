@@ -185,21 +185,34 @@ export default function FoodPage() {
     cats.forEach(cat => {
       const cw = catWeights.filter(w => w.cat_id === cat.id).sort((a, b) => a.recorded_at.localeCompare(b.recorded_at));
       const latestWeight = cw.length > 0 ? cw[cw.length - 1] : null;
-      lines.push(`\n${cat.name} — ${cat.breed}, DOB: ${cat.date_of_birth || "unknown"}, Gender: ${cat.gender || "unknown"}${latestWeight ? `, Current weight: ${latestWeight.weight_kg}kg (${latestWeight.recorded_at})` : ""}`);
+      const weightKg = latestWeight?.weight_kg ?? 0;
+
+      lines.push(`\n${cat.name} — ${cat.breed}, DOB: ${cat.date_of_birth || "unknown"}, Gender: ${cat.gender || "unknown"}${latestWeight ? `, Current weight: ${weightKg}kg (as of ${latestWeight.recorded_at})` : ""}`);
+
+      // Pre-calculate recommended intake so AI doesn't guess
+      if (weightKg > 0) {
+        const recDry = Math.round(weightKg * 25); // ~25g/kg/day for dry
+        const recWet = Math.round(weightKg * 50); // ~50g/kg/day for wet
+        lines.push(`Recommended daily intake at ${weightKg}kg: ~${recDry}g dry food OR ~${recWet}g wet food (or proportional mix)`);
+      }
 
       const catFood = recentFood.filter(f => f.cat_id === cat.id);
       if (catFood.length > 0) {
-        // Daily totals
-        const dailyTotals: Record<string, { grams: number; meals: string[] }> = {};
+        const dailyTotals: Record<string, { grams: number; dryG: number; wetG: number; meals: string[] }> = {};
         catFood.forEach(f => {
-          if (!dailyTotals[f.date]) dailyTotals[f.date] = { grams: 0, meals: [] };
-          dailyTotals[f.date].grams += f.amount_grams || 0;
-          dailyTotals[f.date].meals.push(`${f.food_name} (${f.food_type}, ${f.amount_grams || "?"}g, ${f.meal_time})${f.notes ? ` [${f.notes}]` : ""}`);
+          if (!dailyTotals[f.date]) dailyTotals[f.date] = { grams: 0, dryG: 0, wetG: 0, meals: [] };
+          const g = f.amount_grams || 0;
+          dailyTotals[f.date].grams += g;
+          if (f.food_type.includes("dry")) dailyTotals[f.date].dryG += g;
+          if (f.food_type.includes("wet")) dailyTotals[f.date].wetG += g;
+          dailyTotals[f.date].meals.push(`${f.food_name} (${f.food_type}, ${g || "?"}g, ${f.meal_time})${f.notes ? ` [note: ${f.notes}]` : ""}`);
         });
         const sortedDays = Object.entries(dailyTotals).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 7);
-        lines.push(`Recent daily intake:`);
-        sortedDays.forEach(([date, { grams, meals }]) => {
-          lines.push(`- ${date}: ${grams}g total — ${meals.join(", ")}`);
+        const avgGrams = Math.round(sortedDays.reduce((s, [, d]) => s + d.grams, 0) / sortedDays.length);
+        lines.push(`Average daily intake (last ${sortedDays.length} days): ${avgGrams}g`);
+        lines.push(`Daily breakdown:`);
+        sortedDays.forEach(([date, { grams, dryG, wetG, meals }]) => {
+          lines.push(`- ${date}: ${grams}g total (${dryG}g dry, ${wetG}g wet) — ${meals.join(", ")}`);
         });
       }
     });
@@ -227,13 +240,14 @@ export default function FoodPage() {
         context={foodContext}
         prompt={`You are a vet nutritionist for Golden British Shorthair Munchkin kittens. Analyze their feeding data and give 2-3 insights as a dash-separated list.
 
-Think practically:
-- Calculate recommended daily intake based on each cat's current weight and age (BSH kittens typically need 40-60g/kg/day of wet food equivalent, or ~20-30g/kg/day of dry food).
-- Compare their actual average daily intake over the last few days against the recommendation. Flag if consistently over/under by more than 15%.
-- Look at the wet vs dry food ratio — a mix is ideal, note if it's too skewed.
-- Pay attention to any notes the owner logged (e.g., "didn't eat much", "vomited") — these are important signals.
-- If intake looks healthy and balanced, say so briefly. Don't invent problems.
-- Be specific with numbers (actual vs recommended grams).
+IMPORTANT — the data already includes pre-calculated recommended daily intake and average actual intake. USE THOSE EXACT NUMBERS. Do NOT recalculate or guess different numbers.
+
+Rules:
+- Compare the provided average daily intake against the provided recommended intake. State both numbers. Flag if off by more than 15%.
+- Note the wet vs dry ratio from the daily breakdown. A mix is good; flag if 100% one type.
+- Read any notes carefully (e.g., "didn't eat much", "vomited", "picky") — mention these as they're important health signals.
+- If intake is within range and balanced, confirm briefly with the actual numbers.
+- Be specific. Use the numbers from the data, don't make up different ones.
 
 Plain text only, no markdown. Jump straight into insights, no intro.`}
       />

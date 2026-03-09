@@ -808,7 +808,7 @@ export default function HealthPage() {
   };
 
   const healthContext = useMemo(() => {
-    if (cats.length === 0 || records.length === 0) return "";
+    if (cats.length === 0 || (records.length === 0 && litterLogs.length === 0)) return "";
     const lines: string[] = [`Today: ${format(new Date(), "yyyy-MM-dd")}`];
     cats.forEach(cat => {
       const catRecords = records.filter(r => r.cat_id === cat.id);
@@ -824,8 +824,18 @@ export default function HealthPage() {
         });
       }
     });
+
+    // Include litter box analysis data (shared box, not per-cat)
+    const analyzedLogs = litterLogs.filter(l => l.ai_analysis);
+    if (analyzedLogs.length > 0) {
+      lines.push(`\nLitter Box Analysis (shared box, last ${Math.min(analyzedLogs.length, 5)} entries):`);
+      analyzedLogs.slice(0, 5).forEach(l => {
+        lines.push(`- ${l.date}${l.time ? ` ${l.time}` : ""}: ${l.ai_analysis}${l.notes ? ` [owner note: ${l.notes}]` : ""}`);
+      });
+    }
+
     return lines.join("\n");
-  }, [cats, records]);
+  }, [cats, records, litterLogs]);
 
   const filtered = records
     .filter(r => selectedCat === "all" || r.cat_id === selectedCat)
@@ -919,15 +929,15 @@ export default function HealthPage() {
         title="Health Overview"
         loadingText="Reviewing health records..."
         context={healthContext}
-        prompt={`You are a vet advisor for Golden British Shorthair Munchkin kittens. Analyze their health records and give 2-3 insights as a dash-separated list.
+        prompt={`You are a vet advisor for Golden British Shorthair Munchkin kittens (Merry & Pippin, sharing one litter box). Analyze their health records AND litter box analysis data, and give 2-4 insights as a dash-separated list.
 
 Focus on what the owner needs to know RIGHT NOW:
 - Flag any vaccines or deworm treatments that are overdue or due within the next 2 weeks, with the exact date.
 - If they're up to date on everything, confirm that and mention when the next thing is due.
-- Note if any record type seems missing (e.g., no deworm record at all, or no vet visit in a long time for kittens).
-- If there are any notes in the records that suggest ongoing issues, flag them.
-- Don't list every record back — the owner can see those. Give a high-level health status.
-- Be specific with dates. No vague advice.
+- If litter box analysis data is present, summarize any patterns or concerns (e.g., consistency changes, hydration, anything flagged across multiple entries). Don't just repeat the analysis — synthesize it.
+- Note if any record type seems missing (e.g., no deworm record, or no vet visit in a long time).
+- Don't list every record back — give a high-level health status.
+- Be specific with dates and observations. No vague advice.
 
 Plain text only, no markdown. Jump straight into insights, no intro.`}
       />
