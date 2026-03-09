@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { X, Loader2 } from "lucide-react";
 import { useAdmin } from "./AdminContext";
@@ -9,17 +10,15 @@ import { useAdmin } from "./AdminContext";
 // ── Cute custom nav icons ──
 
 function IconHome({ size = 24, active = false }: { size?: number; active?: boolean }) {
-  const fill = active ? "#B08D3A" : "currentColor";
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      {/* Paw toes */}
-      <ellipse cx="8.5" cy="7" rx="2.2" ry="2.8" fill={fill} opacity={active ? 0.9 : 0.45} transform="rotate(-15 8.5 7)" />
-      <ellipse cx="15.5" cy="7" rx="2.2" ry="2.8" fill={fill} opacity={active ? 0.9 : 0.45} transform="rotate(15 15.5 7)" />
-      <ellipse cx="5.5" cy="11.5" rx="1.8" ry="2.5" fill={fill} opacity={active ? 0.9 : 0.45} transform="rotate(-25 5.5 11.5)" />
-      <ellipse cx="18.5" cy="11.5" rx="1.8" ry="2.5" fill={fill} opacity={active ? 0.9 : 0.45} transform="rotate(25 18.5 11.5)" />
-      {/* Paw pad */}
-      <ellipse cx="12" cy="16" rx="4.5" ry="4" fill={fill} opacity={active ? 1 : 0.5} />
-    </svg>
+    <Image
+      src="/hobbit-door.png"
+      alt="Home"
+      width={size}
+      height={size}
+      className={active ? "" : "opacity-50 grayscale"}
+      style={{ objectFit: "contain" }}
+    />
   );
 }
 
