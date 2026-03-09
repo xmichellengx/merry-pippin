@@ -16,7 +16,7 @@ function getTaskStatus(logs: GroomingLog[], catId: string, taskType: string, fre
   if (!lastLog) return { status: "overdue" as const, daysAgo: null, lastDate: null };
   const daysAgo = differenceInDays(new Date(), new Date(lastLog.completed_at));
   if (daysAgo >= frequencyDays) return { status: "overdue" as const, daysAgo, lastDate: lastLog.completed_at };
-  if (daysAgo >= frequencyDays - 1) return { status: "due" as const, daysAgo, lastDate: lastLog.completed_at };
+  if (daysAgo >= frequencyDays - 1 && daysAgo > 0) return { status: "due" as const, daysAgo, lastDate: lastLog.completed_at };
   return { status: "done" as const, daysAgo, lastDate: lastLog.completed_at };
 }
 
@@ -345,7 +345,7 @@ export default function GroomingPage() {
         /* History view */
         logs.length === 0 ? (
           <div className="card p-8 text-center">
-            <Image src="/cat-face-icon.png" alt="cat" width={110} height={110} className="mx-auto mb-2 opacity-60" />
+            <Image src="/cat-face-icon.webp" alt="cat" width={110} height={110} className="mx-auto mb-2 opacity-60" />
             <p className="text-sm text-muted">Even hobbits need grooming, precious.</p>
           </div>
         ) : (

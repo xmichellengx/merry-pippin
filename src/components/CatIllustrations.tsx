@@ -25,37 +25,37 @@ function CatImage({
 }
 
 export function CatSitting({ size = 120, className = "" }: { size?: number; className?: string }) {
-  return <CatImage src="/cat-sitting.png" alt="Cat sitting" size={size} className={className} />;
+  return <CatImage src="/cat-sitting.webp" alt="Cat sitting" size={size} className={className} />;
 }
 
 export function CatSleeping({ size = 120, className = "" }: { size?: number; className?: string }) {
-  return <CatImage src="/cat-sleeping.png" alt="Cat sleeping" size={size} className={className} />;
+  return <CatImage src="/cat-sleeping.webp" alt="Cat sleeping" size={size} className={className} />;
 }
 
 export function CatWaving({ size = 120, className = "" }: { size?: number; className?: string }) {
-  return <CatImage src="/cat-waving.png" alt="Cat waving" size={size} className={className} />;
+  return <CatImage src="/cat-waving.webp" alt="Cat waving" size={size} className={className} />;
 }
 
 export function CatEating({ size = 100, className = "" }: { size?: number; className?: string }) {
-  return <CatImage src="/cat-eating.png" alt="Cat eating" size={size} className={className} />;
+  return <CatImage src="/cat-eating.webp" alt="Cat eating" size={size} className={className} />;
 }
 
 export function CatWithHeart({ size = 80, className = "" }: { size?: number; className?: string }) {
-  return <CatImage src="/cat-with-heart.png" alt="Cat with heart" size={size} className={className} />;
+  return <CatImage src="/cat-with-heart.webp" alt="Cat with heart" size={size} className={className} />;
 }
 
 export function TwoCatsSitting({ size = 200, className = "" }: { size?: number; className?: string }) {
-  return <CatImage src="/two-cats-sitting.png" alt="Two cats sitting together" size={size} className={className} />;
+  return <CatImage src="/two-cats-sitting.webp" alt="Two cats sitting together" size={size} className={className} />;
 }
 
 export function CatOnScale({ size = 100, className = "" }: { size?: number; className?: string }) {
-  return <CatImage src="/cat-on-scale.png" alt="Cat on scale" size={size} className={className} />;
+  return <CatImage src="/cat-on-scale.webp" alt="Cat on scale" size={size} className={className} />;
 }
 
 export function CatWithCamera({ size = 100, className = "" }: { size?: number; className?: string }) {
-  return <CatImage src="/cat-with-camera.png" alt="Cat with camera" size={size} className={className} />;
+  return <CatImage src="/cat-with-camera.webp" alt="Cat with camera" size={size} className={className} />;
 }
 
 export function TwoCatsSilhouette({ size = 140, className = "" }: { size?: number; className?: string }) {
-  return <CatImage src="/two-cats-silhouette.png" alt="Two cats silhouette" size={size} className={className} />;
+  return <CatImage src="/two-cats-silhouette.webp" alt="Two cats silhouette" size={size} className={className} />;
 }

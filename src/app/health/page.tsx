@@ -1091,7 +1091,7 @@ Plain text only, no markdown. Jump straight into insights, no intro.`}
 
       {filtered.length === 0 ? (
         <div className="card p-8 text-center">
-          <NextImage src="/cat-face-icon.png" alt="No records" width={110} height={110} className="mx-auto mb-2 opacity-40" />
+          <NextImage src="/cat-face-icon.webp" alt="No records" width={110} height={110} className="mx-auto mb-2 opacity-40" />
           <p className="text-muted text-sm">{loadError ? "Failed to load records." : "No records found."}</p>
           {loadError && (
             <button onClick={() => { setLoading(true); loadData(); }} className="mt-3 px-4 py-2 rounded-xl golden-gradient text-white text-sm font-medium shadow-md">

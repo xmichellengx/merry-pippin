@@ -12,7 +12,7 @@ import { useAdmin } from "./AdminContext";
 function IconHome({ size = 24 }: { size?: number; active?: boolean }) {
   return (
     <Image
-      src="/home-logo.png"
+      src="/home-logo.webp"
       alt="Home"
       width={size}
       height={size}
