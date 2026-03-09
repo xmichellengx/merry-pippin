@@ -382,7 +382,7 @@ export default function Dashboard() {
             <h1 className="text-xl font-bold">Merry & Pippin</h1>
             <Image src="/cat-face-icon.png" alt="cat" width={75} height={75} priority />
           </div>
-          <p className="text-white/80 text-sm">A Fellowship of Fluff</p>
+          <p className="text-white/80 text-sm">The Fellowship of Fluff</p>
           <p className="text-white/60 text-xs mt-1">{format(new Date(), "EEEE, MMMM d, yyyy")}</p>
         </div>
         <div className="absolute -right-2 -bottom-4 opacity-25">
