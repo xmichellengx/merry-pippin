@@ -48,7 +48,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${quicksand.variable} antialiased text-foreground`} style={{ fontFamily: "var(--font-quicksand), sans-serif" }}>
         <AdminProvider>
-          <main className="max-w-lg mx-auto bg-background" style={{ paddingBottom: "calc(3.5rem + env(safe-area-inset-bottom, 0px))", minHeight: "100dvh" }}>
+          <main className="max-w-lg mx-auto bg-background" style={{ paddingBottom: "calc(4.5rem + env(safe-area-inset-bottom, 0px))", minHeight: "100dvh" }}>
             {children}
           </main>
           <BottomNav />
