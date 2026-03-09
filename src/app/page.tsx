@@ -462,17 +462,25 @@ export default function Dashboard() {
 
       {/* Grooming Status */}
       {(() => {
-        const dueItems: { cat: Cat; task: GroomingTask; daysLate: number }[] = [];
+        // Group due items by task, consolidating cat names
+        const taskDueMap = new Map<string, { task: GroomingTask; catNames: string[]; worstLate: number }>();
         cats.forEach(cat => {
           groomingTasks.forEach(task => {
             const lastLog = groomingLogs.find(l => l.cat_id === cat.id && l.task_type === task.type);
             const daysAgo = lastLog ? differenceInDays(new Date(), new Date(lastLog.completed_at)) : 999;
             if (daysAgo >= task.frequency_days) {
-              dueItems.push({ cat, task, daysLate: daysAgo === 999 ? -1 : daysAgo - task.frequency_days });
+              const daysLate = daysAgo === 999 ? -1 : daysAgo - task.frequency_days;
+              const existing = taskDueMap.get(task.type);
+              if (existing) {
+                existing.catNames.push(cat.name);
+                existing.worstLate = Math.max(existing.worstLate, daysLate);
+              } else {
+                taskDueMap.set(task.type, { task, catNames: [cat.name], worstLate: daysLate });
+              }
             }
           });
         });
-        dueItems.sort((a, b) => b.daysLate - a.daysLate);
+        const grouped = [...taskDueMap.values()].sort((a, b) => b.worstLate - a.worstLate);
 
         return (
           <div className="card p-4">
@@ -485,24 +493,24 @@ export default function Dashboard() {
                 View all <ChevronRight size={12} />
               </Link>
             </div>
-            {dueItems.length === 0 ? (
+            {grouped.length === 0 ? (
               <div className="flex items-center gap-2 py-1">
                 <div className="w-2 h-2 rounded-full bg-success" />
                 <p className="text-xs text-muted">All groomed up! The hobbits are looking fine.</p>
               </div>
             ) : (
               <div className="space-y-2">
-                {dueItems.slice(0, 4).map((item, i) => (
-                  <div key={i} className="flex items-center justify-between py-1.5 border-b border-card-border last:border-0">
+                {grouped.map(({ task, catNames, worstLate }) => (
+                  <div key={task.type} className="flex items-center justify-between py-1.5 border-b border-card-border last:border-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm">{item.task.icon}</span>
+                      <span className="text-sm">{task.icon}</span>
                       <div>
-                        <p className="text-xs font-medium">{item.task.label}</p>
-                        <p className="text-[10px] text-muted">{item.cat.name}</p>
+                        <p className="text-xs font-medium">{task.label}</p>
+                        <p className="text-[10px] text-muted">{catNames.join(" & ")}</p>
                       </div>
                     </div>
-                    <span className={`badge ${item.daysLate > 0 ? "badge-danger" : "badge-warning"}`}>
-                      {item.daysLate < 0 ? "Never done" : item.daysLate === 0 ? "Due today" : `${item.daysLate}d late`}
+                    <span className={`badge ${worstLate > 0 ? "badge-danger" : "badge-warning"}`}>
+                      {worstLate < 0 ? "Never done" : worstLate === 0 ? "Due today" : `${worstLate}d late`}
                     </span>
                   </div>
                 ))}
