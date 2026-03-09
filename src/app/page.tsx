@@ -459,6 +459,61 @@ export default function Dashboard() {
       {/* Ornate divider */}
       <div className="lotr-divider-ornate mx-6"><span className="text-elvish-gold opacity-40 text-xs px-2">&loz;</span></div>
 
+      {/* Grooming Status */}
+      {(() => {
+        const dueItems: { cat: Cat; task: GroomingTask; daysLate: number }[] = [];
+        cats.forEach(cat => {
+          groomingTasks.forEach(task => {
+            const lastLog = groomingLogs.find(l => l.cat_id === cat.id && l.task_type === task.type);
+            const daysAgo = lastLog ? differenceInDays(new Date(), new Date(lastLog.completed_at)) : 999;
+            if (daysAgo >= task.frequency_days) {
+              dueItems.push({ cat, task, daysLate: daysAgo === 999 ? -1 : daysAgo - task.frequency_days });
+            }
+          });
+        });
+        dueItems.sort((a, b) => b.daysLate - a.daysLate);
+
+        return (
+          <div className="card p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Sparkles size={16} className="text-golden-600" />
+                <h2 className="font-semibold text-sm">Grooming</h2>
+              </div>
+              <Link href="/grooming" className="text-golden-600 text-xs font-medium flex items-center gap-0.5">
+                View all <ChevronRight size={12} />
+              </Link>
+            </div>
+            {dueItems.length === 0 ? (
+              <div className="flex items-center gap-2 py-1">
+                <div className="w-2 h-2 rounded-full bg-success" />
+                <p className="text-xs text-muted">All groomed up! The hobbits are looking fine.</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {dueItems.slice(0, 4).map((item, i) => (
+                  <div key={i} className="flex items-center justify-between py-1.5 border-b border-card-border last:border-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">{item.task.icon}</span>
+                      <div>
+                        <p className="text-xs font-medium">{item.task.label}</p>
+                        <p className="text-[10px] text-muted">{item.cat.name}</p>
+                      </div>
+                    </div>
+                    <span className={`badge ${item.daysLate > 0 ? "badge-danger" : "badge-warning"}`}>
+                      {item.daysLate < 0 ? "Never done" : item.daysLate === 0 ? "Due today" : `${item.daysLate}d late`}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* Ornate divider */}
+      <div className="lotr-divider-ornate mx-6"><span className="text-elvish-gold opacity-40 text-xs px-2">&loz;</span></div>
+
       {/* Upcoming Events */}
       <div className="card p-4">
         <div className="flex items-center justify-between mb-3">
@@ -550,61 +605,6 @@ export default function Dashboard() {
           </div>
         )}
       </div>
-
-      {/* Ornate divider */}
-      <div className="lotr-divider-ornate mx-6"><span className="text-elvish-gold opacity-40 text-xs px-2">&loz;</span></div>
-
-      {/* Grooming Status */}
-      {(() => {
-        const dueItems: { cat: Cat; task: GroomingTask; daysLate: number }[] = [];
-        cats.forEach(cat => {
-          groomingTasks.forEach(task => {
-            const lastLog = groomingLogs.find(l => l.cat_id === cat.id && l.task_type === task.type);
-            const daysAgo = lastLog ? differenceInDays(new Date(), new Date(lastLog.completed_at)) : 999;
-            if (daysAgo >= task.frequency_days) {
-              dueItems.push({ cat, task, daysLate: daysAgo === 999 ? -1 : daysAgo - task.frequency_days });
-            }
-          });
-        });
-        dueItems.sort((a, b) => b.daysLate - a.daysLate);
-
-        return (
-          <div className="card p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Sparkles size={16} className="text-golden-600" />
-                <h2 className="font-semibold text-sm">Grooming</h2>
-              </div>
-              <Link href="/grooming" className="text-golden-600 text-xs font-medium flex items-center gap-0.5">
-                View all <ChevronRight size={12} />
-              </Link>
-            </div>
-            {dueItems.length === 0 ? (
-              <div className="flex items-center gap-2 py-1">
-                <div className="w-2 h-2 rounded-full bg-success" />
-                <p className="text-xs text-muted">All groomed up! The hobbits are looking fine.</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {dueItems.slice(0, 4).map((item, i) => (
-                  <div key={i} className="flex items-center justify-between py-1.5 border-b border-card-border last:border-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm">{item.task.icon}</span>
-                      <div>
-                        <p className="text-xs font-medium">{item.task.label}</p>
-                        <p className="text-[10px] text-muted">{item.cat.name}</p>
-                      </div>
-                    </div>
-                    <span className={`badge ${item.daysLate > 0 ? "badge-danger" : "badge-warning"}`}>
-                      {item.daysLate < 0 ? "Never done" : item.daysLate === 0 ? "Due today" : `${item.daysLate}d late`}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        );
-      })()}
 
       {/* Ornate divider */}
       <div className="lotr-divider-ornate mx-6"><span className="text-elvish-gold opacity-40 text-xs px-2">&loz;</span></div>
