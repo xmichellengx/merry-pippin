@@ -382,7 +382,7 @@ export default function Dashboard() {
             <h1 className="text-xl font-bold">Merry & Pippin</h1>
             <Image src="/cat-face-icon.png" alt="cat" width={75} height={75} priority />
           </div>
-          <p className="text-white/80 text-sm">Growth Tracker</p>
+          <p className="text-white/80 text-sm">A Fellowship of Fluff</p>
           <p className="text-white/60 text-xs mt-1">{format(new Date(), "EEEE, MMMM d, yyyy")}</p>
         </div>
         <div className="absolute -right-2 -bottom-4 opacity-25">
@@ -468,7 +468,7 @@ export default function Dashboard() {
           {upcoming.length === 0 ? (
             <div className="flex flex-col items-center py-2">
               <TwoCatsSitting size={100} className="opacity-40 mb-1" />
-              <p className="text-xs text-muted">No upcoming events.</p>
+              <p className="text-xs text-muted">All is quiet in the Shire.</p>
             </div>
           ) : upcoming.slice(0, 4).map((rec) => {
             const cat = cats.find(c => c.id === rec.cat_id);
@@ -517,7 +517,7 @@ export default function Dashboard() {
         {todayFood.length === 0 ? (
           <div className="flex flex-col items-center py-2">
             <TwoCatsSitting size={90} className="opacity-30 mb-1" />
-            <p className="text-xs text-muted">No meals logged yet today.</p>
+            <p className="text-xs text-muted">The pantry awaits, little hobbits.</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -544,6 +544,12 @@ export default function Dashboard() {
 
       {/* AI Chat */}
       <AiChatCard context={aiContext} />
+
+      {/* Footer */}
+      <div className="text-center py-4 opacity-30">
+        <div className="lotr-divider mx-8 mb-3" />
+        <p className="text-[10px] text-muted italic tracking-wide">&ldquo;What about second breakfast?&rdquo;</p>
+      </div>
     </div>
   );
 }

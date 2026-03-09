@@ -216,7 +216,7 @@ export default function BottomNav() {
     <>
       {showPinModal && <PinModal />}
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-card-border"
-        style={{ background: "#FFFFFF", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+        style={{ background: "var(--card-bg)", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
         <div className="max-w-lg mx-auto flex items-center justify-around h-14">
           {tabs.map((tab) => {
             const isActive = pathname === tab.href;

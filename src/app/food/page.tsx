@@ -351,7 +351,7 @@ Plain text only, no markdown. No intro.`}
       {filteredLogs.length === 0 ? (
         <div className="card p-8 text-center">
           <Image src="/cat-face-icon.png" alt="cat" width={110} height={110} className="mx-auto mb-2 opacity-60" />
-          <p className="text-sm text-muted">No meals logged for this day.</p>
+          <p className="text-sm text-muted">No meals logged for this day. The hobbits must be fed!</p>
           {isAdmin && <button onClick={() => setShowAddForm(true)} className="mt-3 px-4 py-2 rounded-xl golden-gradient text-white text-sm font-medium shadow-md">Log First Meal</button>}
         </div>
       ) : (
