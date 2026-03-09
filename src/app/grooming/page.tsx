@@ -270,6 +270,14 @@ export default function GroomingPage() {
               <Plus size={14} /> Add Grooming Task
             </button>
           )}
+
+          {/* Done button */}
+          <button
+            onClick={() => { setShowSettings(false); setEditingTask(null); setShowAddTask(false); loadData(); }}
+            className="w-full py-2.5 rounded-xl golden-gradient text-white text-sm font-semibold shadow-md"
+          >
+            Done
+          </button>
         </div>
       ) : !showHistory ? (
         /* Task checklist view */
