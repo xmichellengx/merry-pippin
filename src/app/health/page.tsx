@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
   Syringe,
   Bug,
@@ -19,6 +19,9 @@ import {
   Pencil,
   Camera,
   ImageIcon,
+  ChevronDown,
+  AlertTriangle,
+  Clock,
 } from "lucide-react";
 import Link from "next/link";
 import NextImage from "next/image";
@@ -819,6 +822,68 @@ export default function HealthPage() {
     .filter(r => selectedCat === "all" || r.cat_id === selectedCat)
     .filter(r => filterType === "all" || r.record_type === filterType);
 
+  // Split into "needs attention" (overdue/due soon) and past records grouped by month
+  const { needsAttention, monthGroups } = useMemo(() => {
+    const now = new Date();
+    const attention: HealthRecord[] = [];
+    const past: HealthRecord[] = [];
+
+    for (const r of filtered) {
+      if (r.next_due_date) {
+        const dueIn = differenceInDays(new Date(r.next_due_date), now);
+        if (dueIn <= 30) {
+          attention.push(r);
+          continue;
+        }
+      }
+      past.push(r);
+    }
+
+    // Sort attention: overdue first (most overdue first), then due soonest
+    attention.sort((a, b) => {
+      const aDue = differenceInDays(new Date(a.next_due_date!), now);
+      const bDue = differenceInDays(new Date(b.next_due_date!), now);
+      return aDue - bDue;
+    });
+
+    // Group past records by month
+    const groups: { key: string; label: string; records: HealthRecord[] }[] = [];
+    const groupMap = new Map<string, HealthRecord[]>();
+    for (const r of past) {
+      const d = new Date(r.date);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      if (!groupMap.has(key)) groupMap.set(key, []);
+      groupMap.get(key)!.push(r);
+    }
+    // Sort month keys descending (newest first)
+    const sortedKeys = [...groupMap.keys()].sort((a, b) => b.localeCompare(a));
+    for (const key of sortedKeys) {
+      const [y, m] = key.split("-");
+      const label = format(new Date(parseInt(y), parseInt(m) - 1), "MMMM yyyy");
+      groups.push({ key, label, records: groupMap.get(key)! });
+    }
+
+    return { needsAttention: attention, monthGroups: groups };
+  }, [filtered]);
+
+  const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set());
+
+  // Auto-expand the most recent month when data changes
+  useEffect(() => {
+    if (monthGroups.length > 0) {
+      setExpandedMonths(new Set([monthGroups[0].key]));
+    }
+  }, [monthGroups.length > 0 ? monthGroups[0]?.key : ""]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const toggleMonth = (key: string) => {
+    setExpandedMonths(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
   return (
     <div className="px-4 pt-12 space-y-4">
       <div className="flex items-center justify-between">
@@ -982,26 +1047,88 @@ export default function HealthPage() {
         />
       )}
 
-      <div className="space-y-3">
-        {filtered.length === 0 ? (
-          <div className="card p-8 text-center">
-            <NextImage src="/cat-face-icon.png" alt="No records" width={110} height={110} className="mx-auto mb-2 opacity-40" />
-            <p className="text-muted text-sm">No records found.</p>
-          </div>
-        ) : (
-          filtered.map(record => (
-            <RecordCard
-              key={record.id}
-              record={record}
-              cats={cats}
-              onDelete={handleDelete}
-              onEdit={setEditingRecord}
-              onMarkDone={handleMarkDone}
-              isAdmin={isAdmin}
-            />
-          ))
-        )}
-      </div>
+      {filtered.length === 0 ? (
+        <div className="card p-8 text-center">
+          <NextImage src="/cat-face-icon.png" alt="No records" width={110} height={110} className="mx-auto mb-2 opacity-40" />
+          <p className="text-muted text-sm">No records found.</p>
+        </div>
+      ) : (
+        <div className="space-y-5">
+          {/* Needs Attention Section */}
+          {needsAttention.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-2.5">
+                <div className="w-6 h-6 rounded-lg bg-red-50 flex items-center justify-center">
+                  <AlertTriangle size={13} className="text-red-500" />
+                </div>
+                <h2 className="text-sm font-bold text-red-600">Needs Attention</h2>
+                <span className="ml-auto bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full">{needsAttention.length}</span>
+              </div>
+              <div className="space-y-2">
+                {needsAttention.map(record => (
+                  <RecordCard
+                    key={record.id}
+                    record={record}
+                    cats={cats}
+                    onDelete={handleDelete}
+                    onEdit={setEditingRecord}
+                    onMarkDone={handleMarkDone}
+                    isAdmin={isAdmin}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Past Records Grouped by Month */}
+          {monthGroups.length > 0 && (
+            <div>
+              {needsAttention.length > 0 && (
+                <div className="flex items-center gap-2 mb-2.5">
+                  <div className="w-6 h-6 rounded-lg bg-golden-50 flex items-center justify-center">
+                    <Clock size={13} className="text-golden-600" />
+                  </div>
+                  <h2 className="text-sm font-bold">Past Records</h2>
+                </div>
+              )}
+              <div className="space-y-2">
+                {monthGroups.map(group => {
+                  const isExpanded = expandedMonths.has(group.key);
+                  return (
+                    <div key={group.key}>
+                      <button
+                        onClick={() => toggleMonth(group.key)}
+                        className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-golden-50/70 hover:bg-golden-50 transition-colors"
+                      >
+                        <span className="text-xs font-semibold text-foreground">{group.label}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-muted font-medium">{group.records.length} {group.records.length === 1 ? "record" : "records"}</span>
+                          <ChevronDown size={14} className={`text-muted transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
+                        </div>
+                      </button>
+                      {isExpanded && (
+                        <div className="space-y-2 mt-2">
+                          {group.records.map(record => (
+                            <RecordCard
+                              key={record.id}
+                              record={record}
+                              cats={cats}
+                              onDelete={handleDelete}
+                              onEdit={setEditingRecord}
+                              onMarkDone={handleMarkDone}
+                              isAdmin={isAdmin}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Litter Box Log Section */}
       <div className="mt-6" ref={litterSectionRef}>
