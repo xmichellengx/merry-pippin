@@ -189,30 +189,40 @@ export default function FoodPage() {
 
       lines.push(`\n${cat.name} — ${cat.breed}, DOB: ${cat.date_of_birth || "unknown"}, Gender: ${cat.gender || "unknown"}${latestWeight ? `, Current weight: ${weightKg}kg (as of ${latestWeight.recorded_at})` : ""}`);
 
-      // Pre-calculate recommended intake so AI doesn't guess
-      if (weightKg > 0) {
-        const recDry = Math.round(weightKg * 25); // ~25g/kg/day for dry
-        const recWet = Math.round(weightKg * 50); // ~50g/kg/day for wet
-        lines.push(`Recommended daily intake at ${weightKg}kg: ~${recDry}g dry food OR ~${recWet}g wet food (or proportional mix)`);
-      }
-
       const catFood = recentFood.filter(f => f.cat_id === cat.id);
       if (catFood.length > 0) {
-        const dailyTotals: Record<string, { grams: number; dryG: number; wetG: number; meals: string[] }> = {};
+        const dailyTotals: Record<string, { dryG: number; wetG: number; otherG: number; meals: string[] }> = {};
         catFood.forEach(f => {
-          if (!dailyTotals[f.date]) dailyTotals[f.date] = { grams: 0, dryG: 0, wetG: 0, meals: [] };
+          if (!dailyTotals[f.date]) dailyTotals[f.date] = { dryG: 0, wetG: 0, otherG: 0, meals: [] };
           const g = f.amount_grams || 0;
-          dailyTotals[f.date].grams += g;
-          if (f.food_type.includes("dry")) dailyTotals[f.date].dryG += g;
-          if (f.food_type.includes("wet")) dailyTotals[f.date].wetG += g;
+          const types = f.food_type.toLowerCase();
+          if (types.includes("dry")) dailyTotals[f.date].dryG += g;
+          else if (types.includes("wet")) dailyTotals[f.date].wetG += g;
+          else dailyTotals[f.date].otherG += g;
           dailyTotals[f.date].meals.push(`${f.food_name} (${f.food_type}, ${g || "?"}g, ${f.meal_time})${f.notes ? ` [note: ${f.notes}]` : ""}`);
         });
         const sortedDays = Object.entries(dailyTotals).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 7);
-        const avgGrams = Math.round(sortedDays.reduce((s, [, d]) => s + d.grams, 0) / sortedDays.length);
-        lines.push(`Average daily intake (last ${sortedDays.length} days): ${avgGrams}g`);
+
+        // Calculate calorie-equivalent intake (dry ~3.5kcal/g, wet ~1kcal/g)
+        // Growing BSH kittens need ~50-70 kcal/kg/day
+        const dailyKcals = sortedDays.map(([, d]) => d.dryG * 3.5 + d.wetG * 1.0 + d.otherG * 2.0);
+        const avgKcal = Math.round(dailyKcals.reduce((s, k) => s + k, 0) / dailyKcals.length);
+        const avgDry = Math.round(sortedDays.reduce((s, [, d]) => s + d.dryG, 0) / sortedDays.length);
+        const avgWet = Math.round(sortedDays.reduce((s, [, d]) => s + d.wetG, 0) / sortedDays.length);
+
+        if (weightKg > 0) {
+          const recKcal = Math.round(weightKg * 60); // ~60 kcal/kg/day for growing kittens
+          const recDryOnly = Math.round(recKcal / 3.5);
+          const recWetOnly = Math.round(recKcal / 1.0);
+          lines.push(`Recommended: ~${recKcal} kcal/day (~${recDryOnly}g if all dry, ~${recWetOnly}g if all wet)`);
+          lines.push(`Actual average: ~${avgKcal} kcal/day (${avgDry}g dry + ${avgWet}g wet per day) — ${avgKcal > recKcal * 1.15 ? "OVER by " + Math.round((avgKcal / recKcal - 1) * 100) + "%" : avgKcal < recKcal * 0.85 ? "UNDER by " + Math.round((1 - avgKcal / recKcal) * 100) + "%" : "WITHIN healthy range"}`);
+        }
+
         lines.push(`Daily breakdown:`);
-        sortedDays.forEach(([date, { grams, dryG, wetG, meals }]) => {
-          lines.push(`- ${date}: ${grams}g total (${dryG}g dry, ${wetG}g wet) — ${meals.join(", ")}`);
+        sortedDays.forEach(([date, { dryG, wetG, otherG, meals }]) => {
+          const totalG = dryG + wetG + otherG;
+          const kcal = Math.round(dryG * 3.5 + wetG * 1.0 + otherG * 2.0);
+          lines.push(`- ${date}: ${totalG}g (${dryG}g dry, ${wetG}g wet) = ~${kcal}kcal — ${meals.join(", ")}`);
         });
       }
     });
@@ -240,14 +250,15 @@ export default function FoodPage() {
         context={foodContext}
         prompt={`You are a vet nutritionist for Golden British Shorthair Munchkin kittens. Analyze their feeding data and give 2-3 insights as a dash-separated list.
 
-IMPORTANT — the data already includes pre-calculated recommended daily intake and average actual intake. USE THOSE EXACT NUMBERS. Do NOT recalculate or guess different numbers.
+CRITICAL: The data includes pre-calculated calorie (kcal) comparisons. Wet food is ~1 kcal/g, dry food is ~3.5 kcal/g — so 100g wet ≠ 100g dry. Do NOT compare raw gram totals. Always use the kcal figures provided.
+
+The data already states whether intake is WITHIN range, OVER, or UNDER. Trust that assessment. Do NOT recalculate or contradict it.
 
 Rules:
-- Compare the provided average daily intake against the provided recommended intake. State both numbers. Flag if off by more than 15%.
-- Note the wet vs dry ratio from the daily breakdown. A mix is good; flag if 100% one type.
-- Read any notes carefully (e.g., "didn't eat much", "vomited", "picky") — mention these as they're important health signals.
-- If intake is within range and balanced, confirm briefly with the actual numbers.
-- Be specific. Use the numbers from the data, don't make up different ones.
+- Quote the actual vs recommended kcal numbers from the data. If it says "WITHIN healthy range", confirm that — do not say they are overfeeding.
+- Note the wet vs dry balance. A mix is ideal.
+- Read any notes carefully (e.g., "didn't eat much", "vomited") — mention as important signals.
+- If everything looks good, say so. Don't invent problems.
 
 Plain text only, no markdown. Jump straight into insights, no intro.`}
       />
