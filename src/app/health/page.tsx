@@ -21,6 +21,7 @@ import {
   ImageIcon,
 } from "lucide-react";
 import Link from "next/link";
+import NextImage from "next/image";
 import { format, differenceInDays } from "date-fns";
 import { getCats, getHealthRecords, addHealthRecords, updateHealthRecord, deleteHealthRecord, getLitterBoxLogs, addLitterBoxLog, updateLitterBoxLog, deleteLitterBoxLog } from "@/lib/data";
 import { supabase } from "@/lib/supabase";
@@ -984,8 +985,7 @@ export default function HealthPage() {
       <div className="space-y-3">
         {filtered.length === 0 ? (
           <div className="card p-8 text-center">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/cat-face-icon.png" alt="No records" width={110} height={110} className="mx-auto mb-2 opacity-40" />
+            <NextImage src="/cat-face-icon.png" alt="No records" width={110} height={110} className="mx-auto mb-2 opacity-40" />
             <p className="text-muted text-sm">No records found.</p>
           </div>
         ) : (

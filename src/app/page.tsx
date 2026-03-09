@@ -18,6 +18,7 @@ import {
   Menu,
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { format, differenceInDays, differenceInMonths } from "date-fns";
 import { getCats, getWeightRecords, getHealthRecords, getFoodLogs, updateCat } from "@/lib/data";
 import { supabase } from "@/lib/supabase";
@@ -377,8 +378,8 @@ export default function Dashboard() {
 
   const loadData = () => {
     const todayStr = format(new Date(), "yyyy-MM-dd");
-    Promise.all([getCats(), getWeightRecords(), getHealthRecords(), getFoodLogs(todayStr), getFoodLogs()])
-      .then(([c, w, h, f, allFood]) => { setCats(c); setWeights(w); setHealth(h); setTodayFood(f); setRecentFood(allFood.slice(-50)); })
+    Promise.all([getCats(), getWeightRecords(), getHealthRecords(), getFoodLogs(todayStr), getFoodLogs(undefined, undefined, 50)])
+      .then(([c, w, h, f, allFood]) => { setCats(c); setWeights(w); setHealth(h); setTodayFood(f); setRecentFood(allFood); })
       .finally(() => setLoading(false));
   };
 
@@ -464,7 +465,7 @@ export default function Dashboard() {
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-1">
             <h1 className="text-xl font-bold">Merry & Pippin</h1>
-            <img src="/cat-face-icon.png" alt="cat" width={75} height={75} />
+            <Image src="/cat-face-icon.png" alt="cat" width={75} height={75} priority />
           </div>
           <p className="text-white/80 text-sm">Growth Tracker</p>
           <p className="text-white/60 text-xs mt-1">{format(new Date(), "EEEE, MMMM d, yyyy")}</p>

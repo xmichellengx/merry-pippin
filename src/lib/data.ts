@@ -91,10 +91,11 @@ export async function deleteHealthRecord(id: string) {
 
 // ── Food Logs ──
 
-export async function getFoodLogs(date?: string, catId?: string): Promise<FoodLog[]> {
+export async function getFoodLogs(date?: string, catId?: string, limit?: number): Promise<FoodLog[]> {
   let query = supabase.from('food_logs').select('*').order('created_at', { ascending: true })
   if (date) query = query.eq('date', date)
   if (catId) query = query.eq('cat_id', catId)
+  if (limit) query = query.limit(limit)
   const { data, error } = await query
   if (error) { console.error('getFoodLogs:', error.message); return []; }
   return data ?? []
