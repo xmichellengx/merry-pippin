@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { Cat, WeightRecord, HealthRecord, FoodLog, Photo, LitterBoxLog } from './supabase'
+import type { Cat, WeightRecord, HealthRecord, FoodLog, LitterBoxLog } from './supabase'
 
 // ── Cats ──
 
@@ -121,25 +121,6 @@ export async function updateFoodLog(id: string, updates: {
 
 export async function deleteFoodLog(id: string) {
   const { error } = await supabase.from('food_logs').delete().eq('id', id)
-  if (error) throw error
-}
-
-// ── Photos ──
-
-export async function getPhotos(): Promise<Photo[]> {
-  const { data, error } = await supabase.from('photos').select('*').order('created_at', { ascending: false })
-  if (error) { console.error('getPhotos:', error.message); return []; }
-  return data ?? []
-}
-
-export async function addPhoto(record: { cat_id?: string; url: string; caption?: string }) {
-  const { data, error } = await supabase.from('photos').insert(record).select().single()
-  if (error) throw error
-  return data
-}
-
-export async function deletePhoto(id: string) {
-  const { error } = await supabase.from('photos').delete().eq('id', id)
   if (error) throw error
 }
 

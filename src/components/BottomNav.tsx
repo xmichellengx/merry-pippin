@@ -91,30 +91,6 @@ function IconFood({ size = 24, active = false }: { size?: number; active?: boole
   );
 }
 
-function IconPhotos({ size = 24, active = false }: { size?: number; active?: boolean }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      {/* Camera body */}
-      <rect x="3" y="8" width="18" height="12" rx="3" fill={active ? "#E8932B" : "currentColor"} opacity={active ? 1 : 0.45} />
-      {/* Camera top bump */}
-      <rect x="8" y="5.5" width="8" height="3.5" rx="1.5" fill={active ? "#D97A1E" : "currentColor"} opacity={active ? 0.8 : 0.35} />
-      {/* Cat ears on camera */}
-      <path d="M8.5 6L7 3L10 5.5" fill={active ? "#F0C87A" : "currentColor"} opacity={active ? 1 : 0.4} />
-      <path d="M15.5 6L17 3L14 5.5" fill={active ? "#F0C87A" : "currentColor"} opacity={active ? 1 : 0.4} />
-      {/* Ear pink */}
-      <path d="M8.8 5.5L7.8 3.8L9.6 5.2" fill="#F5B8C4" opacity={active ? 0.6 : 0.25} />
-      <path d="M15.2 5.5L16.2 3.8L14.4 5.2" fill="#F5B8C4" opacity={active ? 0.6 : 0.25} />
-      {/* Lens */}
-      <circle cx="12" cy="14" r="4" fill={active ? "#F0C87A" : "currentColor"} opacity={active ? 0.7 : 0.3} />
-      <circle cx="12" cy="14" r="2.5" fill={active ? "#6B8EAE" : "white"} opacity="0.7" />
-      {/* Lens shine */}
-      <circle cx="11" cy="13" r="0.8" fill="white" opacity="0.6" />
-      {/* Flash */}
-      {active && <circle cx="17.5" cy="10" r="1" fill="#FFF8EE" opacity="0.8" />}
-    </svg>
-  );
-}
-
 function PawLocked({ size = 22, className = "" }: { size?: number; className?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
@@ -136,7 +112,6 @@ const tabs = [
   { href: "/weight", label: "Weight", Icon: IconWeight },
   { href: "/", label: "Home", Icon: IconHome },
   { href: "/food", label: "Food", Icon: IconFood },
-  { href: "/photos", label: "Photos", Icon: IconPhotos },
 ];
 
 function PinModal() {

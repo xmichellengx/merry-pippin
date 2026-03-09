@@ -56,15 +56,6 @@ export type FoodLog = {
   created_at: string
 }
 
-export type Photo = {
-  id: string
-  cat_id: string | null
-  url: string
-  caption: string | null
-  taken_at: string | null
-  created_at: string
-}
-
 export type LitterBoxLog = {
   id: string
   date: string
