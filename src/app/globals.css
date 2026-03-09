@@ -78,31 +78,6 @@ body {
   position: relative;
 }
 
-/* Elvish corner ornaments — subtle gold filigree on cards */
-.card::before,
-.card::after {
-  content: '';
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  opacity: 0.25;
-  pointer-events: none;
-}
-.card::before {
-  top: 4px;
-  left: 4px;
-  border-top: 2px solid var(--elvish-gold);
-  border-left: 2px solid var(--elvish-gold);
-  border-top-left-radius: 6px;
-}
-.card::after {
-  bottom: 4px;
-  right: 4px;
-  border-bottom: 2px solid var(--elvish-gold);
-  border-right: 2px solid var(--elvish-gold);
-  border-bottom-right-radius: 6px;
-}
-
 .card-hover:active {
   transform: scale(0.98);
   transition: transform 0.1s ease;
