@@ -543,7 +543,7 @@ export default function Dashboard() {
             });
             if (soon.length === 0) return (
               <div className="flex flex-col items-center py-2">
-                <TwoCatsSitting size={100} className="opacity-40 mb-1" />
+                <Image src="/empty-upcoming.webp" alt="" width={120} height={89} className="opacity-70 mb-1" />
                 <p className="text-xs text-muted">All is quiet in the Shire.</p>
               </div>
             );
