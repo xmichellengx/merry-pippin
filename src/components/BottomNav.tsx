@@ -9,22 +9,16 @@ import { useAdmin } from "./AdminContext";
 // ── Cute custom nav icons ──
 
 function IconHome({ size = 24, active = false }: { size?: number; active?: boolean }) {
+  const fill = active ? "#B08D3A" : "currentColor";
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      {/* House body */}
-      <rect x="5" y="12" width="14" height="9" rx="2" fill={active ? "#B08D3A" : "currentColor"} opacity={active ? 1 : 0.45} />
-      {/* Roof */}
-      <path d="M3 13L12 4L21 13" stroke={active ? "#96742A" : "currentColor"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-      {/* Cat ears on roof */}
-      <path d="M8.5 8L7 4.5L10 7" fill={active ? "#B08D3A" : "currentColor"} opacity={active ? 1 : 0.5} />
-      <path d="M15.5 8L17 4.5L14 7" fill={active ? "#B08D3A" : "currentColor"} opacity={active ? 1 : 0.5} />
-      {/* Door / window - cat face */}
-      <circle cx="12" cy="17" r="2.5" fill={active ? "#F9F3E8" : "white"} opacity="0.9" />
-      {/* Cat eyes in window */}
-      <circle cx="11" cy="16.5" r="0.6" fill={active ? "#96742A" : "currentColor"} opacity="0.7" />
-      <circle cx="13" cy="16.5" r="0.6" fill={active ? "#96742A" : "currentColor"} opacity="0.7" />
-      {/* Cat nose */}
-      <ellipse cx="12" cy="17.5" rx="0.4" ry="0.3" fill="#F5A0B0" />
+      {/* Paw toes */}
+      <ellipse cx="8.5" cy="7" rx="2.2" ry="2.8" fill={fill} opacity={active ? 0.9 : 0.45} transform="rotate(-15 8.5 7)" />
+      <ellipse cx="15.5" cy="7" rx="2.2" ry="2.8" fill={fill} opacity={active ? 0.9 : 0.45} transform="rotate(15 15.5 7)" />
+      <ellipse cx="5.5" cy="11.5" rx="1.8" ry="2.5" fill={fill} opacity={active ? 0.9 : 0.45} transform="rotate(-25 5.5 11.5)" />
+      <ellipse cx="18.5" cy="11.5" rx="1.8" ry="2.5" fill={fill} opacity={active ? 0.9 : 0.45} transform="rotate(25 18.5 11.5)" />
+      {/* Paw pad */}
+      <ellipse cx="12" cy="16" rx="4.5" ry="4" fill={fill} opacity={active ? 1 : 0.5} />
     </svg>
   );
 }
