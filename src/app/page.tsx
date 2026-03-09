@@ -527,17 +527,24 @@ export default function Dashboard() {
           </Link>
         </div>
         <div className="space-y-2">
-          {upcoming.length === 0 ? (
-            <div className="flex flex-col items-center py-2">
-              <TwoCatsSitting size={100} className="opacity-40 mb-1" />
-              <p className="text-xs text-muted">All is quiet in the Shire.</p>
-            </div>
-          ) : upcoming.slice(0, 4).map((rec) => {
+          {(() => {
+            const soon = upcoming.filter(rec => {
+              if (!rec.next_due_date) return false;
+              const d = differenceInDays(new Date(rec.next_due_date), new Date());
+              return d <= 7;
+            });
+            if (soon.length === 0) return (
+              <div className="flex flex-col items-center py-2">
+                <TwoCatsSitting size={100} className="opacity-40 mb-1" />
+                <p className="text-xs text-muted">All is quiet in the Shire.</p>
+              </div>
+            );
+            return soon.slice(0, 4).map((rec) => {
             const cat = cats.find(c => c.id === rec.cat_id);
             if (!rec.next_due_date) return null;
             const daysUntil = differenceInDays(new Date(rec.next_due_date), new Date());
             const isOverdue = daysUntil < 0;
-            const isUrgent = daysUntil <= 14 && daysUntil >= 0;
+            const isUrgent = daysUntil <= 7 && daysUntil >= 0;
 
             const calDate = rec.next_due_date.replace(/-/g, "");
             const calUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`${cat?.name || "Cat"} - ${rec.title}`)}&dates=${calDate}/${calDate}&details=${encodeURIComponent(`${rec.record_type} for ${cat?.name || "cat"}`)}`;
@@ -561,7 +568,8 @@ export default function Dashboard() {
                 </div>
               </div>
             );
-          })}
+          });
+          })()}
         </div>
       </div>
 
@@ -586,20 +594,19 @@ export default function Dashboard() {
           </div>
         ) : (
           <div className="space-y-2">
-            {todayFood.map((meal) => {
-              const cat = cats.find(c => c.id === meal.cat_id);
+            {cats.map(cat => {
+              const catMeals = todayFood.filter(f => f.cat_id === cat.id);
+              if (catMeals.length === 0) return null;
+              const totalGrams = catMeals.reduce((sum, m) => sum + (m.amount_grams || 0), 0);
+              const mealCount = catMeals.length;
+              const types = [...new Set(catMeals.map(m => m.food_type))];
               return (
-                <div key={meal.id} className="flex items-center justify-between py-1.5">
+                <div key={cat.id} className="flex items-center justify-between py-1.5 border-b border-card-border last:border-0">
                   <div>
-                    <p className="text-xs font-medium">{meal.food_name}</p>
-                    <p className="text-[10px] text-muted">{cat?.name} &middot; {meal.meal_time}</p>
+                    <p className="text-xs font-medium">{cat.name}</p>
+                    <p className="text-[10px] text-muted">{mealCount} meal{mealCount > 1 ? "s" : ""} &middot; {types.join(", ")}</p>
                   </div>
-                  <div className="text-right">
-                    <span className="badge badge-info">{meal.food_type}</span>
-                    {meal.amount_grams && (
-                      <p className="text-[10px] text-muted mt-0.5">{meal.amount_grams}g</p>
-                    )}
-                  </div>
+                  <span className="text-sm font-semibold text-golden-600">{totalGrams}g</span>
                 </div>
               );
             })}
