@@ -251,7 +251,7 @@ Plain text only, no markdown. Jump straight into insights, no intro.`}
 
       {/* Edit Weight Modal */}
       {editingWeight && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center" onClick={() => setEditingWeight(null)}>
+        <div className="fixed inset-0 bg-black/50 z-[60] flex items-end justify-center" onClick={() => setEditingWeight(null)}>
           <div className="bg-card w-full max-w-md rounded-t-3xl p-5 space-y-3 max-h-[90vh] overflow-y-auto" style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" }} onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-1">
               <h3 className="font-bold text-base">Edit Weight</h3>
