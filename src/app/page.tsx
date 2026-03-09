@@ -73,12 +73,16 @@ function AiHealthInsights({ context }: { context: string }) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        message: `Give me 3-4 key insights as a dash-separated list. Rules:
-- Jump straight into insights. No intro line.
-- Each point: 1 sentence max, MUST include a specific number/date from the data.
-- Focus on: anything overdue or due soon, today's feeding vs recommended intake, any weight concerns.
-- Only flag issues or actions needed. Skip anything that looks normal/on track.
-- Plain text only, no markdown.`,
+        message: `You are an expert vet advisor for two Golden British Shorthair Munchkin kittens. Analyze the data and give me 3-4 genuinely useful insights as a dash-separated list.
+
+Think like a vet would — look at the BIG PICTURE, not day-to-day noise:
+- Weight: These kittens are weighed every few weeks, not daily. Compare the OVERALL growth trend across weeks/months against BSH growth curves. A single weigh-in dip means nothing — look at the trajectory. Flag only if the multi-week trend is concerning (stalling, losing over multiple weigh-ins, or growing too fast).
+- Feeding: Calculate recommended daily intake based on current weight and age, then compare against actual average daily intake over the last few days. Flag if consistently over/under by more than 15%.
+- Health: Flag vaccines/deworm that are overdue or due within 2 weeks. Don't mention things months away.
+- Be specific with numbers and dates. No vague advice like "monitor closely" or "keep tracking."
+- If everything looks healthy and on track, say so in one line and suggest what to watch for next.
+
+Plain text only, no markdown. Jump straight into the insights, no intro.`,
         context,
       }),
     })
