@@ -56,6 +56,8 @@ export default function WeightPage() {
       setShowAddForm(false);
       setFormCatId(""); setFormWeight(""); setFormNotes("");
       loadData();
+    } catch (err) {
+      alert("Failed to save: " + (err instanceof Error ? err.message : String(err)));
     } finally { setSaving(false); }
   };
 
@@ -82,6 +84,8 @@ export default function WeightPage() {
       });
       setEditingWeight(null);
       loadData();
+    } catch (err) {
+      alert("Failed to update: " + (err instanceof Error ? err.message : String(err)));
     } finally { setEditSaving(false); }
   };
 
