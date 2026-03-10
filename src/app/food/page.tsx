@@ -1,17 +1,23 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { ArrowLeft, Plus, UtensilsCrossed, Loader2, Trash2, Pencil, X } from "lucide-react";
-import Link from "next/link";
+import { UtensilsCrossed, Trash2, Pencil } from "lucide-react";
 import Image from "next/image";
 import { format, subDays } from "date-fns";
-import { getCats, getFoodLogs, addFoodLog, deleteFoodLog, updateFoodLog } from "@/lib/data";
-import type { Cat, FoodLog } from "@/lib/supabase";
+import { getFoodLogs, addFoodLog, deleteFoodLog, updateFoodLog } from "@/lib/data";
+import type { FoodLog } from "@/lib/supabase";
 import { useAdmin } from "@/components/AdminContext";
 import { useToast } from "@/components/Toast";
 import { AiInsights } from "@/components/AiInsights";
 import { getWeightRecords } from "@/lib/data";
 import type { WeightRecord } from "@/lib/supabase";
+import { FilterChip } from "@/components/FilterChip";
+import { PageHeader } from "@/components/PageHeader";
+import { LoadingScreen } from "@/components/LoadingScreen";
+import { ActionButton } from "@/components/ActionButton";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import Modal from "@/components/Modal";
+import { useCats } from "@/hooks/useCats";
 
 const foodTypeEmoji: Record<string, string> = {
   wet: "\uD83E\uDD6B",
@@ -75,7 +81,7 @@ function FoodTypeChips({ selected, onChange }: { selected: string[]; onChange: (
 }
 
 export default function FoodPage() {
-  const [cats, setCats] = useState<Cat[]>([]);
+  const { cats } = useCats();
   const [logs, setLogs] = useState<FoodLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -102,6 +108,9 @@ export default function FoodPage() {
   const [editNotes, setEditNotes] = useState("");
   const [editSaving, setEditSaving] = useState(false);
 
+  // ConfirmDialog state
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
   // Recent food (last 50) + weights for AI context
   const [recentFood, setRecentFood] = useState<FoodLog[]>([]);
   const [catWeights, setCatWeights] = useState<WeightRecord[]>([]);
@@ -110,18 +119,8 @@ export default function FoodPage() {
     getFoodLogs(date).then(f => setLogs(f)).finally(() => setLoading(false));
   }, []);
 
-  // Escape key for modals
+  // Load page data — today's logs are critical path
   useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { setShowAddForm(false); setEditingMeal(null); }
-    };
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
-  }, []);
-
-  // Load page data — cats + today's logs are critical path
-  useEffect(() => {
-    getCats().then(c => setCats(c));
     loadLogs(selectedDate);
   }, [selectedDate, loadLogs]);
 
@@ -154,8 +153,10 @@ export default function FoodPage() {
     } finally { setSaving(false); }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Delete this meal?")) return;
+  const handleConfirmDelete = async () => {
+    if (!deleteId) return;
+    const id = deleteId;
+    setDeleteId(null);
     await deleteFoodLog(id);
     setLogs(prev => prev.filter(l => l.id !== id));
   };
@@ -185,7 +186,7 @@ export default function FoodPage() {
       setEditingMeal(null);
       loadLogs(selectedDate);
     } catch (err) {
-      alert("Failed to save: " + (err instanceof Error ? err.message : String(err)));
+      showToast("Failed to save: " + (err instanceof Error ? err.message : String(err)));
     } finally { setEditSaving(false); }
   };
 
@@ -247,18 +248,12 @@ export default function FoodPage() {
   }, [cats, recentFood, catWeights]);
 
   if (loading) {
-    return <div className="flex flex-col items-center pt-32 gap-3"><Image src="/loading-food.webp" alt="" width={180} height={180} priority className="opacity-80" /><Loader2 size={28} className="text-golden-500 animate-spin" /></div>;
+    return <LoadingScreen image="/loading-food.webp" />;
   }
 
   return (
     <div className="px-4 pt-12 pb-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/" aria-label="Back to home" className="w-8 h-8 rounded-full bg-golden-100 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2"><ArrowLeft size={16} className="text-golden-700" /></Link>
-          <h1 className="text-lg font-bold">Food Log</h1>
-        </div>
-        {isAdmin && <button onClick={() => setShowAddForm(!showAddForm)} aria-label="Log meal" className="w-9 h-9 rounded-full golden-gradient flex items-center justify-center shadow-md focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2"><Plus size={18} className="text-white" /></button>}
-      </div>
+      <PageHeader title="Food Log" action={isAdmin ? <ActionButton onClick={() => setShowAddForm(!showAddForm)} label="Log meal" /> : undefined} />
 
       <AiInsights
         cacheKey="food"
@@ -294,9 +289,9 @@ Plain text only, no markdown. No intro.`}
       </div>
 
       <div className="flex gap-2">
-        <button onClick={() => setSelectedCat("all")} className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${selectedCat === "all" ? "golden-gradient text-white" : "bg-golden-50 text-golden-700"}`}>All</button>
+        <FilterChip active={selectedCat === "all"} onClick={() => setSelectedCat("all")}>All</FilterChip>
         {cats.map(cat => (
-          <button key={cat.id} onClick={() => setSelectedCat(cat.id)} className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${selectedCat === cat.id ? "golden-gradient text-white" : "bg-golden-50 text-golden-700"}`}>{cat.name}</button>
+          <FilterChip key={cat.id} active={selectedCat === cat.id} onClick={() => setSelectedCat(cat.id)}>{cat.name}</FilterChip>
         ))}
       </div>
 
@@ -320,54 +315,46 @@ Plain text only, no markdown. No intro.`}
         </div>
       </div>
 
-      {isAdmin && showAddForm && (
-        <div className="fixed inset-0 overlay z-[60] flex items-end justify-center" onClick={() => setShowAddForm(false)} role="dialog" aria-modal="true" aria-labelledby="add-meal-title">
-          <div className="bg-white w-full max-w-lg rounded-t-3xl p-5 space-y-3 max-h-[90vh] overflow-y-auto animate-slide-up" style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" }} onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-1">
-              <h3 id="add-meal-title" className="font-bold text-base">Log Meal</h3>
-              <button onClick={() => setShowAddForm(false)} aria-label="Close" className="w-8 h-8 rounded-full bg-golden-50 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2"><X size={16} className="text-golden-700" /></button>
-            </div>
-            <div>
-              <label className="text-xs text-muted block mb-1">Cat</label>
-              <select value={formCatId} onChange={e => setFormCatId(e.target.value)}>
-                <option value="" disabled>Select cat...</option>
-                {cats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs text-muted block mb-1">Food Name</label>
-              <input type="text" placeholder="e.g., Royal Canin British Shorthair" value={formFoodName} onChange={e => setFormFoodName(e.target.value)} />
-            </div>
-            <div>
-              <label className="text-xs text-muted block mb-1">Type (tap to select, can pick multiple)</label>
-              <FoodTypeChips selected={formFoodTypes} onChange={setFormFoodTypes} />
-            </div>
-            <div>
-              <label className="text-xs text-muted block mb-1">Meal Time</label>
-              <select value={formMealTime} onChange={e => setFormMealTime(e.target.value)}>
-                <option value="breakfast">Breakfast</option>
-                <option value="lunch">Lunch</option>
-                <option value="snack">Snack</option>
-                <option value="dinner">Dinner</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-xs text-muted block mb-1">Amount (grams)</label>
-              <input type="number" placeholder="e.g., 85" value={formAmount} onChange={e => setFormAmount(e.target.value)} />
-            </div>
-            <div>
-              <label className="text-xs text-muted block mb-1">Notes</label>
-              <textarea rows={2} placeholder="Optional notes..." value={formNotes} onChange={e => setFormNotes(e.target.value)} />
-            </div>
-            <div className="flex gap-2">
-              <button onClick={handleSave} disabled={saving || !formCatId || !formFoodName || formFoodTypes.length === 0} className="flex-1 py-2.5 rounded-xl golden-gradient text-white text-sm font-semibold shadow-md disabled:opacity-50">
-                {saving ? "Saving..." : "Save Meal"}
-              </button>
-              <button onClick={() => setShowAddForm(false)} className="px-4 py-2.5 rounded-xl bg-golden-50 text-golden-700 text-sm font-medium">Cancel</button>
-            </div>
-          </div>
+      <Modal open={isAdmin && showAddForm} onClose={() => setShowAddForm(false)} title="Log Meal" position="bottom">
+        <div>
+          <label className="text-xs text-muted block mb-1">Cat</label>
+          <select value={formCatId} onChange={e => setFormCatId(e.target.value)}>
+            <option value="" disabled>Select cat...</option>
+            {cats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
         </div>
-      )}
+        <div>
+          <label className="text-xs text-muted block mb-1">Food Name</label>
+          <input type="text" placeholder="e.g., Royal Canin British Shorthair" value={formFoodName} onChange={e => setFormFoodName(e.target.value)} />
+        </div>
+        <div>
+          <label className="text-xs text-muted block mb-1">Type (tap to select, can pick multiple)</label>
+          <FoodTypeChips selected={formFoodTypes} onChange={setFormFoodTypes} />
+        </div>
+        <div>
+          <label className="text-xs text-muted block mb-1">Meal Time</label>
+          <select value={formMealTime} onChange={e => setFormMealTime(e.target.value)}>
+            <option value="breakfast">Breakfast</option>
+            <option value="lunch">Lunch</option>
+            <option value="snack">Snack</option>
+            <option value="dinner">Dinner</option>
+          </select>
+        </div>
+        <div>
+          <label className="text-xs text-muted block mb-1">Amount (grams)</label>
+          <input type="number" placeholder="e.g., 85" value={formAmount} onChange={e => setFormAmount(e.target.value)} />
+        </div>
+        <div>
+          <label className="text-xs text-muted block mb-1">Notes</label>
+          <textarea rows={2} placeholder="Optional notes..." value={formNotes} onChange={e => setFormNotes(e.target.value)} />
+        </div>
+        <div className="flex gap-2">
+          <button onClick={handleSave} disabled={saving || !formCatId || !formFoodName || formFoodTypes.length === 0} className="flex-1 py-2.5 rounded-xl golden-gradient text-white text-sm font-semibold shadow-md disabled:opacity-50">
+            {saving ? "Saving..." : "Save Meal"}
+          </button>
+          <button onClick={() => setShowAddForm(false)} className="px-4 py-2.5 rounded-xl bg-golden-50 text-golden-700 text-sm font-medium">Cancel</button>
+        </div>
+      </Modal>
 
       {filteredLogs.length === 0 ? (
         <div className="card p-8 text-center">
@@ -397,8 +384,8 @@ Plain text only, no markdown. No intro.`}
                   </div>
                   {isAdmin && (
                     <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
-                      <button onClick={() => openEdit(meal)} aria-label="Edit meal" className="text-muted hover:text-golden-600 focus-visible:ring-2 focus-visible:ring-golden-400 rounded"><Pencil size={13} /></button>
-                      <button onClick={() => handleDelete(meal.id)} aria-label="Delete meal" className="text-muted hover:text-danger focus-visible:ring-2 focus-visible:ring-golden-400 rounded"><Trash2 size={14} /></button>
+                      <button onClick={() => openEdit(meal)} aria-label="Edit meal" className="p-2 text-muted hover:text-golden-600 focus-visible:ring-2 focus-visible:ring-golden-400 rounded"><Pencil size={13} /></button>
+                      <button onClick={() => setDeleteId(meal.id)} aria-label="Delete meal" className="p-2 text-muted hover:text-danger focus-visible:ring-2 focus-visible:ring-golden-400 rounded"><Trash2 size={14} /></button>
                     </div>
                   )}
                 </div>
@@ -410,53 +397,50 @@ Plain text only, no markdown. No intro.`}
       )}
 
       {/* Edit Meal Modal */}
-      {editingMeal && (
-        <div className="fixed inset-0 overlay z-[60] flex items-center justify-center px-6" onClick={() => setEditingMeal(null)} role="dialog" aria-modal="true" aria-labelledby="edit-meal-title">
-          <div className="bg-white w-full max-w-sm rounded-2xl p-5 shadow-xl space-y-3 max-h-[85vh] overflow-y-auto animate-scale-in" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-1">
-              <div className="flex items-center gap-2">
-                <span className="text-base">🍽️</span>
-                <h3 id="edit-meal-title" className="font-bold text-sm">Edit Meal</h3>
-              </div>
-              <button onClick={() => setEditingMeal(null)} aria-label="Close" className="w-7 h-7 rounded-full bg-golden-50 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2"><X size={14} className="text-golden-700" /></button>
-            </div>
-            <div>
-              <label className="text-xs text-muted block mb-1">Cat</label>
-              <select value={editCatId} onChange={e => setEditCatId(e.target.value)}>
-                {cats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs text-muted block mb-1">Food Name</label>
-              <input type="text" value={editFoodName} onChange={e => setEditFoodName(e.target.value)} />
-            </div>
-            <div>
-              <label className="text-xs text-muted block mb-1">Type (tap to select, can pick multiple)</label>
-              <FoodTypeChips selected={editFoodTypes} onChange={setEditFoodTypes} />
-            </div>
-            <div>
-              <label className="text-xs text-muted block mb-1">Meal Time</label>
-              <select value={editMealTime} onChange={e => setEditMealTime(e.target.value)}>
-                <option value="breakfast">Breakfast</option>
-                <option value="lunch">Lunch</option>
-                <option value="snack">Snack</option>
-                <option value="dinner">Dinner</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-xs text-muted block mb-1">Amount (grams)</label>
-              <input type="number" placeholder="e.g., 85" value={editAmount} onChange={e => setEditAmount(e.target.value)} />
-            </div>
-            <div>
-              <label className="text-xs text-muted block mb-1">Notes</label>
-              <textarea rows={2} placeholder="Optional notes..." value={editNotes} onChange={e => setEditNotes(e.target.value)} />
-            </div>
-            <button onClick={handleEditSave} disabled={editSaving || !editCatId || !editFoodName || editFoodTypes.length === 0} className="w-full py-3 rounded-xl golden-gradient text-white text-sm font-semibold shadow-md disabled:opacity-50">
-              {editSaving ? "Saving..." : "Update"}
-            </button>
-          </div>
+      <Modal open={!!editingMeal} onClose={() => setEditingMeal(null)} title="Edit Meal" position="center">
+        <div>
+          <label className="text-xs text-muted block mb-1">Cat</label>
+          <select value={editCatId} onChange={e => setEditCatId(e.target.value)}>
+            {cats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
         </div>
-      )}
+        <div>
+          <label className="text-xs text-muted block mb-1">Food Name</label>
+          <input type="text" value={editFoodName} onChange={e => setEditFoodName(e.target.value)} />
+        </div>
+        <div>
+          <label className="text-xs text-muted block mb-1">Type (tap to select, can pick multiple)</label>
+          <FoodTypeChips selected={editFoodTypes} onChange={setEditFoodTypes} />
+        </div>
+        <div>
+          <label className="text-xs text-muted block mb-1">Meal Time</label>
+          <select value={editMealTime} onChange={e => setEditMealTime(e.target.value)}>
+            <option value="breakfast">Breakfast</option>
+            <option value="lunch">Lunch</option>
+            <option value="snack">Snack</option>
+            <option value="dinner">Dinner</option>
+          </select>
+        </div>
+        <div>
+          <label className="text-xs text-muted block mb-1">Amount (grams)</label>
+          <input type="number" placeholder="e.g., 85" value={editAmount} onChange={e => setEditAmount(e.target.value)} />
+        </div>
+        <div>
+          <label className="text-xs text-muted block mb-1">Notes</label>
+          <textarea rows={2} placeholder="Optional notes..." value={editNotes} onChange={e => setEditNotes(e.target.value)} />
+        </div>
+        <button onClick={handleEditSave} disabled={editSaving || !editCatId || !editFoodName || editFoodTypes.length === 0} className="w-full py-3 rounded-xl golden-gradient text-white text-sm font-semibold shadow-md disabled:opacity-50">
+          {editSaving ? "Saving..." : "Update"}
+        </button>
+      </Modal>
+
+      <ConfirmDialog
+        open={!!deleteId}
+        title="Delete Record"
+        message="This meal record will be permanently removed."
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleteId(null)}
+      />
     </div>
   );
 }

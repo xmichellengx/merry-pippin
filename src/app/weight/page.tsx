@@ -1,15 +1,21 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { ArrowLeft, Plus, TrendingUp, TrendingDown, Loader2, Trash2, Pencil, X } from "lucide-react";
-import Link from "next/link";
+import { TrendingUp, TrendingDown, Loader2, Trash2, Pencil } from "lucide-react";
 import Image from "next/image";
 import { format } from "date-fns";
-import { getCats, getWeightRecords, addWeightRecord, deleteWeightRecord, updateWeightRecord } from "@/lib/data";
-import type { Cat, WeightRecord } from "@/lib/supabase";
+import { getWeightRecords, addWeightRecord, deleteWeightRecord, updateWeightRecord } from "@/lib/data";
+import type { WeightRecord } from "@/lib/supabase";
 import dynamic from "next/dynamic";
 import { useAdmin } from "@/components/AdminContext";
 import { useToast } from "@/components/Toast";
+import { FilterChip } from "@/components/FilterChip";
+import { PageHeader } from "@/components/PageHeader";
+import { LoadingScreen } from "@/components/LoadingScreen";
+import { ActionButton } from "@/components/ActionButton";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import Modal from "@/components/Modal";
+import { useCats } from "@/hooks/useCats";
 
 const WeightChart = dynamic(() => import("@/components/WeightChart"), {
   loading: () => <div className="h-56 flex items-center justify-center"><Loader2 size={20} className="animate-spin text-golden-400" /></div>,
@@ -18,7 +24,7 @@ const WeightChart = dynamic(() => import("@/components/WeightChart"), {
 import { AiInsights } from "@/components/AiInsights";
 
 export default function WeightPage() {
-  const [cats, setCats] = useState<Cat[]>([]);
+  const { cats } = useCats();
   const [weights, setWeights] = useState<WeightRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -39,22 +45,16 @@ export default function WeightPage() {
   const [editNotes, setEditNotes] = useState("");
   const [editSaving, setEditSaving] = useState(false);
 
+  // ConfirmDialog state
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
   const loadData = () => {
-    Promise.all([getCats(), getWeightRecords()])
-      .then(([c, w]) => { setCats(c); setWeights(w); })
+    getWeightRecords()
+      .then(w => setWeights(w))
       .finally(() => setLoading(false));
   };
 
   useEffect(() => { loadData(); }, []);
-
-  // Escape key for modals
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { setShowAddForm(false); setEditingWeight(null); }
-    };
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
-  }, []);
 
   const handleSave = async () => {
     if (!formCatId || !formWeight) return;
@@ -72,8 +72,10 @@ export default function WeightPage() {
     } finally { setSaving(false); }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Delete this weight record?")) return;
+  const handleConfirmDelete = async () => {
+    if (!deleteId) return;
+    const id = deleteId;
+    setDeleteId(null);
     await deleteWeightRecord(id);
     setWeights(prev => prev.filter(w => w.id !== id));
   };
@@ -115,7 +117,7 @@ export default function WeightPage() {
   }, [cats, weights]);
 
   if (loading) {
-    return <div className="flex flex-col items-center pt-32 gap-3"><Image src="/loading-weight.webp" alt="" width={180} height={180} priority className="opacity-80" /><Loader2 size={28} className="text-golden-500 animate-spin" /></div>;
+    return <LoadingScreen image="/loading-weight.webp" />;
   }
 
   // Build chart data
@@ -133,13 +135,7 @@ export default function WeightPage() {
 
   return (
     <div className="px-4 pt-12 pb-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/" aria-label="Back to home" className="w-8 h-8 rounded-full bg-golden-100 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2"><ArrowLeft size={16} className="text-golden-700" /></Link>
-          <h1 className="text-lg font-bold">Weight Tracker</h1>
-        </div>
-        {isAdmin && <button onClick={() => setShowAddForm(!showAddForm)} aria-label="Add weight record" className="w-9 h-9 rounded-full golden-gradient flex items-center justify-center shadow-md focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2"><Plus size={18} className="text-white" /></button>}
-      </div>
+      <PageHeader title="Weight Tracker" action={isAdmin ? <ActionButton onClick={() => setShowAddForm(!showAddForm)} label="Add weight record" /> : undefined} />
 
       <AiInsights
         cacheKey="weight"
@@ -160,9 +156,9 @@ Plain text only, no markdown. Jump straight into insights, no intro.`}
       />
 
       <div className="flex gap-2">
-        <button onClick={() => setSelectedCat("all")} className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2 ${selectedCat === "all" ? "golden-gradient text-white" : "bg-golden-50 text-golden-700"}`}>Compare</button>
+        <FilterChip active={selectedCat === "all"} onClick={() => setSelectedCat("all")}>Compare</FilterChip>
         {cats.map(cat => (
-          <button key={cat.id} onClick={() => setSelectedCat(cat.id)} className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2 ${selectedCat === cat.id ? "golden-gradient text-white" : "bg-golden-50 text-golden-700"}`}>{cat.name}</button>
+          <FilterChip key={cat.id} active={selectedCat === cat.id} onClick={() => setSelectedCat(cat.id)}>{cat.name}</FilterChip>
         ))}
       </div>
 
@@ -175,49 +171,38 @@ Plain text only, no markdown. Jump straight into insights, no intro.`}
         </div>
       )}
 
-      {isAdmin && showAddForm && (
-        <div className="fixed inset-0 overlay z-[60] flex items-center justify-center px-6" onClick={() => setShowAddForm(false)} role="dialog" aria-modal="true" aria-labelledby="add-weight-title">
-          <div className="bg-white w-full max-w-sm rounded-2xl p-5 shadow-xl space-y-4 animate-scale-in" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-base">⚖️</span>
-                <h3 id="add-weight-title" className="font-bold text-sm">Log Weight</h3>
-              </div>
-              <button onClick={() => setShowAddForm(false)} aria-label="Close" className="w-7 h-7 rounded-full bg-golden-50 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2"><X size={14} className="text-golden-700" /></button>
-            </div>
-            <div className="flex gap-2">
-              {cats.map(c => {
-                const lastW = weights.filter(w => w.cat_id === c.id).slice(-1)[0];
-                return (
-                  <button key={c.id} onClick={() => setFormCatId(c.id)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${formCatId === c.id ? "golden-gradient text-white shadow-sm" : "bg-golden-50 text-golden-700"}`}>
-                    <div className="w-5 h-5 rounded-full bg-white/30 flex items-center justify-center text-[9px] font-bold">{c.name[0]}</div>
-                    <span>{c.name}</span>
-                    {lastW && <span className="opacity-70 text-[10px]">{lastW.weight_kg}kg</span>}
-                  </button>
-                );
-              })}
-            </div>
-            <div>
-              <label htmlFor="add-weight-kg" className="text-xs text-muted block mb-1">{formCatId ? `${cats.find(c => c.id === formCatId)?.name}'s weight (kg)` : "Weight (kg)"}</label>
-              <div className="relative">
-                <input id="add-weight-kg" type="number" step="0.01" placeholder={(() => { const last = formCatId ? weights.filter(w => w.cat_id === formCatId).slice(-1)[0] : null; return last ? `Last: ${last.weight_kg} kg` : "e.g., 1.85"; })()} value={formWeight} onChange={e => setFormWeight(e.target.value)} className="pr-8" />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted">kg</span>
-              </div>
-            </div>
-            <div>
-              <label htmlFor="add-weight-date" className="text-xs text-muted block mb-1">Date</label>
-              <input id="add-weight-date" type="date" value={formDate} onChange={e => setFormDate(e.target.value)} />
-            </div>
-            <div>
-              <label htmlFor="add-weight-notes" className="text-xs text-muted block mb-1">Notes</label>
-              <textarea id="add-weight-notes" rows={2} placeholder="Optional notes..." value={formNotes} onChange={e => setFormNotes(e.target.value)} />
-            </div>
-            <button onClick={handleSave} disabled={saving || !formCatId || !formWeight} className="w-full py-3 rounded-xl golden-gradient text-white text-sm font-semibold shadow-md disabled:opacity-50">
-              {saving ? "Saving..." : "Save"}
-            </button>
+      <Modal open={isAdmin && showAddForm} onClose={() => setShowAddForm(false)} title="Log Weight">
+        <div className="flex gap-2">
+          {cats.map(c => {
+            const lastW = weights.filter(w => w.cat_id === c.id).slice(-1)[0];
+            return (
+              <button key={c.id} onClick={() => setFormCatId(c.id)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${formCatId === c.id ? "golden-gradient text-white shadow-sm" : "bg-golden-50 text-golden-700"}`}>
+                <div className="w-5 h-5 rounded-full bg-white/30 flex items-center justify-center text-[9px] font-bold">{c.name[0]}</div>
+                <span>{c.name}</span>
+                {lastW && <span className="opacity-70 text-[10px]">{lastW.weight_kg}kg</span>}
+              </button>
+            );
+          })}
+        </div>
+        <div>
+          <label htmlFor="add-weight-kg" className="text-xs text-muted block mb-1">{formCatId ? `${cats.find(c => c.id === formCatId)?.name}'s weight (kg)` : "Weight (kg)"}</label>
+          <div className="relative">
+            <input id="add-weight-kg" type="number" step="0.01" placeholder={(() => { const last = formCatId ? weights.filter(w => w.cat_id === formCatId).slice(-1)[0] : null; return last ? `Last: ${last.weight_kg} kg` : "e.g., 1.85"; })()} value={formWeight} onChange={e => setFormWeight(e.target.value)} className="pr-8" />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted">kg</span>
           </div>
         </div>
-      )}
+        <div>
+          <label htmlFor="add-weight-date" className="text-xs text-muted block mb-1">Date</label>
+          <input id="add-weight-date" type="date" value={formDate} onChange={e => setFormDate(e.target.value)} />
+        </div>
+        <div>
+          <label htmlFor="add-weight-notes" className="text-xs text-muted block mb-1">Notes</label>
+          <textarea id="add-weight-notes" rows={2} placeholder="Optional notes..." value={formNotes} onChange={e => setFormNotes(e.target.value)} />
+        </div>
+        <button onClick={handleSave} disabled={saving || !formCatId || !formWeight} className="w-full py-3 rounded-xl golden-gradient text-white text-sm font-semibold shadow-md disabled:opacity-50">
+          {saving ? "Saving..." : "Save"}
+        </button>
+      </Modal>
 
       {cats.filter(c => selectedCat === "all" || selectedCat === c.id).map(cat => {
         const catWeights = weights.filter(w => w.cat_id === cat.id);
@@ -262,8 +247,8 @@ Plain text only, no markdown. Jump straight into insights, no intro.`}
                     <span className="font-medium">{w.weight_kg} kg</span>
                     {isAdmin && (
                       <div className="flex items-center gap-1.5">
-                        <button onClick={() => openEdit(w)} aria-label="Edit weight record" className="text-muted hover:text-golden-600 focus-visible:ring-2 focus-visible:ring-golden-400 rounded"><Pencil size={11} /></button>
-                        <button onClick={() => handleDelete(w.id)} aria-label="Delete weight record" className="text-muted hover:text-danger focus-visible:ring-2 focus-visible:ring-golden-400 rounded"><Trash2 size={11} /></button>
+                        <button onClick={() => openEdit(w)} aria-label="Edit weight record" className="p-2 text-muted hover:text-golden-600 focus-visible:ring-2 focus-visible:ring-golden-400 rounded"><Pencil size={11} /></button>
+                        <button onClick={() => setDeleteId(w.id)} aria-label="Delete weight record" className="p-2 text-muted hover:text-danger focus-visible:ring-2 focus-visible:ring-golden-400 rounded"><Trash2 size={11} /></button>
                       </div>
                     )}
                   </div>
@@ -275,43 +260,40 @@ Plain text only, no markdown. Jump straight into insights, no intro.`}
       })}
 
       {/* Edit Weight Modal */}
-      {editingWeight && (
-        <div className="fixed inset-0 overlay z-[60] flex items-center justify-center px-6" onClick={() => setEditingWeight(null)} role="dialog" aria-modal="true" aria-labelledby="edit-weight-title">
-          <div className="bg-white w-full max-w-sm rounded-2xl p-5 shadow-xl space-y-4 animate-scale-in" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-base">⚖️</span>
-                <h3 id="edit-weight-title" className="font-bold text-sm">Edit Weight</h3>
-              </div>
-              <button onClick={() => setEditingWeight(null)} aria-label="Close" className="w-7 h-7 rounded-full bg-golden-50 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2"><X size={14} className="text-golden-700" /></button>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full golden-gradient flex items-center justify-center">
-                <span className="text-white font-bold text-[9px]">{cats.find(c => c.id === editingWeight.cat_id)?.name[0]}</span>
-              </div>
-              <span className="text-sm font-medium">{cats.find(c => c.id === editingWeight.cat_id)?.name}</span>
-            </div>
-            <div>
-              <label htmlFor="edit-weight-kg" className="text-xs text-muted block mb-1">Weight (kg)</label>
-              <div className="relative">
-                <input id="edit-weight-kg" type="number" step="0.01" value={editWeight} onChange={e => setEditWeight(e.target.value)} className="pr-8" />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted">kg</span>
-              </div>
-            </div>
-            <div>
-              <label htmlFor="edit-weight-date" className="text-xs text-muted block mb-1">Date</label>
-              <input id="edit-weight-date" type="date" value={editDate} onChange={e => setEditDate(e.target.value)} />
-            </div>
-            <div>
-              <label htmlFor="edit-weight-notes" className="text-xs text-muted block mb-1">Notes</label>
-              <textarea id="edit-weight-notes" rows={2} placeholder="Optional notes..." value={editNotes} onChange={e => setEditNotes(e.target.value)} />
-            </div>
-            <button onClick={handleEditSave} disabled={editSaving || !editWeight} className="w-full py-3 rounded-xl golden-gradient text-white text-sm font-semibold shadow-md disabled:opacity-50">
-              {editSaving ? "Saving..." : "Update"}
-            </button>
+      <Modal open={!!editingWeight} onClose={() => setEditingWeight(null)} title="Edit Weight">
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-full golden-gradient flex items-center justify-center">
+            <span className="text-white font-bold text-[9px]">{cats.find(c => c.id === editingWeight?.cat_id)?.name[0]}</span>
+          </div>
+          <span className="text-sm font-medium">{cats.find(c => c.id === editingWeight?.cat_id)?.name}</span>
+        </div>
+        <div>
+          <label htmlFor="edit-weight-kg" className="text-xs text-muted block mb-1">Weight (kg)</label>
+          <div className="relative">
+            <input id="edit-weight-kg" type="number" step="0.01" value={editWeight} onChange={e => setEditWeight(e.target.value)} className="pr-8" />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted">kg</span>
           </div>
         </div>
-      )}
+        <div>
+          <label htmlFor="edit-weight-date" className="text-xs text-muted block mb-1">Date</label>
+          <input id="edit-weight-date" type="date" value={editDate} onChange={e => setEditDate(e.target.value)} />
+        </div>
+        <div>
+          <label htmlFor="edit-weight-notes" className="text-xs text-muted block mb-1">Notes</label>
+          <textarea id="edit-weight-notes" rows={2} placeholder="Optional notes..." value={editNotes} onChange={e => setEditNotes(e.target.value)} />
+        </div>
+        <button onClick={handleEditSave} disabled={editSaving || !editWeight} className="w-full py-3 rounded-xl golden-gradient text-white text-sm font-semibold shadow-md disabled:opacity-50">
+          {editSaving ? "Saving..." : "Update"}
+        </button>
+      </Modal>
+
+      <ConfirmDialog
+        open={!!deleteId}
+        title="Delete Record"
+        message="This weight record will be permanently removed."
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleteId(null)}
+      />
     </div>
   );
 }
