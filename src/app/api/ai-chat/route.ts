@@ -1,12 +1,22 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import OpenAI from 'openai'
+
+export const maxDuration = 15
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, context } = await request.json()
+    const { message, context, history } = await request.json()
 
     if (!process.env.OPENAI_API_KEY) {
-      return NextResponse.json({ error: 'AI not configured' }, { status: 500 })
+      return new Response(JSON.stringify({ error: 'AI not configured' }), { status: 500, headers: { 'Content-Type': 'application/json' } })
+    }
+
+    // Input validation
+    if (!message || typeof message !== 'string') {
+      return new Response(JSON.stringify({ error: 'Message is required' }), { status: 400, headers: { 'Content-Type': 'application/json' } })
+    }
+    if (context && context.length > 15000) {
+      return new Response(JSON.stringify({ error: 'Context too large' }), { status: 400, headers: { 'Content-Type': 'application/json' } })
     }
 
     const client = new OpenAI({
@@ -29,20 +39,62 @@ Guidelines:
 - Use dashes for bullet points, keep each point to 1-2 sentences.
 - IMPORTANT: Output plain text only. Do NOT use markdown headers (###), bold (**text**), or any markdown formatting. Just plain dashes and text.`
 
-    const response = await client.chat.completions.create({
+    // Build messages array with conversation history
+    const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+      { role: 'system', content: systemPrompt },
+    ]
+
+    // Include up to last 10 messages of history for conversational context
+    if (Array.isArray(history)) {
+      const recentHistory = history.slice(-10)
+      for (const msg of recentHistory) {
+        if (msg.role === 'user' && msg.text) {
+          messages.push({ role: 'user', content: msg.text })
+        } else if (msg.role === 'assistant' && msg.text) {
+          messages.push({ role: 'assistant', content: msg.text })
+        }
+      }
+    }
+
+    // Add current message
+    messages.push({ role: 'user', content: message })
+
+    // Use streaming for faster perceived response
+    const stream = await client.chat.completions.create({
       model: 'gpt-4o-mini',
       max_tokens: 600,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: message },
-      ],
+      temperature: 0.7,
+      stream: true,
+      messages,
     })
 
-    const text = response.choices[0]?.message?.content || ''
+    // Return a streaming response
+    const encoder = new TextEncoder()
+    const readable = new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const chunk of stream) {
+            const text = chunk.choices[0]?.delta?.content
+            if (text) {
+              controller.enqueue(encoder.encode(text))
+            }
+          }
+          controller.close()
+        } catch (err) {
+          console.error('Stream error:', err)
+          controller.error(err)
+        }
+      },
+    })
 
-    return NextResponse.json({ reply: text })
+    return new Response(readable, {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'no-cache',
+      },
+    })
   } catch (error) {
     console.error('AI chat error:', error)
-    return NextResponse.json({ error: 'Failed to get AI response' }, { status: 500 })
+    return new Response(JSON.stringify({ error: 'Failed to get AI response' }), { status: 500, headers: { 'Content-Type': 'application/json' } })
   }
 }

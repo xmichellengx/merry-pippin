@@ -55,7 +55,8 @@ function AiChatCard({ context }: { context: string }) {
   const sendMessage = async (text: string) => {
     if (!text.trim() || loading) return;
     const userMsg: AiMessage = { role: "user", text: text.trim() };
-    setMessages(prev => [...prev, userMsg]);
+    const currentMessages = [...messages, userMsg];
+    setMessages(currentMessages);
     setInput("");
     setLoading(true);
 
@@ -63,19 +64,42 @@ function AiChatCard({ context }: { context: string }) {
       const res = await fetch("/api/ai-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text.trim(), context }),
+        body: JSON.stringify({ message: text.trim(), context, history: messages }),
       });
-      const data = await res.json();
-      if (data.reply) {
-        setMessages(prev => [...prev, { role: "assistant", text: data.reply }]);
-      } else {
+
+      if (!res.ok) {
         setMessages(prev => [...prev, { role: "assistant", text: "Sorry, I couldn't get a response. Try again!" }]);
+        setLoading(false);
+        return;
+      }
+
+      // Stream the response for instant token display
+      const reader = res.body?.getReader();
+      if (!reader) {
+        setMessages(prev => [...prev, { role: "assistant", text: "Sorry, I couldn't get a response. Try again!" }]);
+        setLoading(false);
+        return;
+      }
+
+      const decoder = new TextDecoder();
+      let fullText = "";
+      setMessages(prev => [...prev, { role: "assistant", text: "" }]);
+      setLoading(false);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        fullText += decoder.decode(value, { stream: true });
+        setMessages(prev => {
+          const updated = [...prev];
+          updated[updated.length - 1] = { role: "assistant", text: fullText };
+          return updated;
+        });
+        scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
       }
     } catch {
       setMessages(prev => [...prev, { role: "assistant", text: "Oops! Something went wrong. Try again later." }]);
-    } finally {
       setLoading(false);
-      setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }), 100);
     }
   };
 

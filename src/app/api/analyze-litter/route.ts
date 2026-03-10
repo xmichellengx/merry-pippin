@@ -18,6 +18,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No photo provided' }, { status: 400 })
     }
 
+    if (photoUrls.length > 4) {
+      return NextResponse.json({ error: 'Maximum 4 photos allowed' }, { status: 400 })
+    }
+
     const client = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
     })
