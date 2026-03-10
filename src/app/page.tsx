@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
   UtensilsCrossed,
   Calendar,
@@ -8,7 +8,6 @@ import {
   Loader2,
   Pencil,
   Camera,
-  X,
   Send,
   Bot,
   Lock,
@@ -19,12 +18,15 @@ import {
 import Link from "next/link";
 import Image from "next/image";
 import { format, differenceInDays, differenceInMonths } from "date-fns";
-import { getCats, getWeightRecords, getHealthRecords, getFoodLogs, updateCat, getGroomingLogs, getGroomingTasks } from "@/lib/data";
+import { getWeightRecords, getHealthRecords, getFoodLogs, updateCat, getGroomingLogs, getGroomingTasks } from "@/lib/data";
 import { supabase } from "@/lib/supabase";
 import type { Cat, WeightRecord, HealthRecord, FoodLog, GroomingTask, GroomingLog } from "@/lib/supabase";
 import { TwoCatsSitting } from "@/components/CatIllustrations";
 import { useAdmin } from "@/components/AdminContext";
 import { compressImage, compressImageToBlob } from "@/lib/compress-image";
+import { useCats } from "@/hooks/useCats";
+import Modal from "@/components/Modal";
+import { LoadingScreen } from "@/components/LoadingScreen";
 
 function getAge(dob: string | null) {
   if (!dob) return "Unknown age";
@@ -103,7 +105,7 @@ function AiChatCard({ context }: { context: string }) {
           </div>
         </div>
       ) : (
-        <div ref={scrollRef} className="max-h-60 overflow-y-auto space-y-2.5 mb-3 scroll-smooth">
+        <div ref={scrollRef} className="max-h-60 overflow-y-auto space-y-2.5 mb-3 scroll-smooth" aria-live="polite" role="log">
           {messages.map((msg, i) => (
             <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
               <div className={`max-w-[85%] px-3 py-2 rounded-2xl text-xs leading-relaxed ${
@@ -138,7 +140,7 @@ function AiChatCard({ context }: { context: string }) {
           onClick={() => sendMessage(input)}
           disabled={loading || !input.trim()}
           aria-label="Send message"
-          className="w-9 h-9 rounded-xl golden-gradient flex items-center justify-center shadow-sm disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2"
+          className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl golden-gradient flex items-center justify-center shadow-sm disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2"
         >
           <Send size={14} className="text-white" />
         </button>
@@ -199,92 +201,74 @@ function EditCatModal({ cat, onClose, onSaved }: { cat: Cat; onClose: () => void
     }
   };
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
-
   return (
-    <div className="fixed inset-0 overlay z-50 flex items-center justify-center p-4" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="edit-cat-title">
-      <div
-        className="bg-white rounded-2xl w-full max-w-sm p-5 space-y-4 max-h-[90vh] overflow-y-auto"
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between">
-          <h2 id="edit-cat-title" className="text-lg font-bold">Edit Profile</h2>
-          <button onClick={onClose} aria-label="Close" className="w-8 h-8 rounded-full bg-golden-50 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2">
-            <X size={16} className="text-muted" />
-          </button>
-        </div>
-
-        {/* Photo */}
-        <div className="flex justify-center">
-          <button onClick={() => fileRef.current?.click()} aria-label="Change photo" className="relative group">
-            {photoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={photoUrl} alt={name} className="w-24 h-24 rounded-full object-cover border-4 border-golden-200" />
-            ) : (
-              <div className="w-24 h-24 rounded-full golden-gradient flex items-center justify-center border-4 border-golden-200">
-                <span className="text-white font-bold text-3xl">{name[0] || "?"}</span>
-              </div>
-            )}
-            <div className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-golden-500 flex items-center justify-center shadow-md border-2 border-white">
-              {uploading ? <Loader2 size={14} className="text-white animate-spin" /> : <Camera size={14} className="text-white" />}
+    <Modal open={true} onClose={onClose} title="Edit Cat Profile">
+      {/* Photo */}
+      <div className="flex justify-center">
+        <button onClick={() => fileRef.current?.click()} aria-label="Change photo" className="relative group min-w-[44px] min-h-[44px]">
+          {photoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={photoUrl} alt={name} className="w-24 h-24 rounded-full object-cover border-4 border-golden-200" />
+          ) : (
+            <div className="w-24 h-24 rounded-full golden-gradient flex items-center justify-center border-4 border-golden-200">
+              <span className="text-white font-bold text-3xl">{name[0] || "?"}</span>
             </div>
-          </button>
-          <input ref={fileRef} type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
-        </div>
-
-        {/* Name */}
-        <div>
-          <label htmlFor="edit-cat-name" className="text-xs text-muted block mb-1">Name</label>
-          <input id="edit-cat-name" type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Cat name" />
-        </div>
-
-        {/* Breed & Color */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label htmlFor="edit-cat-breed" className="text-xs text-muted block mb-1">Breed</label>
-            <input id="edit-cat-breed" type="text" value={breed} onChange={e => setBreed(e.target.value)} />
+          )}
+          <div className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-golden-500 flex items-center justify-center shadow-md border-2 border-white">
+            {uploading ? <Loader2 size={14} className="text-white animate-spin" /> : <Camera size={14} className="text-white" />}
           </div>
-          <div>
-            <label htmlFor="edit-cat-color" className="text-xs text-muted block mb-1">Color</label>
-            <input id="edit-cat-color" type="text" value={color} onChange={e => setColor(e.target.value)} />
-          </div>
-        </div>
+        </button>
+        <input ref={fileRef} type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
+      </div>
 
-        {/* Gender */}
+      {/* Name */}
+      <div>
+        <label htmlFor="edit-cat-name" className="text-xs text-muted block mb-1">Name</label>
+        <input id="edit-cat-name" type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Cat name" />
+      </div>
+
+      {/* Breed & Color */}
+      <div className="grid grid-cols-2 gap-3">
         <div>
-          <label htmlFor="edit-cat-gender" className="text-xs text-muted block mb-1">Gender</label>
-          <select id="edit-cat-gender" value={gender} onChange={e => setGender(e.target.value)}>
-            <option value="">Not set</option>
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-          </select>
+          <label htmlFor="edit-cat-breed" className="text-xs text-muted block mb-1">Breed</label>
+          <input id="edit-cat-breed" type="text" value={breed} onChange={e => setBreed(e.target.value)} />
         </div>
-
-        {/* Date of Birth */}
         <div>
-          <label htmlFor="edit-cat-dob" className="text-xs text-muted block mb-1">Date of Birth</label>
-          <input id="edit-cat-dob" type="date" value={dob} onChange={e => setDob(e.target.value)} />
-        </div>
-
-        {/* Actions */}
-        <div className="flex gap-2 pt-2">
-          <button
-            onClick={handleSave}
-            disabled={saving || !name}
-            className="flex-1 py-3 rounded-xl golden-gradient text-white text-sm font-semibold shadow-md disabled:opacity-50"
-          >
-            {saving ? "Saving..." : "Save Changes"}
-          </button>
-          <button onClick={onClose} className="px-5 py-3 rounded-xl bg-golden-50 text-golden-700 text-sm font-medium">
-            Cancel
-          </button>
+          <label htmlFor="edit-cat-color" className="text-xs text-muted block mb-1">Color</label>
+          <input id="edit-cat-color" type="text" value={color} onChange={e => setColor(e.target.value)} />
         </div>
       </div>
-    </div>
+
+      {/* Gender */}
+      <div>
+        <label htmlFor="edit-cat-gender" className="text-xs text-muted block mb-1">Gender</label>
+        <select id="edit-cat-gender" value={gender} onChange={e => setGender(e.target.value)}>
+          <option value="">Not set</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+        </select>
+      </div>
+
+      {/* Date of Birth */}
+      <div>
+        <label htmlFor="edit-cat-dob" className="text-xs text-muted block mb-1">Date of Birth</label>
+        <input id="edit-cat-dob" type="date" value={dob} onChange={e => setDob(e.target.value)} />
+      </div>
+
+      {/* Actions */}
+      <div className="flex gap-2 pt-2">
+        <button
+          onClick={handleSave}
+          disabled={saving || !name}
+          className="flex-1 py-3 rounded-xl golden-gradient text-white text-sm font-semibold shadow-md disabled:opacity-50"
+        >
+          {saving ? "Saving..." : "Save Changes"}
+        </button>
+        <button onClick={onClose} className="px-5 py-3 rounded-xl bg-golden-50 text-golden-700 text-sm font-medium">
+          Cancel
+        </button>
+      </div>
+    </Modal>
   );
 }
 
@@ -322,22 +306,24 @@ function FooterQuote() {
 }
 
 export default function Dashboard() {
-  const [cats, setCats] = useState<Cat[]>([]);
+  const { cats, loading: catsLoading, refetch: refetchCats } = useCats();
   const [weights, setWeights] = useState<WeightRecord[]>([]);
   const [health, setHealth] = useState<HealthRecord[]>([]);
   const [allFood, setAllFood] = useState<FoodLog[]>([]);
   const [groomingLogs, setGroomingLogs] = useState<GroomingLog[]>([]);
   const [groomingTasks, setGroomingTasks] = useState<GroomingTask[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(true);
   const [editingCat, setEditingCat] = useState<Cat | null>(null);
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const { isAdmin, logout, setShowPinModal } = useAdmin();
 
+  const loading = catsLoading || dataLoading;
+
   const loadData = () => {
-    Promise.all([getCats(), getWeightRecords(), getHealthRecords(), getFoodLogs(undefined, undefined, 50), getGroomingLogs(), getGroomingTasks()])
-      .then(([c, w, h, f, g, gt]) => { setCats(c); setWeights(w); setHealth(h); setAllFood(f); setGroomingLogs(g); setGroomingTasks(gt); })
-      .finally(() => setLoading(false));
+    Promise.all([getWeightRecords(), getHealthRecords(), getFoodLogs(undefined, undefined, 50), getGroomingLogs(), getGroomingTasks()])
+      .then(([w, h, f, g, gt]) => { setWeights(w); setHealth(h); setAllFood(f); setGroomingLogs(g); setGroomingTasks(gt); })
+      .finally(() => setDataLoading(false));
   };
 
   const todayStr = format(new Date(), "yyyy-MM-dd");
@@ -419,12 +405,7 @@ export default function Dashboard() {
   }, [cats, weights, health, todayFood, allFood]);
 
   if (loading) {
-    return (
-      <div className="flex flex-col items-center pt-32 gap-3">
-        <Image src="/loading-home.webp" alt="" width={180} height={180} priority className="opacity-80" />
-        <Loader2 size={28} className="text-golden-500 animate-spin" />
-      </div>
-    );
+    return <LoadingScreen image="/loading-home.webp" />;
   }
 
   return (
@@ -443,7 +424,7 @@ export default function Dashboard() {
         <div className="absolute -right-2 -bottom-4 opacity-25">
           <TwoCatsSitting size={120} />
         </div>
-        <button onClick={() => setShowMenu(!showMenu)} aria-label="Open menu" className="absolute bottom-3 right-3 z-10 w-8 h-8 rounded-full bg-white/20 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2">
+        <button onClick={() => setShowMenu(!showMenu)} aria-label="Open menu" className="absolute bottom-2 right-2 z-10 w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-white/20 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2">
           <Menu size={18} />
         </button>
       </div>
@@ -505,7 +486,7 @@ export default function Dashboard() {
         <EditCatModal
           cat={editingCat}
           onClose={() => setEditingCat(null)}
-          onSaved={loadData}
+          onSaved={() => { refetchCats(); loadData(); }}
         />
       )}
 
