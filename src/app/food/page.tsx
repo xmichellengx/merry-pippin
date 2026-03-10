@@ -124,7 +124,8 @@ export default function FoodPage() {
     loadLogs(selectedDate);
   }, [selectedDate, loadLogs]);
 
-  // Load AI context data in one batch so context only changes once (avoids double AI call)
+  // Load AI context data — refreshed after mutations via refreshKey
+  const [refreshKey, setRefreshKey] = useState(0);
   useEffect(() => {
     Promise.all([
       getFoodLogs(undefined, undefined, 50),
@@ -133,7 +134,7 @@ export default function FoodPage() {
       setRecentFood(food);
       setCatWeights(weights);
     });
-  }, []);
+  }, [refreshKey]);
 
   const handleSave = async () => {
     if (!formCatId || !formFoodName || formFoodTypes.length === 0) return;
@@ -148,6 +149,7 @@ export default function FoodPage() {
       setShowAddForm(false);
       setFormCatId(""); setFormFoodName(""); setFormFoodTypes(["dry"]); setFormAmount(""); setFormNotes("");
       loadLogs(selectedDate);
+      setRefreshKey(k => k + 1);
     } catch (err) {
       showToast("Failed to save: " + (err instanceof Error ? err.message : String(err)));
     } finally { setSaving(false); }
@@ -159,6 +161,7 @@ export default function FoodPage() {
     setDeleteId(null);
     await deleteFoodLog(id);
     setLogs(prev => prev.filter(l => l.id !== id));
+    setRefreshKey(k => k + 1);
   };
 
   const openEdit = (meal: FoodLog) => {
@@ -185,6 +188,7 @@ export default function FoodPage() {
       });
       setEditingMeal(null);
       loadLogs(selectedDate);
+      setRefreshKey(k => k + 1);
     } catch (err) {
       showToast("Failed to save: " + (err instanceof Error ? err.message : String(err)));
     } finally { setEditSaving(false); }
