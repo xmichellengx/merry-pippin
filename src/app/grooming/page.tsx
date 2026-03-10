@@ -8,6 +8,7 @@ import { format, differenceInDays } from "date-fns";
 import { getCats, getGroomingLogs, addGroomingLog, deleteGroomingLog, getGroomingTasks, addGroomingTask, updateGroomingTask, deleteGroomingTask } from "@/lib/data";
 import type { Cat, GroomingLog, GroomingTask } from "@/lib/supabase";
 import { useAdmin } from "@/components/AdminContext";
+import { useToast } from "@/components/Toast";
 
 const ICON_OPTIONS = ["🪶", "✨", "👂", "✂️", "🧴", "🛁", "🐾", "💅", "🪥", "👃", "👁️", "💊"];
 
@@ -35,6 +36,7 @@ export default function GroomingPage() {
   const [newIcon, setNewIcon] = useState("✨");
   const [newFreq, setNewFreq] = useState(7);
   const { isAdmin } = useAdmin();
+  const { showToast } = useToast();
 
   const loadData = () => {
     Promise.all([getCats(), getGroomingLogs(), getGroomingTasks()])
@@ -56,11 +58,12 @@ export default function GroomingPage() {
       loadData();
     } catch (err) {
       const msg = err instanceof Error ? err.message : typeof err === "object" && err !== null && "message" in err ? (err as { message: string }).message : JSON.stringify(err);
-      alert("Failed to save: " + msg);
+      showToast("Failed to save: " + msg);
     } finally { setSaving(null); }
   };
 
   const handleDeleteLog = async (id: string) => {
+    if (!confirm("Delete this grooming log?")) return;
     await deleteGroomingLog(id);
     setLogs(prev => prev.filter(l => l.id !== id));
   };
@@ -78,7 +81,7 @@ export default function GroomingPage() {
       loadData();
     } catch (err) {
       const msg = err instanceof Error ? err.message : JSON.stringify(err);
-      alert("Failed to add task: " + msg);
+      showToast("Failed to add task: " + msg);
     } finally { setSaving(null); }
   };
 
@@ -88,7 +91,7 @@ export default function GroomingPage() {
       setTasks(prev => prev.map(t => t.id === task.id ? { ...t, ...updates } : t));
     } catch (err) {
       const msg = err instanceof Error ? err.message : JSON.stringify(err);
-      alert("Failed to update: " + msg);
+      showToast("Failed to update: " + msg);
     }
   };
 
@@ -100,7 +103,7 @@ export default function GroomingPage() {
       if (editingTask?.id === task.id) setEditingTask(null);
     } catch (err) {
       const msg = err instanceof Error ? err.message : JSON.stringify(err);
-      alert("Failed to delete: " + msg);
+      showToast("Failed to delete: " + msg);
     }
   };
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import {
   UtensilsCrossed,
   Calendar,
@@ -137,7 +137,8 @@ function AiChatCard({ context }: { context: string }) {
         <button
           onClick={() => sendMessage(input)}
           disabled={loading || !input.trim()}
-          className="w-9 h-9 rounded-xl golden-gradient flex items-center justify-center shadow-sm disabled:opacity-40"
+          aria-label="Send message"
+          className="w-9 h-9 rounded-xl golden-gradient flex items-center justify-center shadow-sm disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2"
         >
           <Send size={14} className="text-white" />
         </button>
@@ -198,22 +199,28 @@ function EditCatModal({ cat, onClose, onSaved }: { cat: Cat; onClose: () => void
     }
   };
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
   return (
-    <div className="fixed inset-0 overlay z-50 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 overlay z-50 flex items-center justify-center p-4" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="edit-cat-title">
       <div
         className="bg-white rounded-2xl w-full max-w-sm p-5 space-y-4 max-h-[90vh] overflow-y-auto"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold">Edit Profile</h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-golden-50 flex items-center justify-center">
+          <h2 id="edit-cat-title" className="text-lg font-bold">Edit Profile</h2>
+          <button onClick={onClose} aria-label="Close" className="w-8 h-8 rounded-full bg-golden-50 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2">
             <X size={16} className="text-muted" />
           </button>
         </div>
 
         {/* Photo */}
         <div className="flex justify-center">
-          <button onClick={() => fileRef.current?.click()} className="relative group">
+          <button onClick={() => fileRef.current?.click()} aria-label="Change photo" className="relative group">
             {photoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={photoUrl} alt={name} className="w-24 h-24 rounded-full object-cover border-4 border-golden-200" />
@@ -231,26 +238,26 @@ function EditCatModal({ cat, onClose, onSaved }: { cat: Cat; onClose: () => void
 
         {/* Name */}
         <div>
-          <label className="text-xs text-muted block mb-1">Name</label>
-          <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Cat name" />
+          <label htmlFor="edit-cat-name" className="text-xs text-muted block mb-1">Name</label>
+          <input id="edit-cat-name" type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Cat name" />
         </div>
 
         {/* Breed & Color */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs text-muted block mb-1">Breed</label>
-            <input type="text" value={breed} onChange={e => setBreed(e.target.value)} />
+            <label htmlFor="edit-cat-breed" className="text-xs text-muted block mb-1">Breed</label>
+            <input id="edit-cat-breed" type="text" value={breed} onChange={e => setBreed(e.target.value)} />
           </div>
           <div>
-            <label className="text-xs text-muted block mb-1">Color</label>
-            <input type="text" value={color} onChange={e => setColor(e.target.value)} />
+            <label htmlFor="edit-cat-color" className="text-xs text-muted block mb-1">Color</label>
+            <input id="edit-cat-color" type="text" value={color} onChange={e => setColor(e.target.value)} />
           </div>
         </div>
 
         {/* Gender */}
         <div>
-          <label className="text-xs text-muted block mb-1">Gender</label>
-          <select value={gender} onChange={e => setGender(e.target.value)}>
+          <label htmlFor="edit-cat-gender" className="text-xs text-muted block mb-1">Gender</label>
+          <select id="edit-cat-gender" value={gender} onChange={e => setGender(e.target.value)}>
             <option value="">Not set</option>
             <option value="male">Male</option>
             <option value="female">Female</option>
@@ -259,8 +266,8 @@ function EditCatModal({ cat, onClose, onSaved }: { cat: Cat; onClose: () => void
 
         {/* Date of Birth */}
         <div>
-          <label className="text-xs text-muted block mb-1">Date of Birth</label>
-          <input type="date" value={dob} onChange={e => setDob(e.target.value)} />
+          <label htmlFor="edit-cat-dob" className="text-xs text-muted block mb-1">Date of Birth</label>
+          <input id="edit-cat-dob" type="date" value={dob} onChange={e => setDob(e.target.value)} />
         </div>
 
         {/* Actions */}
@@ -281,6 +288,39 @@ function EditCatModal({ cat, onClose, onSaved }: { cat: Cat; onClose: () => void
   );
 }
 
+const quotes = [
+  { text: "What about second breakfast?", by: "Pippin" },
+  { text: "We've had one, yes. But what about second breakfast?", by: "Pippin" },
+  { text: "I don't think he knows about second breakfast, Pip.", by: "Merry" },
+  { text: "Anyway, you need people of intelligence on this sort of mission... quest... thing.", by: "Pippin" },
+  { text: "Short cuts make long delays.", by: "Pippin" },
+  { text: "The closer we are to danger, the farther we are from harm.", by: "Pippin" },
+  { text: "It comes in pints? I'm getting one!", by: "Pippin" },
+  { text: "That doesn't make sense to me. But then again, you are very small.", by: "Merry" },
+  { text: "I feel like I'm back at the Green Dragon after a hard day's work.", by: "Pippin" },
+  { text: "We are sitting on a field of victory, enjoying a few well-earned comforts.", by: "Pippin" },
+  { text: "You can trust us to stick to you through thick and thin.", by: "Merry" },
+  { text: "For the Shire!", by: "Merry & Pippin" },
+];
+
+function FooterQuote() {
+  const [q, setQ] = useState(quotes[0]);
+  useEffect(() => {
+    const now = new Date();
+    const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000);
+    setQ(quotes[dayOfYear % quotes.length]);
+  }, []);
+  return (
+    <div className="text-center py-5 opacity-40">
+      <div className="lotr-divider-ornate mx-6 mb-3"><span className="text-elvish-gold text-[10px] px-2">&loz;</span></div>
+      <p className="text-[10px] text-muted italic tracking-wide leading-relaxed px-8">
+        &ldquo;{q.text}&rdquo;
+      </p>
+      <p className="text-[9px] text-muted mt-1 tracking-wider opacity-70">— {q.by}</p>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const [cats, setCats] = useState<Cat[]>([]);
   const [weights, setWeights] = useState<WeightRecord[]>([]);
@@ -291,6 +331,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [editingCat, setEditingCat] = useState<Cat | null>(null);
   const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   const { isAdmin, logout, setShowPinModal } = useAdmin();
 
   const loadData = () => {
@@ -303,6 +344,16 @@ export default function Dashboard() {
   const todayFood = useMemo(() => allFood.filter(f => f.date === todayStr), [allFood, todayStr]);
 
   useEffect(() => { loadData(); }, []);
+
+  // Close dropdown on Escape or click outside
+  useEffect(() => {
+    if (!showMenu) return;
+    const handleKey = (e: KeyboardEvent) => { if (e.key === "Escape") setShowMenu(false); };
+    const handleClick = (e: MouseEvent) => { if (menuRef.current && !menuRef.current.contains(e.target as Node)) setShowMenu(false); };
+    document.addEventListener("keydown", handleKey);
+    document.addEventListener("mousedown", handleClick);
+    return () => { document.removeEventListener("keydown", handleKey); document.removeEventListener("mousedown", handleClick); };
+  }, [showMenu]);
 
   const upcoming = useMemo(() =>
     health.filter(h => h.next_due_date).sort((a, b) => (a.next_due_date ?? '').localeCompare(b.next_due_date ?? '')),
@@ -392,13 +443,13 @@ export default function Dashboard() {
         <div className="absolute -right-2 -bottom-4 opacity-25">
           <TwoCatsSitting size={120} />
         </div>
-        <button onClick={() => setShowMenu(!showMenu)} className="absolute bottom-3 right-3 z-10 w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+        <button onClick={() => setShowMenu(!showMenu)} aria-label="Open menu" className="absolute bottom-3 right-3 z-10 w-8 h-8 rounded-full bg-white/20 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2">
           <Menu size={18} />
         </button>
       </div>
       {/* Dropdown menu */}
       {showMenu && (
-        <div className="absolute right-4 mt-1 z-20 bg-white rounded-xl shadow-lg border border-card-border py-1 min-w-[140px]">
+        <div ref={menuRef} className="absolute right-4 mt-1 z-20 bg-white rounded-xl shadow-lg border border-card-border py-1 min-w-[140px]">
           <button
             onClick={() => { setShowMenu(false); isAdmin ? logout() : setShowPinModal(true); }}
             className="w-full px-4 py-2.5 text-left text-sm text-foreground flex items-center gap-2 hover:bg-golden-50"
@@ -420,7 +471,8 @@ export default function Dashboard() {
             <button
               key={cat.id}
               onClick={() => isAdmin && setEditingCat(cat)}
-              className="card p-4 text-left transition-all active:scale-[0.98]"
+              aria-label={`Edit ${cat.name}'s profile`}
+              className="card p-4 text-left transition-all active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2"
             >
               <div className="relative">
                 {cat.photo_url ? (
@@ -630,32 +682,7 @@ export default function Dashboard() {
       <AiChatCard context={aiContext} />
 
       {/* Footer — rotating Merry & Pippin quotes */}
-      {(() => {
-        const quotes = [
-          { text: "What about second breakfast?", by: "Pippin" },
-          { text: "We've had one, yes. But what about second breakfast?", by: "Pippin" },
-          { text: "I don't think he knows about second breakfast, Pip.", by: "Merry" },
-          { text: "Anyway, you need people of intelligence on this sort of mission... quest... thing.", by: "Pippin" },
-          { text: "Short cuts make long delays.", by: "Pippin" },
-          { text: "The closer we are to danger, the farther we are from harm.", by: "Pippin" },
-          { text: "It comes in pints? I'm getting one!", by: "Pippin" },
-          { text: "That doesn't make sense to me. But then again, you are very small.", by: "Merry" },
-          { text: "I feel like I'm back at the Green Dragon after a hard day's work.", by: "Pippin" },
-          { text: "We are sitting on a field of victory, enjoying a few well-earned comforts.", by: "Pippin" },
-          { text: "You can trust us to stick to you through thick and thin.", by: "Merry" },
-          { text: "For the Shire!", by: "Merry & Pippin" },
-        ];
-        const q = quotes[Math.floor(Date.now() / 86400000) % quotes.length];
-        return (
-          <div className="text-center py-5 opacity-40">
-            <div className="lotr-divider-ornate mx-6 mb-3"><span className="text-elvish-gold text-[10px] px-2">&loz;</span></div>
-            <p className="text-[10px] text-muted italic tracking-wide leading-relaxed px-8">
-              &ldquo;{q.text}&rdquo;
-            </p>
-            <p className="text-[9px] text-muted mt-1 tracking-wider opacity-70">— {q.by}</p>
-          </div>
-        );
-      })()}
+      <FooterQuote />
     </div>
   );
 }

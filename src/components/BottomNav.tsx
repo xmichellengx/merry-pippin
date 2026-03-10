@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -155,8 +155,14 @@ function PinModal() {
     setLoading(false);
   };
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => { if (e.key === "Escape") setShowPinModal(false); };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [setShowPinModal]);
+
   return (
-    <div className="fixed inset-0 overlay z-[60] flex items-end justify-center" onClick={() => setShowPinModal(false)}>
+    <div className="fixed inset-0 overlay z-[60] flex items-end justify-center" onClick={() => setShowPinModal(false)} role="dialog" aria-modal="true" aria-labelledby="pin-modal-title">
       <div
         className="bg-white rounded-t-2xl w-full max-w-lg p-6 pb-8 space-y-4 animate-slide-up"
         style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" }}
@@ -165,15 +171,16 @@ function PinModal() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <PawLocked size={20} className="text-golden-600" />
-            <h2 className="text-base font-bold">Meowmeee Login</h2>
+            <h2 id="pin-modal-title" className="text-base font-bold">Meowmeee Login</h2>
           </div>
-          <button onClick={() => setShowPinModal(false)} className="w-8 h-8 rounded-full bg-golden-50 flex items-center justify-center">
+          <button onClick={() => setShowPinModal(false)} aria-label="Close" className="w-8 h-8 rounded-full bg-golden-50 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2">
             <X size={16} className="text-muted" />
           </button>
         </div>
-        <p className="text-xs text-muted">Enter your secret PIN to unlock editing.</p>
+        <label htmlFor="pin-input" className="text-xs text-muted block">Enter your secret PIN to unlock editing.</label>
         <div>
           <input
+            id="pin-input"
             type="password"
             inputMode="numeric"
             pattern="[0-9]*"
@@ -216,7 +223,8 @@ export default function BottomNav() {
               <Link
                 key={tab.href}
                 href={tab.href}
-                className={`flex flex-col items-center justify-center ${isHome ? "w-13 h-13 -mt-5 rounded-full shadow-lg border-2 border-white overflow-hidden" : `w-14 py-0 rounded-lg transition-colors ${isActive ? "text-golden-600" : "text-muted"}`}`}
+                aria-label={tab.label}
+                className={`flex flex-col items-center justify-center focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2 ${isHome ? "w-13 h-13 -mt-5 rounded-full shadow-lg border-2 border-white overflow-hidden" : `w-14 py-0 rounded-lg transition-colors ${isActive ? "text-golden-600" : "text-muted"}`}`}
               >
                 {isHome ? (
                   <tab.Icon size={52} active={true} />

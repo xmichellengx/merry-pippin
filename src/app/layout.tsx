@@ -3,6 +3,7 @@ import { Quicksand } from "next/font/google";
 import "./globals.css";
 import BottomNav from "@/components/BottomNav";
 import { AdminProvider } from "@/components/AdminContext";
+import { ToastProvider } from "@/components/Toast";
 
 const quicksand = Quicksand({
   variable: "--font-quicksand",
@@ -33,8 +34,6 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   viewportFit: "cover",
   themeColor: "#D4BC82",
 };
@@ -48,10 +47,12 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${quicksand.variable} antialiased text-foreground`} style={{ fontFamily: "var(--font-quicksand), sans-serif" }}>
         <AdminProvider>
-          <main className="max-w-lg mx-auto bg-background" style={{ paddingBottom: "calc(5.5rem + env(safe-area-inset-bottom, 0px))", minHeight: "100dvh" }}>
-            {children}
-          </main>
-          <BottomNav />
+          <ToastProvider>
+            <main className="max-w-lg mx-auto bg-background" style={{ paddingBottom: "calc(5.5rem + env(safe-area-inset-bottom, 0px))", minHeight: "100dvh" }}>
+              {children}
+            </main>
+            <BottomNav />
+          </ToastProvider>
         </AdminProvider>
       </body>
     </html>
