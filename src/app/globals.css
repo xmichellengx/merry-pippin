@@ -63,11 +63,11 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Bump up small text sizes for readability */
-.text-xs { font-size: 0.8125rem !important; }
-.text-\[10px\] { font-size: 0.6875rem !important; }
-.text-\[9px\] { font-size: 0.6875rem !important; }
-.text-sm { font-size: 0.9375rem !important; }
+/* Bump up small text sizes for readability via higher-specificity selectors */
+:root .text-xs { font-size: 0.8125rem; }
+:root .text-\[10px\] { font-size: 0.6875rem; }
+:root .text-\[9px\] { font-size: 0.6875rem; }
+:root .text-sm { font-size: 0.9375rem; }
 
 /* ── Card with elvish corner filigree ── */
 .card {
@@ -85,7 +85,7 @@ body {
 
 /* Antique gold gradient */
 .golden-gradient {
-  background: linear-gradient(135deg, #D4BC82 0%, #B08D3A 50%, #96742A 100%);
+  background: linear-gradient(135deg, var(--golden-300) 0%, var(--golden-500) 50%, var(--golden-600) 100%);
 }
 
 /* Status badges */
