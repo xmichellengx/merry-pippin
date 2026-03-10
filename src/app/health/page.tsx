@@ -257,6 +257,7 @@ function VetSelector({
           type="button"
           onClick={() => onSelect("")}
           className="text-muted hover:text-foreground"
+          aria-label="Clear vet selection"
         >
           <X size={14} />
         </button>
@@ -433,6 +434,14 @@ function EditRecordModal({
   const catName = cats.find(c => c.id === record.cat_id)?.name ?? "Unknown";
   const showPhoto = recordType === "vaccine" || recordType === "deworm";
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
   const handleSave = async () => {
     if (!title) return;
     setSaving(true);
@@ -469,35 +478,35 @@ function EditRecordModal({
         <p className="text-xs text-muted">Cat: <span className="font-medium text-foreground">{catName}</span></p>
 
         <div>
-          <label className="text-xs text-muted block mb-1">Type</label>
-          <select value={recordType} onChange={e => setRecordType(e.target.value)}>
+          <label htmlFor="edit-record-type" className="text-xs text-muted block mb-1">Type</label>
+          <select id="edit-record-type" value={recordType} onChange={e => setRecordType(e.target.value)}>
             {Object.entries(typeConfig).map(([key, cfg]) => (
               <option key={key} value={key}>{cfg.label}</option>
             ))}
           </select>
         </div>
         <div>
-          <label className="text-xs text-muted block mb-1">Title</label>
-          <input type="text" value={title} onChange={e => setTitle(e.target.value)} />
+          <label htmlFor="edit-record-title-input" className="text-xs text-muted block mb-1">Title</label>
+          <input id="edit-record-title-input" type="text" value={title} onChange={e => setTitle(e.target.value)} />
         </div>
         <div>
-          <label className="text-xs text-muted block mb-1">Date</label>
-          <input type="date" value={date} onChange={e => setDate(e.target.value)} />
+          <label htmlFor="edit-record-date" className="text-xs text-muted block mb-1">Date</label>
+          <input id="edit-record-date" type="date" value={date} onChange={e => setDate(e.target.value)} />
         </div>
         <div>
-          <label className="text-xs text-muted block mb-1">Next Due Date</label>
-          <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+          <label htmlFor="edit-record-due-date" className="text-xs text-muted block mb-1">Next Due Date</label>
+          <input id="edit-record-due-date" type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
         </div>
         <div>
-          <label className="text-xs text-muted block mb-1">Vet Clinic</label>
+          <label htmlFor="edit-record-vet" className="text-xs text-muted block mb-1">Vet Clinic</label>
           <VetSelector
             selectedVet={vetName}
             onSelect={(name) => setVetName(name)}
           />
         </div>
         <div>
-          <label className="text-xs text-muted block mb-1">Notes</label>
-          <textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)} />
+          <label htmlFor="edit-record-notes" className="text-xs text-muted block mb-1">Notes</label>
+          <textarea id="edit-record-notes" rows={2} value={notes} onChange={e => setNotes(e.target.value)} />
         </div>
 
         {showPhoto && (
@@ -970,19 +979,19 @@ Plain text only, no markdown. Jump straight into insights, no intro.`}
         <div className="card p-4 space-y-3 border-golden-300 border-2">
           <h3 className="font-semibold text-sm">New Health Record</h3>
           <div>
-            <label className="text-xs text-muted block mb-1">Cat</label>
-            <select value={formCatId} onChange={e => setFormCatId(e.target.value)}>
+            <label htmlFor="health-cat" className="text-xs text-muted block mb-1">Cat</label>
+            <select id="health-cat" value={formCatId} onChange={e => setFormCatId(e.target.value)}>
               <option value="" disabled>Select cat...</option>
               {cats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
           <div>
-            <label className="text-xs text-muted block mb-1">Title</label>
-            <input type="text" placeholder="e.g., Annual Checkup" value={formTitle} onChange={e => setFormTitle(e.target.value)} />
+            <label htmlFor="health-title" className="text-xs text-muted block mb-1">Title</label>
+            <input id="health-title" type="text" placeholder="e.g., Annual Checkup" value={formTitle} onChange={e => setFormTitle(e.target.value)} />
           </div>
           <div>
-            <label className="text-xs text-muted block mb-1">Date</label>
-            <input type="date" value={formDate} onChange={e => setFormDate(e.target.value)} />
+            <label htmlFor="health-date" className="text-xs text-muted block mb-1">Date</label>
+            <input id="health-date" type="date" value={formDate} onChange={e => setFormDate(e.target.value)} />
           </div>
 
           {/* Type checkboxes with per-type due dates */}
@@ -1073,8 +1082,8 @@ Plain text only, no markdown. Jump straight into insights, no intro.`}
           </div>
 
           <div>
-            <label className="text-xs text-muted block mb-1">Notes</label>
-            <textarea rows={2} placeholder="Optional notes..." value={formNotes} onChange={e => setFormNotes(e.target.value)} />
+            <label htmlFor="health-notes" className="text-xs text-muted block mb-1">Notes</label>
+            <textarea id="health-notes" rows={2} placeholder="Optional notes..." value={formNotes} onChange={e => setFormNotes(e.target.value)} />
           </div>
           <div className="flex gap-2">
             <button onClick={handleSave} disabled={saving || !formCatId || !formTitle || checkedTypes.length === 0} className="flex-1 py-2.5 rounded-xl golden-gradient text-white text-sm font-semibold shadow-md disabled:opacity-50">
