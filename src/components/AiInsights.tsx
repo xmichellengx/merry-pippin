@@ -58,12 +58,14 @@ export function AiInsights({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message: prompt, context }),
     })
-      .then(res => res.json())
-      .then(data => {
-        if (data.reply) {
-          setInsights(data.reply);
+      .then(async res => {
+        if (!res.ok) throw new Error("AI request failed");
+        // The API returns a plain text stream — read it fully
+        const text = await res.text();
+        if (text) {
+          setInsights(text);
           try {
-            localStorage.setItem(CACHE_DATA, data.reply);
+            localStorage.setItem(CACHE_DATA, text);
             localStorage.setItem(CACHE_HASH, contextHash);
           } catch { /* storage full */ }
         } else {
