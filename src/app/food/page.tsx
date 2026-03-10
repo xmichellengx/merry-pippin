@@ -399,11 +399,14 @@ Plain text only, no markdown. No intro.`}
 
       {/* Edit Meal Modal */}
       {editingMeal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center" onClick={() => setEditingMeal(null)}>
-          <div className="bg-card w-full max-w-md rounded-t-3xl p-5 space-y-3 max-h-[90vh] overflow-y-auto" style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" }} onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center px-6" onClick={() => setEditingMeal(null)}>
+          <div className="bg-white w-full max-w-sm rounded-2xl p-5 shadow-xl space-y-3 max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-1">
-              <h3 className="font-bold text-base">Edit Meal</h3>
-              <button onClick={() => setEditingMeal(null)} className="w-8 h-8 rounded-full bg-golden-50 flex items-center justify-center"><X size={16} className="text-golden-700" /></button>
+              <div className="flex items-center gap-2">
+                <span className="text-base">🍽️</span>
+                <h3 className="font-bold text-sm">Edit Meal</h3>
+              </div>
+              <button onClick={() => setEditingMeal(null)} className="w-7 h-7 rounded-full bg-golden-50 flex items-center justify-center"><X size={14} className="text-golden-700" /></button>
             </div>
             <div>
               <label className="text-xs text-muted block mb-1">Cat</label>
@@ -436,12 +439,9 @@ Plain text only, no markdown. No intro.`}
               <label className="text-xs text-muted block mb-1">Notes</label>
               <textarea rows={2} placeholder="Optional notes..." value={editNotes} onChange={e => setEditNotes(e.target.value)} />
             </div>
-            <div className="flex gap-2">
-              <button onClick={handleEditSave} disabled={editSaving || !editCatId || !editFoodName || editFoodTypes.length === 0} className="flex-1 py-2.5 rounded-xl golden-gradient text-white text-sm font-semibold shadow-md disabled:opacity-50">
-                {editSaving ? "Saving..." : "Update Meal"}
-              </button>
-              <button onClick={() => setEditingMeal(null)} className="px-4 py-2.5 rounded-xl bg-golden-50 text-golden-700 text-sm font-medium">Cancel</button>
-            </div>
+            <button onClick={handleEditSave} disabled={editSaving || !editCatId || !editFoodName || editFoodTypes.length === 0} className="w-full py-3 rounded-xl golden-gradient text-white text-sm font-semibold shadow-md disabled:opacity-50">
+              {editSaving ? "Saving..." : "Update"}
+            </button>
           </div>
         </div>
       )}
