@@ -8,6 +8,7 @@ import { format, subDays } from "date-fns";
 import { getCats, getFoodLogs, addFoodLog, deleteFoodLog, updateFoodLog } from "@/lib/data";
 import type { Cat, FoodLog } from "@/lib/supabase";
 import { useAdmin } from "@/components/AdminContext";
+import { useToast } from "@/components/Toast";
 import { AiInsights } from "@/components/AiInsights";
 import { getWeightRecords } from "@/lib/data";
 import type { WeightRecord } from "@/lib/supabase";
@@ -82,6 +83,7 @@ export default function FoodPage() {
   const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [showAddForm, setShowAddForm] = useState(false);
   const { isAdmin } = useAdmin();
+  const { showToast } = useToast();
 
   const [formCatId, setFormCatId] = useState("");
   const [formFoodName, setFormFoodName] = useState("");
@@ -106,6 +108,15 @@ export default function FoodPage() {
 
   const loadLogs = useCallback((date: string) => {
     getFoodLogs(date).then(f => setLogs(f)).finally(() => setLoading(false));
+  }, []);
+
+  // Escape key for modals
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { setShowAddForm(false); setEditingMeal(null); }
+    };
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
   }, []);
 
   // Load page data — cats + today's logs are critical path
@@ -139,11 +150,12 @@ export default function FoodPage() {
       setFormCatId(""); setFormFoodName(""); setFormFoodTypes(["dry"]); setFormAmount(""); setFormNotes("");
       loadLogs(selectedDate);
     } catch (err) {
-      alert("Failed to save: " + (err instanceof Error ? err.message : String(err)));
+      showToast("Failed to save: " + (err instanceof Error ? err.message : String(err)));
     } finally { setSaving(false); }
   };
 
   const handleDelete = async (id: string) => {
+    if (!confirm("Delete this meal?")) return;
     await deleteFoodLog(id);
     setLogs(prev => prev.filter(l => l.id !== id));
   };
@@ -242,10 +254,10 @@ export default function FoodPage() {
     <div className="px-4 pt-12 pb-6 space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link href="/" className="w-8 h-8 rounded-full bg-golden-100 flex items-center justify-center"><ArrowLeft size={16} className="text-golden-700" /></Link>
+          <Link href="/" aria-label="Back to home" className="w-8 h-8 rounded-full bg-golden-100 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2"><ArrowLeft size={16} className="text-golden-700" /></Link>
           <h1 className="text-lg font-bold">Food Log</h1>
         </div>
-        {isAdmin && <button onClick={() => setShowAddForm(!showAddForm)} className="w-9 h-9 rounded-full golden-gradient flex items-center justify-center shadow-md"><Plus size={18} className="text-white" /></button>}
+        {isAdmin && <button onClick={() => setShowAddForm(!showAddForm)} aria-label="Log meal" className="w-9 h-9 rounded-full golden-gradient flex items-center justify-center shadow-md focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2"><Plus size={18} className="text-white" /></button>}
       </div>
 
       <AiInsights
@@ -309,11 +321,11 @@ Plain text only, no markdown. No intro.`}
       </div>
 
       {isAdmin && showAddForm && (
-        <div className="fixed inset-0 bg-black/50 z-[60] flex items-end justify-center" onClick={() => setShowAddForm(false)}>
+        <div className="fixed inset-0 overlay z-[60] flex items-end justify-center" onClick={() => setShowAddForm(false)} role="dialog" aria-modal="true" aria-labelledby="add-meal-title">
           <div className="bg-white w-full max-w-lg rounded-t-3xl p-5 space-y-3 max-h-[90vh] overflow-y-auto animate-slide-up" style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" }} onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-1">
-              <h3 className="font-bold text-base">Log Meal</h3>
-              <button onClick={() => setShowAddForm(false)} className="w-8 h-8 rounded-full bg-golden-50 flex items-center justify-center"><X size={16} className="text-golden-700" /></button>
+              <h3 id="add-meal-title" className="font-bold text-base">Log Meal</h3>
+              <button onClick={() => setShowAddForm(false)} aria-label="Close" className="w-8 h-8 rounded-full bg-golden-50 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2"><X size={16} className="text-golden-700" /></button>
             </div>
             <div>
               <label className="text-xs text-muted block mb-1">Cat</label>
@@ -385,8 +397,8 @@ Plain text only, no markdown. No intro.`}
                   </div>
                   {isAdmin && (
                     <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
-                      <button onClick={() => openEdit(meal)} className="text-muted hover:text-golden-600"><Pencil size={13} /></button>
-                      <button onClick={() => handleDelete(meal.id)} className="text-muted hover:text-danger"><Trash2 size={14} /></button>
+                      <button onClick={() => openEdit(meal)} aria-label="Edit meal" className="text-muted hover:text-golden-600 focus-visible:ring-2 focus-visible:ring-golden-400 rounded"><Pencil size={13} /></button>
+                      <button onClick={() => handleDelete(meal.id)} aria-label="Delete meal" className="text-muted hover:text-danger focus-visible:ring-2 focus-visible:ring-golden-400 rounded"><Trash2 size={14} /></button>
                     </div>
                   )}
                 </div>
@@ -399,14 +411,14 @@ Plain text only, no markdown. No intro.`}
 
       {/* Edit Meal Modal */}
       {editingMeal && (
-        <div className="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center px-6" onClick={() => setEditingMeal(null)}>
-          <div className="bg-white w-full max-w-sm rounded-2xl p-5 shadow-xl space-y-3 max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 overlay z-[60] flex items-center justify-center px-6" onClick={() => setEditingMeal(null)} role="dialog" aria-modal="true" aria-labelledby="edit-meal-title">
+          <div className="bg-white w-full max-w-sm rounded-2xl p-5 shadow-xl space-y-3 max-h-[85vh] overflow-y-auto animate-scale-in" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
                 <span className="text-base">🍽️</span>
-                <h3 className="font-bold text-sm">Edit Meal</h3>
+                <h3 id="edit-meal-title" className="font-bold text-sm">Edit Meal</h3>
               </div>
-              <button onClick={() => setEditingMeal(null)} className="w-7 h-7 rounded-full bg-golden-50 flex items-center justify-center"><X size={14} className="text-golden-700" /></button>
+              <button onClick={() => setEditingMeal(null)} aria-label="Close" className="w-7 h-7 rounded-full bg-golden-50 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2"><X size={14} className="text-golden-700" /></button>
             </div>
             <div>
               <label className="text-xs text-muted block mb-1">Cat</label>

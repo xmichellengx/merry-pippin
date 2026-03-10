@@ -32,6 +32,7 @@ import { compressImage, compressImageToBlob } from "@/lib/compress-image";
 import type { Cat, HealthRecord, LitterBoxLog } from "@/lib/supabase";
 import { useAdmin } from "@/components/AdminContext";
 import { AiInsights } from "@/components/AiInsights";
+import { useToast } from "@/components/Toast";
 
 const typeConfig: Record<string, { icon: typeof Syringe; color: string; bg: string; label: string }> = {
   vaccine: { icon: Syringe, color: "text-blue-600", bg: "bg-blue-50", label: "Vaccine" },
@@ -118,6 +119,7 @@ function PhotoUpload({
             type="button"
             onClick={() => onUpload("")}
             className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center"
+            aria-label="Remove photo"
           >
             <X size={10} />
           </button>
@@ -452,13 +454,13 @@ function EditRecordModal({
   };
 
   return (
-    <div className="fixed inset-0 overlay z-50 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 overlay z-50 flex items-center justify-center p-4" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="edit-record-title">
       <div
-        className="bg-white rounded-2xl w-full max-w-sm p-5 space-y-4 max-h-[90vh] overflow-y-auto"
+        className="bg-white rounded-2xl w-full max-w-sm p-5 space-y-4 max-h-[90vh] overflow-y-auto animate-scale-in"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold">Edit Record</h2>
+          <h2 id="edit-record-title" className="text-lg font-bold">Edit Record</h2>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-golden-50 flex items-center justify-center">
             <X size={16} className="text-muted" />
           </button>
@@ -564,6 +566,7 @@ function RecordCard({
                   onClick={() => onEdit(record)}
                   className="w-7 h-7 rounded-lg bg-golden-50 flex items-center justify-center text-golden-600 hover:bg-golden-100 transition-colors"
                   title="Edit"
+                  aria-label="Edit record"
                 >
                   <Pencil size={12} />
                 </button>
@@ -571,6 +574,7 @@ function RecordCard({
                   onClick={() => onDelete(record.id)}
                   className="w-7 h-7 rounded-lg bg-red-50 flex items-center justify-center text-red-400 hover:bg-red-100 transition-colors"
                   title="Delete"
+                  aria-label="Delete record"
                 >
                   <Trash2 size={12} />
                 </button>
@@ -640,6 +644,7 @@ export default function HealthPage() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingRecord, setEditingRecord] = useState<HealthRecord | null>(null);
   const { isAdmin } = useAdmin();
+  const { showToast } = useToast();
 
   // Litter box state
   const [litterLogs, setLitterLogs] = useState<LitterBoxLog[]>([]);
@@ -721,6 +726,7 @@ export default function HealthPage() {
   };
 
   const handleDelete = async (id: string) => {
+    if (!confirm("Delete this health record?")) return;
     await deleteHealthRecord(id);
     setRecords(prev => prev.filter(r => r.id !== id));
   };
@@ -802,6 +808,7 @@ export default function HealthPage() {
   }, []);
 
   const handleLitterDelete = async (id: string) => {
+    if (!confirm("Delete this litter box log?")) return;
     await deleteLitterBoxLog(id);
     setLitterLogs(prev => prev.filter(l => l.id !== id));
   };
@@ -911,13 +918,13 @@ export default function HealthPage() {
     <div className="px-4 pt-12 pb-6 space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link href="/" className="w-8 h-8 rounded-full bg-golden-100 flex items-center justify-center">
+          <Link href="/" className="w-8 h-8 rounded-full bg-golden-100 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2" aria-label="Back to home">
             <ArrowLeft size={16} className="text-golden-700" />
           </Link>
           <h1 className="text-lg font-bold">Health Records</h1>
         </div>
         {isAdmin && (
-          <button onClick={() => setShowAddForm(!showAddForm)} className="w-9 h-9 rounded-full golden-gradient flex items-center justify-center shadow-md">
+          <button onClick={() => setShowAddForm(!showAddForm)} className="w-9 h-9 rounded-full golden-gradient flex items-center justify-center shadow-md focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2" aria-label="Add health record">
             <Plus size={18} className="text-white" />
           </button>
         )}
