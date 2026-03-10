@@ -1,14 +1,18 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { ArrowLeft, Loader2, Trash2, Check, Settings, X, Plus, Pencil } from "lucide-react";
-import Link from "next/link";
 import Image from "next/image";
 import { format, differenceInDays } from "date-fns";
-import { getCats, getGroomingLogs, addGroomingLog, deleteGroomingLog, getGroomingTasks, addGroomingTask, updateGroomingTask, deleteGroomingTask } from "@/lib/data";
-import type { Cat, GroomingLog, GroomingTask } from "@/lib/supabase";
+import { getGroomingLogs, addGroomingLog, deleteGroomingLog, getGroomingTasks, addGroomingTask, updateGroomingTask, deleteGroomingTask } from "@/lib/data";
+import type { GroomingLog, GroomingTask } from "@/lib/supabase";
 import { useAdmin } from "@/components/AdminContext";
 import { useToast } from "@/components/Toast";
+import { PageHeader } from "@/components/PageHeader";
+import { LoadingScreen } from "@/components/LoadingScreen";
+import { FilterChip } from "@/components/FilterChip";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { useCats } from "@/hooks/useCats";
 
 const ICON_OPTIONS = ["🪶", "✨", "👂", "✂️", "🧴", "🛁", "🐾", "💅", "🪥", "👃", "👁️", "💊"];
 
@@ -22,7 +26,7 @@ function getTaskStatus(logs: GroomingLog[], catId: string, taskType: string, fre
 }
 
 export default function GroomingPage() {
-  const [cats, setCats] = useState<Cat[]>([]);
+  const { cats } = useCats();
   const [logs, setLogs] = useState<GroomingLog[]>([]);
   const [tasks, setTasks] = useState<GroomingTask[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,13 +42,19 @@ export default function GroomingPage() {
   const { isAdmin } = useAdmin();
   const { showToast } = useToast();
 
-  const loadData = () => {
-    Promise.all([getCats(), getGroomingLogs(), getGroomingTasks()])
-      .then(([c, g, t]) => { setCats(c); setLogs(g); setTasks(t); })
-      .finally(() => setLoading(false));
-  };
+  // Confirm dialog state
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmTitle, setConfirmTitle] = useState("");
+  const [confirmMessage, setConfirmMessage] = useState("");
+  const [confirmAction, setConfirmAction] = useState<() => void>(() => {});
 
-  useEffect(() => { loadData(); }, []);
+  const loadData = useCallback(() => {
+    Promise.all([getGroomingLogs(), getGroomingTasks()])
+      .then(([g, t]) => { setLogs(g); setTasks(t); })
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => { loadData(); }, [loadData]);
 
   const handleMarkDone = async (catId: string, taskType: string) => {
     const key = `${catId}-${taskType}`;
@@ -62,10 +72,15 @@ export default function GroomingPage() {
     } finally { setSaving(null); }
   };
 
-  const handleDeleteLog = async (id: string) => {
-    if (!confirm("Delete this grooming log?")) return;
-    await deleteGroomingLog(id);
-    setLogs(prev => prev.filter(l => l.id !== id));
+  const handleDeleteLog = (id: string) => {
+    setConfirmTitle("Delete Grooming Log");
+    setConfirmMessage("Are you sure you want to delete this grooming log?");
+    setConfirmAction(() => async () => {
+      await deleteGroomingLog(id);
+      setLogs(prev => prev.filter(l => l.id !== id));
+      setConfirmOpen(false);
+    });
+    setConfirmOpen(true);
   };
 
   const handleAddTask = async () => {
@@ -95,16 +110,21 @@ export default function GroomingPage() {
     }
   };
 
-  const handleDeleteTask = async (task: GroomingTask) => {
-    if (!confirm(`Delete "${task.label}"? This won't delete existing logs.`)) return;
-    try {
-      await deleteGroomingTask(task.id);
-      setTasks(prev => prev.filter(t => t.id !== task.id));
-      if (editingTask?.id === task.id) setEditingTask(null);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : JSON.stringify(err);
-      showToast("Failed to delete: " + msg);
-    }
+  const handleDeleteTask = (task: GroomingTask) => {
+    setConfirmTitle(`Delete "${task.label}"`);
+    setConfirmMessage("This won't delete existing logs. Are you sure?");
+    setConfirmAction(() => async () => {
+      try {
+        await deleteGroomingTask(task.id);
+        setTasks(prev => prev.filter(t => t.id !== task.id));
+        if (editingTask?.id === task.id) setEditingTask(null);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : JSON.stringify(err);
+        showToast("Failed to delete: " + msg);
+      }
+      setConfirmOpen(false);
+    });
+    setConfirmOpen(true);
   };
 
   const filteredCats = useMemo(() =>
@@ -113,44 +133,67 @@ export default function GroomingPage() {
   );
 
   if (loading) {
-    return <div className="flex flex-col items-center pt-32 gap-3"><Image src="/loading-grooming.webp" alt="" width={180} height={180} priority className="opacity-80" /><Loader2 size={28} className="text-golden-500 animate-spin" /></div>;
+    return <LoadingScreen image="/loading-grooming.webp" />;
   }
+
+  const isSubView = showSettings || showHistory;
+
+  const headerAction = (
+    <div className="flex gap-2">
+      {isAdmin && (
+        <button
+          onClick={() => { setShowSettings(!showSettings); setShowHistory(false); }}
+          aria-label="Grooming settings"
+          className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2 ${showSettings ? "golden-gradient text-white shadow-md" : "bg-golden-50 text-golden-700"}`}
+        >
+          <Settings size={16} />
+        </button>
+      )}
+      <button
+        onClick={() => { setShowHistory(!showHistory); setShowSettings(false); }}
+        aria-label="Toggle grooming history"
+        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2 ${showHistory ? "golden-gradient text-white" : "bg-golden-50 text-golden-700"}`}
+      >
+        {showHistory ? "Tasks" : "History"}
+      </button>
+    </div>
+  );
 
   return (
     <div className="px-4 pt-12 pb-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {showSettings || showHistory ? (
-            <button onClick={() => { setShowSettings(false); setShowHistory(false); setEditingTask(null); setShowAddTask(false); }} className="w-8 h-8 rounded-full bg-golden-100 flex items-center justify-center"><ArrowLeft size={16} className="text-golden-700" /></button>
-          ) : (
-            <Link href="/" className="w-8 h-8 rounded-full bg-golden-100 flex items-center justify-center"><ArrowLeft size={16} className="text-golden-700" /></Link>
-          )}
-          <h1 className="text-lg font-bold">Grooming</h1>
-        </div>
-        <div className="flex gap-2">
-          {isAdmin && (
+      <ConfirmDialog
+        open={confirmOpen}
+        title={confirmTitle}
+        message={confirmMessage}
+        confirmLabel="Delete"
+        onConfirm={confirmAction}
+        onCancel={() => setConfirmOpen(false)}
+      />
+
+      {isSubView ? (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
             <button
-              onClick={() => { setShowSettings(!showSettings); setShowHistory(false); }}
-              className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${showSettings ? "golden-gradient text-white shadow-md" : "bg-golden-50 text-golden-700"}`}
+              onClick={() => { setShowSettings(false); setShowHistory(false); setEditingTask(null); setShowAddTask(false); }}
+              aria-label="Back to grooming tasks"
+              className="w-8 h-8 rounded-full bg-golden-100 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2"
             >
-              <Settings size={16} />
+              <ArrowLeft size={16} className="text-golden-700" />
             </button>
-          )}
-          <button
-            onClick={() => { setShowHistory(!showHistory); setShowSettings(false); }}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${showHistory ? "golden-gradient text-white" : "bg-golden-50 text-golden-700"}`}
-          >
-            {showHistory ? "Tasks" : "History"}
-          </button>
+            <h1 className="text-lg font-bold">Grooming</h1>
+          </div>
+          {headerAction}
         </div>
-      </div>
+      ) : (
+        <PageHeader title="Grooming" action={headerAction} />
+      )}
 
       {/* Cat filter */}
       {!showSettings && (
         <div className="flex gap-2">
-          <button onClick={() => setSelectedCat("all")} className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${selectedCat === "all" ? "golden-gradient text-white" : "bg-golden-50 text-golden-700"}`}>All</button>
+          <FilterChip active={selectedCat === "all"} onClick={() => setSelectedCat("all")}>All</FilterChip>
           {cats.map(cat => (
-            <button key={cat.id} onClick={() => setSelectedCat(cat.id)} className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${selectedCat === cat.id ? "golden-gradient text-white" : "bg-golden-50 text-golden-700"}`}>{cat.name}</button>
+            <FilterChip key={cat.id} active={selectedCat === cat.id} onClick={() => setSelectedCat(cat.id)}>{cat.name}</FilterChip>
           ))}
         </div>
       )}
@@ -160,7 +203,11 @@ export default function GroomingPage() {
         <div className="card p-4 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold">Manage Tasks</h2>
-            <button onClick={() => { setShowSettings(false); setEditingTask(null); setShowAddTask(false); }} className="w-7 h-7 rounded-full bg-golden-50 flex items-center justify-center">
+            <button
+              onClick={() => { setShowSettings(false); setEditingTask(null); setShowAddTask(false); }}
+              aria-label="Close settings"
+              className="w-8 h-8 rounded-full bg-golden-50 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2"
+            >
               <X size={14} className="text-golden-700" />
             </button>
           </div>
@@ -193,12 +240,14 @@ export default function GroomingPage() {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => setEditingTask({ ...editingTask, frequency_days: Math.max(1, editingTask.frequency_days - 1) })}
-                          className="w-7 h-7 rounded-full bg-white flex items-center justify-center text-golden-700 font-bold text-sm border border-card-border"
+                          aria-label="Decrease frequency"
+                          className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-golden-700 font-bold text-sm border border-card-border focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2"
                         >-</button>
                         <span className="text-sm font-semibold w-10 text-center">{editingTask.frequency_days}d</span>
                         <button
                           onClick={() => setEditingTask({ ...editingTask, frequency_days: editingTask.frequency_days + 1 })}
-                          className="w-7 h-7 rounded-full bg-white flex items-center justify-center text-golden-700 font-bold text-sm border border-card-border"
+                          aria-label="Increase frequency"
+                          className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-golden-700 font-bold text-sm border border-card-border focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2"
                         >+</button>
                       </div>
                     </div>
@@ -224,7 +273,11 @@ export default function GroomingPage() {
                         <p className="text-[10px] text-muted">Every {task.frequency_days} days</p>
                       </div>
                     </div>
-                    <button onClick={() => setEditingTask({ ...task })} className="w-8 h-8 rounded-full bg-golden-50 flex items-center justify-center text-golden-700">
+                    <button
+                      onClick={() => setEditingTask({ ...task })}
+                      aria-label={`Edit ${task.label}`}
+                      className="w-8 h-8 rounded-full bg-golden-50 flex items-center justify-center text-golden-700 focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2"
+                    >
                       <Pencil size={13} />
                     </button>
                   </div>
@@ -255,9 +308,17 @@ export default function GroomingPage() {
               <div className="flex items-center justify-between">
                 <span className="text-xs text-muted">Frequency</span>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => setNewFreq(Math.max(1, newFreq - 1))} className="w-7 h-7 rounded-full bg-white flex items-center justify-center text-golden-700 font-bold text-sm border border-card-border">-</button>
+                  <button
+                    onClick={() => setNewFreq(Math.max(1, newFreq - 1))}
+                    aria-label="Decrease frequency"
+                    className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-golden-700 font-bold text-sm border border-card-border focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2"
+                  >-</button>
                   <span className="text-sm font-semibold w-10 text-center">{newFreq}d</span>
-                  <button onClick={() => setNewFreq(newFreq + 1)} className="w-7 h-7 rounded-full bg-white flex items-center justify-center text-golden-700 font-bold text-sm border border-card-border">+</button>
+                  <button
+                    onClick={() => setNewFreq(newFreq + 1)}
+                    aria-label="Increase frequency"
+                    className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-golden-700 font-bold text-sm border border-card-border focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2"
+                  >+</button>
                 </div>
               </div>
               <div className="flex gap-2">
@@ -321,7 +382,8 @@ export default function GroomingPage() {
                           <button
                             onClick={() => handleMarkDone(cat.id, task.type)}
                             disabled={saving === savingKey}
-                            className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center text-success hover:bg-success/20 disabled:opacity-50"
+                            aria-label={`Mark ${task.label} done for ${cat.name}`}
+                            className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center text-success hover:bg-success/20 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2"
                           >
                             {saving === savingKey ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
                           </button>
@@ -369,7 +431,13 @@ export default function GroomingPage() {
                         <p className="text-[10px] text-muted">{cat?.name} &middot; {format(new Date(log.completed_at), "MMM d, yyyy")}</p>
                       </div>
                       {isAdmin && (
-                        <button onClick={() => handleDeleteLog(log.id)} className="text-muted hover:text-danger"><Trash2 size={14} /></button>
+                        <button
+                          onClick={() => handleDeleteLog(log.id)}
+                          aria-label="Delete grooming log"
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-muted hover:text-danger focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2"
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       )}
                     </div>
                     {log.notes && <p className="text-xs text-muted mt-1 pl-9">{log.notes}</p>}
