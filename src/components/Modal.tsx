@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useId } from "react";
 import { X } from "lucide-react";
 
 interface ModalProps {
@@ -13,6 +13,7 @@ interface ModalProps {
 }
 
 export default function Modal({ open, onClose, title, children, position = "center" }: ModalProps) {
+  const titleId = useId();
   const overlayRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
@@ -68,16 +69,16 @@ export default function Modal({ open, onClose, title, children, position = "cent
       onClick={onClose}
       role="dialog"
       aria-modal="true"
-      aria-labelledby="modal-title"
+      aria-labelledby={titleId}
     >
       <div
         ref={contentRef}
-        className={`bg-white w-full ${isBottom ? "max-w-lg rounded-t-3xl animate-slide-up" : "max-w-sm rounded-2xl"} p-5 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto`}
+        className={`bg-white w-full ${isBottom ? "max-w-lg rounded-t-3xl animate-slide-up" : "max-w-sm rounded-2xl animate-scale-in"} p-5 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto`}
         style={isBottom ? { paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" } : undefined}
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
-          <h2 id="modal-title" className="text-base font-bold">{title}</h2>
+          <h2 id={titleId} className="text-base font-bold">{title}</h2>
           <button onClick={onClose} aria-label="Close" className="w-8 h-8 rounded-full bg-golden-50 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2">
             <X size={16} className="text-muted" />
           </button>

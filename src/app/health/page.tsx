@@ -1,38 +1,40 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
   Syringe,
   Bug,
   Stethoscope,
   Pill,
-  Plus,
-  ArrowLeft,
-  Loader2,
   Trash2,
   MapPin,
-  ExternalLink,
-  Navigation,
-  Star,
-  X,
-  Check,
-  Pencil,
-  Camera,
   ImageIcon,
   ChevronDown,
   AlertTriangle,
   Clock,
+  Check,
+  Pencil,
+  Camera,
+  Loader2,
+  X,
 } from "lucide-react";
-import Link from "next/link";
 import NextImage from "next/image";
 import { format, differenceInDays } from "date-fns";
-import { getCats, getHealthRecords, addHealthRecords, updateHealthRecord, deleteHealthRecord, getLitterBoxLogs, addLitterBoxLog, updateLitterBoxLog, deleteLitterBoxLog } from "@/lib/data";
+import { getHealthRecords, addHealthRecords, deleteHealthRecord, updateHealthRecord, getLitterBoxLogs } from "@/lib/data";
 import { supabase } from "@/lib/supabase";
 import { compressImage, compressImageToBlob } from "@/lib/compress-image";
 import type { Cat, HealthRecord, LitterBoxLog } from "@/lib/supabase";
 import { useAdmin } from "@/components/AdminContext";
 import { AiInsights } from "@/components/AiInsights";
 import { useToast } from "@/components/Toast";
+import { FilterChip, FilterChipDark } from "@/components/FilterChip";
+import { PageHeader } from "@/components/PageHeader";
+import { LoadingScreen } from "@/components/LoadingScreen";
+import { ActionButton } from "@/components/ActionButton";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { useCats } from "@/hooks/useCats";
+import EditRecordModal, { VetSelector } from "@/components/health/EditRecordModal";
+import LitterBoxSection from "@/components/health/LitterBoxSection";
 
 const typeConfig: Record<string, { icon: typeof Syringe; color: string; bg: string; label: string }> = {
   vaccine: { icon: Syringe, color: "text-blue-600", bg: "bg-blue-50", label: "Vaccine" },
@@ -144,396 +146,6 @@ function PhotoUpload({
   );
 }
 
-type NearbyVet = {
-  name: string;
-  address: string;
-  lat: number;
-  lng: number;
-  rating: number | null;
-  totalRatings: number;
-  placeId: string;
-  openNow: boolean | null;
-  mapsUrl: string;
-  isOpen: boolean;
-};
-
-function parseLitterPhotos(photoUrl: string | null): string[] {
-  if (!photoUrl) return [];
-  try {
-    const parsed = JSON.parse(photoUrl);
-    if (Array.isArray(parsed)) return parsed;
-  } catch { /* not JSON */ }
-  return [photoUrl];
-}
-
-function VetSelector({
-  selectedVet,
-  onSelect,
-}: {
-  selectedVet: string;
-  onSelect: (name: string, mapsUrl?: string) => void;
-}) {
-  const [nearbyVets, setNearbyVets] = useState<NearbyVet[]>([]);
-  const [searchResults, setSearchResults] = useState<NearbyVet[]>([]);
-  const [loadingVets, setLoadingVets] = useState(false);
-  const [loadingSearch, setLoadingSearch] = useState(false);
-  const [vetError, setVetError] = useState("");
-  const [showResults, setShowResults] = useState(false);
-  const [manualEntry, setManualEntry] = useState(false);
-  const [customVet, setCustomVet] = useState("");
-  const searchTimeout = useRef<NodeJS.Timeout | null>(null);
-
-  const findNearbyVets = useCallback(async () => {
-    setLoadingVets(true);
-    setVetError("");
-    setShowResults(false);
-
-    if (!navigator.geolocation) {
-      setVetError("Geolocation is not supported by your browser.");
-      setLoadingVets(false);
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        try {
-          const res = await fetch(
-            `/api/nearby-vets?lat=${position.coords.latitude}&lng=${position.coords.longitude}`
-          );
-          const data = await res.json();
-          if (!res.ok) {
-            setVetError(data.error || "Failed to find nearby vets");
-          } else {
-            setNearbyVets(data.vets || []);
-            setShowResults(true);
-          }
-        } catch {
-          setVetError("Failed to fetch nearby vets");
-        } finally {
-          setLoadingVets(false);
-        }
-      },
-      (err) => {
-        setVetError(
-          err.code === 1
-            ? "Location access denied. Please enable location in your browser settings."
-            : "Could not get your location. Please try again."
-        );
-        setLoadingVets(false);
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
-  }, []);
-
-  const searchVets = useCallback((query: string) => {
-    if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    if (query.length < 2) {
-      setSearchResults([]);
-      setLoadingSearch(false);
-      return;
-    }
-    setLoadingSearch(true);
-    searchTimeout.current = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/search-vets?q=${encodeURIComponent(query)}`);
-        const data = await res.json();
-        if (res.ok) {
-          setSearchResults(data.vets || []);
-        }
-      } catch {
-        // silently fail, user can still type manually
-      } finally {
-        setLoadingSearch(false);
-      }
-    }, 400);
-  }, []);
-
-  if (selectedVet && !manualEntry) {
-    return (
-      <div className="flex items-center gap-2 p-2 rounded-lg bg-golden-50 border border-golden-200">
-        <MapPin size={14} className="text-golden-500 shrink-0" />
-        <span className="text-xs font-medium text-golden-700 flex-1">{selectedVet}</span>
-        <button
-          type="button"
-          onClick={() => onSelect("")}
-          className="text-muted hover:text-foreground"
-          aria-label="Clear vet selection"
-        >
-          <X size={14} />
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-2">
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={findNearbyVets}
-          disabled={loadingVets}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-golden-50 text-golden-700 text-xs font-medium hover:bg-golden-100 transition-colors disabled:opacity-50"
-        >
-          {loadingVets ? (
-            <Loader2 size={13} className="animate-spin" />
-          ) : (
-            <Navigation size={13} />
-          )}
-          {loadingVets ? "Finding vets..." : "Find Nearby Vets"}
-        </button>
-        <button
-          type="button"
-          onClick={() => setManualEntry(!manualEntry)}
-          className="px-3 py-2 rounded-lg bg-gray-100 text-gray-600 text-xs font-medium hover:bg-gray-200 transition-colors"
-        >
-          Type manually
-        </button>
-      </div>
-
-      {vetError && (
-        <p className="text-xs text-red-500">{vetError}</p>
-      )}
-
-      {manualEntry && (
-        <div className="space-y-1">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="Start typing vet clinic name..."
-              value={customVet}
-              onChange={(e) => {
-                setCustomVet(e.target.value);
-                searchVets(e.target.value);
-              }}
-              className="flex-1"
-            />
-            <button
-              type="button"
-              onClick={() => {
-                if (customVet.trim()) {
-                  onSelect(customVet.trim());
-                  setManualEntry(false);
-                  setCustomVet("");
-                  setSearchResults([]);
-                }
-              }}
-              className="px-3 py-2 rounded-lg golden-gradient text-white text-xs font-medium"
-            >
-              Add
-            </button>
-          </div>
-          {loadingSearch && (
-            <div className="flex items-center gap-1.5 px-2 py-1">
-              <Loader2 size={11} className="animate-spin text-golden-500" />
-              <span className="text-[11px] text-muted">Searching clinics...</span>
-            </div>
-          )}
-          {searchResults.length > 0 && (
-            <div className="max-h-48 overflow-y-auto rounded-lg border border-card-border bg-white">
-              {searchResults.map((vet) => (
-                <button
-                  key={vet.placeId}
-                  type="button"
-                  onClick={() => {
-                    onSelect(vet.name, vet.mapsUrl);
-                    setManualEntry(false);
-                    setCustomVet("");
-                    setSearchResults([]);
-                  }}
-                  className="w-full text-left px-3 py-2.5 hover:bg-golden-50 border-b border-card-border last:border-0 transition-colors"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <span className="text-xs font-semibold block">{vet.name}</span>
-                      <span className="text-[11px] text-muted block mt-0.5">{vet.address}</span>
-                    </div>
-                    <div className="text-right shrink-0">
-                      {vet.rating !== null && (
-                        <span className="flex items-center gap-0.5 text-[11px] text-amber-600">
-                          <Star size={10} className="fill-amber-400 text-amber-400" />
-                          {vet.rating}
-                        </span>
-                      )}
-                      {vet.openNow !== null && (
-                        <span className={`text-[10px] font-medium ${vet.openNow ? "text-green-600" : "text-red-500"}`}>
-                          {vet.openNow ? "Open" : "Closed"}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {showResults && (
-        <div className="max-h-48 overflow-y-auto rounded-lg border border-card-border bg-white">
-          {nearbyVets.length === 0 ? (
-            <p className="p-3 text-xs text-muted text-center">No vet clinics found nearby.</p>
-          ) : (
-            nearbyVets.map((vet) => (
-              <button
-                key={vet.placeId}
-                type="button"
-                onClick={() => {
-                  onSelect(vet.name, vet.mapsUrl);
-                  setShowResults(false);
-                }}
-                className="w-full text-left px-3 py-2.5 hover:bg-golden-50 border-b border-card-border last:border-0 transition-colors"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <span className="text-xs font-semibold block">{vet.name}</span>
-                    <span className="text-[11px] text-muted block mt-0.5">{vet.address}</span>
-                  </div>
-                  <div className="text-right shrink-0">
-                    {vet.rating !== null && (
-                      <span className="flex items-center gap-0.5 text-[11px] text-amber-600">
-                        <Star size={10} className="fill-amber-400 text-amber-400" />
-                        {vet.rating} <span className="text-muted">({vet.totalRatings})</span>
-                      </span>
-                    )}
-                    {vet.openNow !== null && (
-                      <span className={`text-[10px] font-medium ${vet.openNow ? "text-green-600" : "text-red-500"}`}>
-                        {vet.openNow ? "Open now" : "Closed"}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </button>
-            ))
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function EditRecordModal({
-  record,
-  cats,
-  onClose,
-  onSaved,
-}: {
-  record: HealthRecord;
-  cats: Cat[];
-  onClose: () => void;
-  onSaved: () => void;
-}) {
-  const [title, setTitle] = useState(record.title);
-  const [date, setDate] = useState(record.date);
-  const [dueDate, setDueDate] = useState(record.next_due_date ?? "");
-  const [notes, setNotes] = useState(record.description ?? "");
-  const [vetName, setVetName] = useState(record.vet_name ?? "");
-  const [recordType, setRecordType] = useState<string>(record.record_type);
-  const [photoUrl, setPhotoUrl] = useState(record.photo_url ?? "");
-  const [saving, setSaving] = useState(false);
-
-  const catName = cats.find(c => c.id === record.cat_id)?.name ?? "Unknown";
-  const showPhoto = recordType === "vaccine" || recordType === "deworm";
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
-
-  const handleSave = async () => {
-    if (!title) return;
-    setSaving(true);
-    try {
-      await updateHealthRecord(record.id, {
-        title,
-        date,
-        record_type: recordType,
-        next_due_date: dueDate || null,
-        description: notes || null,
-        vet_name: vetName || null,
-        photo_url: photoUrl || null,
-      });
-      onSaved();
-      onClose();
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 overlay z-50 flex items-center justify-center p-4" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="edit-record-title">
-      <div
-        className="bg-white rounded-2xl w-full max-w-sm p-5 space-y-4 max-h-[90vh] overflow-y-auto animate-scale-in"
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between">
-          <h2 id="edit-record-title" className="text-lg font-bold">Edit Record</h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-golden-50 flex items-center justify-center">
-            <X size={16} className="text-muted" />
-          </button>
-        </div>
-
-        <p className="text-xs text-muted">Cat: <span className="font-medium text-foreground">{catName}</span></p>
-
-        <div>
-          <label htmlFor="edit-record-type" className="text-xs text-muted block mb-1">Type</label>
-          <select id="edit-record-type" value={recordType} onChange={e => setRecordType(e.target.value)}>
-            {Object.entries(typeConfig).map(([key, cfg]) => (
-              <option key={key} value={key}>{cfg.label}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label htmlFor="edit-record-title-input" className="text-xs text-muted block mb-1">Title</label>
-          <input id="edit-record-title-input" type="text" value={title} onChange={e => setTitle(e.target.value)} />
-        </div>
-        <div>
-          <label htmlFor="edit-record-date" className="text-xs text-muted block mb-1">Date</label>
-          <input id="edit-record-date" type="date" value={date} onChange={e => setDate(e.target.value)} />
-        </div>
-        <div>
-          <label htmlFor="edit-record-due-date" className="text-xs text-muted block mb-1">Next Due Date</label>
-          <input id="edit-record-due-date" type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
-        </div>
-        <div>
-          <label htmlFor="edit-record-vet" className="text-xs text-muted block mb-1">Vet Clinic</label>
-          <VetSelector
-            selectedVet={vetName}
-            onSelect={(name) => setVetName(name)}
-          />
-        </div>
-        <div>
-          <label htmlFor="edit-record-notes" className="text-xs text-muted block mb-1">Notes</label>
-          <textarea id="edit-record-notes" rows={2} value={notes} onChange={e => setNotes(e.target.value)} />
-        </div>
-
-        {showPhoto && (
-          <PhotoUpload
-            photoUrl={photoUrl}
-            onUpload={setPhotoUrl}
-            label={recordType === "vaccine" ? "Vaccine sticker / label photo" : "Deworm product photo"}
-          />
-        )}
-
-        <div className="flex gap-2 pt-2">
-          <button
-            onClick={handleSave}
-            disabled={saving || !title}
-            className="flex-1 py-3 rounded-xl golden-gradient text-white text-sm font-semibold shadow-md disabled:opacity-50"
-          >
-            {saving ? "Saving..." : "Save Changes"}
-          </button>
-          <button onClick={onClose} className="px-5 py-3 rounded-xl bg-golden-50 text-golden-700 text-sm font-medium">
-            Cancel
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function RecordCard({
   record,
   cats,
@@ -573,7 +185,7 @@ function RecordCard({
               <div className="flex items-center gap-1 shrink-0">
                 <button
                   onClick={() => onEdit(record)}
-                  className="w-7 h-7 rounded-lg bg-golden-50 flex items-center justify-center text-golden-600 hover:bg-golden-100 transition-colors"
+                  className="w-8 h-8 rounded-lg bg-golden-50 flex items-center justify-center text-golden-600 hover:bg-golden-100 transition-colors"
                   title="Edit"
                   aria-label="Edit record"
                 >
@@ -581,7 +193,7 @@ function RecordCard({
                 </button>
                 <button
                   onClick={() => onDelete(record.id)}
-                  className="w-7 h-7 rounded-lg bg-red-50 flex items-center justify-center text-red-400 hover:bg-red-100 transition-colors"
+                  className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-red-400 hover:bg-red-100 transition-colors"
                   title="Delete"
                   aria-label="Delete record"
                 >
@@ -644,7 +256,7 @@ function RecordCard({
 }
 
 export default function HealthPage() {
-  const [cats, setCats] = useState<Cat[]>([]);
+  const { cats } = useCats();
   const [records, setRecords] = useState<HealthRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -652,18 +264,13 @@ export default function HealthPage() {
   const [filterType, setFilterType] = useState<string>("all");
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingRecord, setEditingRecord] = useState<HealthRecord | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const { isAdmin } = useAdmin();
   const { showToast } = useToast();
 
   // Litter box state
   const [litterLogs, setLitterLogs] = useState<LitterBoxLog[]>([]);
   const litterSectionRef = useRef<HTMLDivElement>(null);
-  const [showLitterForm, setShowLitterForm] = useState(false);
-  const [litterPhotos, setLitterPhotos] = useState<string[]>([]);
-  const [litterNotes, setLitterNotes] = useState("");
-  const [litterSaving, setLitterSaving] = useState(false);
-  const [analyzingId, setAnalyzingId] = useState<string | null>(null);
-  const [analysisError, setAnalysisError] = useState<string | null>(null);
 
   // Form state
   const [formCatId, setFormCatId] = useState("");
@@ -684,14 +291,13 @@ export default function HealthPage() {
   const loadData = async () => {
     setLoadError(false);
     try {
-      let [c, h, l] = await Promise.all([getCats(), getHealthRecords(), getLitterBoxLogs()]);
+      let [h, l] = await Promise.all([getHealthRecords(), getLitterBoxLogs()]);
       // Supabase can silently return [] on transient errors — retry once
       if (h.length === 0) {
         await new Promise(r => setTimeout(r, 500));
         h = await getHealthRecords();
       }
-      setCats(c); setRecords(h); setLitterLogs(l);
-      cleanupOldLitterPhotos(l);
+      setRecords(h); setLitterLogs(l);
     } catch {
       setLoadError(true);
     } finally {
@@ -735,91 +341,14 @@ export default function HealthPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this health record?")) return;
     await deleteHealthRecord(id);
     setRecords(prev => prev.filter(r => r.id !== id));
+    setDeleteTarget(null);
   };
 
   const handleMarkDone = async (record: HealthRecord) => {
     await updateHealthRecord(record.id, { next_due_date: null });
     loadData();
-  };
-
-  const handleLitterSave = async () => {
-    if (litterPhotos.length === 0 && !litterNotes) return;
-    setLitterSaving(true);
-    try {
-      const now = new Date();
-      const photoUrlValue = litterPhotos.length > 0 ? JSON.stringify(litterPhotos) : undefined;
-      const log = await addLitterBoxLog({
-        date: format(now, "yyyy-MM-dd"),
-        time: format(now, "HH:mm"),
-        ...(photoUrlValue ? { photo_url: photoUrlValue } : {}),
-        ...(litterNotes ? { notes: litterNotes } : {}),
-      });
-      setShowLitterForm(false);
-      setLitterPhotos([]);
-      setLitterNotes("");
-      loadData();
-      // Auto-analyze if photos were uploaded
-      if (litterPhotos.length > 0 && log?.id) {
-        handleLitterAnalyze(log.id, litterPhotos, litterNotes);
-      }
-    } finally { setLitterSaving(false); }
-  };
-
-  const handleLitterAnalyze = async (id: string, photos: string | string[], notes: string) => {
-    setAnalyzingId(id);
-    setAnalysisError(null);
-    let photoUrls = Array.isArray(photos) ? photos : parseLitterPhotos(photos);
-    // Limit to first photo for analysis to avoid request size issues with data URLs
-    if (photoUrls.length > 1 && photoUrls.some(u => u.startsWith("data:"))) {
-      photoUrls = [photoUrls[0]];
-    }
-    try {
-      const res = await fetch("/api/analyze-litter", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ photoUrls, notes }),
-      });
-      const data = await res.json();
-      if (data.analysis) {
-        const lower = data.analysis.toLowerCase();
-        const isAlarming = ["concern", "alarming", "vet", "blood", "parasit", "worm", "diarrhea", "urgent", "abnormal", "warning", "immediate"].some(w => lower.includes(w));
-        await updateLitterBoxLog(id, {
-          ai_analysis: data.analysis,
-          ...(!isAlarming ? { photo_url: null } : {}),
-        });
-        loadData();
-      } else if (data.error) {
-        setAnalysisError(data.error);
-      }
-    } catch (err) {
-      console.error("Analysis failed:", err);
-      setAnalysisError("Analysis failed. Please try again.");
-    } finally { setAnalyzingId(null); }
-  };
-
-  // Auto-cleanup: remove photos older than 48h that aren't alarming
-  const cleanupOldLitterPhotos = useCallback(async (logs: LitterBoxLog[]) => {
-    const TWO_DAYS = 48 * 60 * 60 * 1000;
-    for (const log of logs) {
-      if (!log.photo_url || !log.created_at) continue;
-      const age = Date.now() - new Date(log.created_at).getTime();
-      if (age > TWO_DAYS) {
-        const lower = (log.ai_analysis || "").toLowerCase();
-        const isAlarming = ["concern", "alarming", "vet", "blood", "parasit", "worm", "diarrhea", "urgent", "abnormal", "warning", "immediate"].some(w => lower.includes(w));
-        if (!isAlarming) {
-          await updateLitterBoxLog(log.id, { photo_url: null });
-        }
-      }
-    }
-  }, []);
-
-  const handleLitterDelete = async (id: string) => {
-    if (!confirm("Delete this litter box log?")) return;
-    await deleteLitterBoxLog(id);
-    setLitterLogs(prev => prev.filter(l => l.id !== id));
   };
 
   const healthContext = useMemo(() => {
@@ -920,24 +449,15 @@ export default function HealthPage() {
   };
 
   if (loading) {
-    return <div className="flex flex-col items-center pt-32 gap-3"><NextImage src="/loading-health.webp" alt="" width={180} height={180} priority className="opacity-80" /><Loader2 size={28} className="text-golden-500 animate-spin" /></div>;
+    return <LoadingScreen image="/loading-health.webp" />;
   }
 
   return (
     <div className="px-4 pt-12 pb-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/" className="w-8 h-8 rounded-full bg-golden-100 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2" aria-label="Back to home">
-            <ArrowLeft size={16} className="text-golden-700" />
-          </Link>
-          <h1 className="text-lg font-bold">Health Records</h1>
-        </div>
-        {isAdmin && (
-          <button onClick={() => setShowAddForm(!showAddForm)} className="w-9 h-9 rounded-full golden-gradient flex items-center justify-center shadow-md focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2" aria-label="Add health record">
-            <Plus size={18} className="text-white" />
-          </button>
-        )}
-      </div>
+      <PageHeader
+        title="Health Records"
+        action={isAdmin ? <ActionButton onClick={() => setShowAddForm(!showAddForm)} label="Add health record" /> : undefined}
+      />
 
       <AiInsights
         cacheKey="health"
@@ -958,17 +478,17 @@ Plain text only, no markdown. Jump straight into insights, no intro.`}
       />
 
       <div className="flex gap-2">
-        <button onClick={() => setSelectedCat("all")} className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${selectedCat === "all" ? "golden-gradient text-white" : "bg-golden-50 text-golden-700"}`}>All</button>
+        <FilterChip active={selectedCat === "all"} onClick={() => setSelectedCat("all")}>All</FilterChip>
         {cats.map(cat => (
-          <button key={cat.id} onClick={() => setSelectedCat(cat.id)} className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${selectedCat === cat.id ? "golden-gradient text-white" : "bg-golden-50 text-golden-700"}`}>{cat.name}</button>
+          <FilterChip key={cat.id} active={selectedCat === cat.id} onClick={() => setSelectedCat(cat.id)}>{cat.name}</FilterChip>
         ))}
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-1">
         {["all", "vaccine", "deworm", "vet_visit", "medication"].map(type => (
-          <button key={type} onClick={() => setFilterType(type)} className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors shrink-0 ${filterType === type ? "bg-foreground text-white" : "bg-golden-50 text-foreground/70"}`}>
+          <FilterChipDark key={type} active={filterType === type} onClick={() => setFilterType(type)}>
             {type === "all" ? "All Types" : typeConfig[type]?.label ?? type}
-          </button>
+          </FilterChipDark>
         ))}
       </div>
       <button onClick={() => litterSectionRef.current?.scrollIntoView({ behavior: "smooth" })} className="w-full py-2 rounded-xl text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
@@ -1104,6 +624,15 @@ Plain text only, no markdown. Jump straight into insights, no intro.`}
         />
       )}
 
+      {/* Confirm dialog for health record deletion */}
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="Delete health record"
+        message="Are you sure you want to delete this health record?"
+        onConfirm={() => deleteTarget && handleDelete(deleteTarget)}
+        onCancel={() => setDeleteTarget(null)}
+      />
+
       {filtered.length === 0 ? (
         <div className="card p-8 text-center">
           <NextImage src="/loading-health.webp" alt="No records" width={120} height={98} className="mx-auto mb-2 opacity-70" />
@@ -1132,7 +661,7 @@ Plain text only, no markdown. Jump straight into insights, no intro.`}
                     key={record.id}
                     record={record}
                     cats={cats}
-                    onDelete={handleDelete}
+                    onDelete={(id) => setDeleteTarget(id)}
                     onEdit={setEditingRecord}
                     onMarkDone={handleMarkDone}
                     isAdmin={isAdmin}
@@ -1175,7 +704,7 @@ Plain text only, no markdown. Jump straight into insights, no intro.`}
                               key={record.id}
                               record={record}
                               cats={cats}
-                              onDelete={handleDelete}
+                              onDelete={(id) => setDeleteTarget(id)}
                               onEdit={setEditingRecord}
                               onMarkDone={handleMarkDone}
                               isAdmin={isAdmin}
@@ -1193,133 +722,12 @@ Plain text only, no markdown. Jump straight into insights, no intro.`}
       )}
 
       {/* Litter Box Log Section */}
-      <div className="mt-6" ref={litterSectionRef}>
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">🚽</span>
-            <h2 className="font-semibold text-sm">Litter Box Log</h2>
-          </div>
-          {isAdmin && (
-            <button onClick={() => setShowLitterForm(!showLitterForm)} className="w-8 h-8 rounded-full golden-gradient flex items-center justify-center shadow-md">
-              <Plus size={16} className="text-white" />
-            </button>
-          )}
-        </div>
-
-        {/* Add Litter Log Form */}
-        {showLitterForm && (
-          <div className="fixed inset-0 bg-black/50 z-[60] flex items-end justify-center" onClick={() => setShowLitterForm(false)}>
-            <div className="bg-white w-full max-w-lg rounded-t-3xl p-5 space-y-3 max-h-[90vh] overflow-y-auto animate-slide-up"
-              style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" }} onClick={e => e.stopPropagation()}>
-              <h3 className="font-semibold text-sm">Log Litter Box Scoop</h3>
-
-              <div>
-                <label className="text-[11px] text-muted block mb-1">
-                  <Camera size={10} className="inline mr-0.5" />
-                  Photos of litter box contents
-                </label>
-                {litterPhotos.length > 0 && (
-                  <div className="flex gap-2 flex-wrap mb-2">
-                    {litterPhotos.map((url, i) => (
-                      <div key={i} className="relative inline-block">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={url} alt={`Photo ${i + 1}`} className="w-20 h-20 object-cover rounded-lg border border-card-border" />
-                        <button type="button" onClick={() => setLitterPhotos(prev => prev.filter((_, j) => j !== i))}
-                          className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center">
-                          <X size={10} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <PhotoUpload photoUrl="" onUpload={(url) => { if (url) setLitterPhotos(prev => [...prev, url]); }} label="Add photo" />
-              </div>
-
-              <div>
-                <label className="text-[11px] text-muted block mb-1">Notes (optional)</label>
-                <textarea value={litterNotes} onChange={e => setLitterNotes(e.target.value)}
-                  placeholder="Anything unusual? Color, smell, consistency..."
-                  className="w-full px-3 py-2 rounded-lg border border-card-border text-sm resize-none" rows={3} />
-              </div>
-
-              <div className="flex gap-2">
-                <button onClick={() => setShowLitterForm(false)} className="flex-1 py-2.5 rounded-xl border border-card-border text-sm font-medium">Cancel</button>
-                <button onClick={handleLitterSave} disabled={litterSaving || (litterPhotos.length === 0 && !litterNotes)}
-                  className="flex-1 py-2.5 rounded-xl golden-gradient text-white text-sm font-medium shadow-md disabled:opacity-50">
-                  {litterSaving ? "Saving..." : "Save & Analyze"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Litter Log Cards */}
-        <div className="space-y-2">
-          {litterLogs.length === 0 ? (
-            <div className="card p-6 text-center">
-              <NextImage src="/loading-grooming.webp" alt="No logs" width={80} height={75} className="mx-auto mb-1 opacity-60" />
-              <p className="text-muted text-xs">&quot;One does not simply skip the scoop.&quot; No litter logs yet!</p>
-            </div>
-          ) : (
-            litterLogs.slice(0, 10).map(log => (
-              <div key={log.id} className="card p-3 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm">🚽</span>
-                    <span className="text-xs font-medium">{format(new Date(log.date), "MMM d, yyyy")}</span>
-                    {log.time && <span className="text-xs text-muted">{log.time}</span>}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    {log.photo_url && !log.ai_analysis && (
-                      <button onClick={() => handleLitterAnalyze(log.id, log.photo_url!, log.notes || "")}
-                        disabled={analyzingId === log.id}
-                        className="px-2 py-1 rounded-lg bg-golden-50 text-golden-600 text-[10px] font-medium">
-                        {analyzingId === log.id ? "Analyzing..." : "Analyze"}
-                      </button>
-                    )}
-                    {analysisError && analyzingId === null && (
-                      <span className="text-[10px] text-red-500">{analysisError}</span>
-                    )}
-                    {isAdmin && (
-                      <button onClick={() => handleLitterDelete(log.id)} className="w-6 h-6 rounded-full flex items-center justify-center text-red-400 hover:bg-red-50">
-                        <Trash2 size={12} />
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {log.photo_url && (
-                  <div className="flex gap-2 flex-wrap">
-                    {parseLitterPhotos(log.photo_url).map((url, i) => (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img key={i} src={url} alt={`Litter box ${i + 1}`} className="w-20 h-20 object-cover rounded-lg border border-card-border" />
-                    ))}
-                  </div>
-                )}
-
-                {log.notes && <p className="text-xs text-foreground/70">{log.notes}</p>}
-
-                {analyzingId === log.id && (
-                  <div className="flex items-center gap-2 py-1">
-                    <Loader2 size={12} className="animate-spin text-golden-500" />
-                    <span className="text-[10px] text-muted">AI analyzing photo...</span>
-                  </div>
-                )}
-
-                {log.ai_analysis && (
-                  <div className="bg-golden-50 rounded-lg p-3 space-y-1">
-                    <div className="flex items-center gap-1 mb-1">
-                      <span className="text-[10px] font-semibold text-golden-700">AI Analysis</span>
-                    </div>
-                    {log.ai_analysis.split("\n").filter(l => l.trim()).map((line, i) => (
-                      <p key={i} className="text-[11px] text-foreground/80 leading-relaxed">{line.replace(/^[-•*]\s*/, "")}</p>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))
-          )}
-        </div>
+      <div ref={litterSectionRef}>
+        <LitterBoxSection
+          litterLogs={litterLogs}
+          isAdmin={isAdmin}
+          onLogsChanged={loadData}
+        />
       </div>
     </div>
   );
