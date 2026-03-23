@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { UtensilsCrossed, Trash2, Pencil } from "lucide-react";
+import { Trash2, Pencil } from "lucide-react";
 import Image from "next/image";
 import { format, subDays } from "date-fns";
 import { getFoodLogs, addFoodLog, deleteFoodLog, updateFoodLog } from "@/lib/data";

@@ -82,17 +82,18 @@ function AiChatCard({ context }: { context: string }) {
       }
 
       const decoder = new TextDecoder();
-      let fullText = "";
+      const textChunks: string[] = [];
       setMessages(prev => [...prev, { role: "assistant", text: "" }]);
       setLoading(false);
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        fullText += decoder.decode(value, { stream: true });
+        textChunks.push(decoder.decode(value, { stream: true }));
+        const accumulated = textChunks.join("");
         setMessages(prev => {
           const updated = [...prev];
-          updated[updated.length - 1] = { role: "assistant", text: fullText };
+          updated[updated.length - 1] = { role: "assistant", text: accumulated };
           return updated;
         });
         scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -312,11 +313,10 @@ const quotes = [
 ];
 
 function FooterQuote() {
-  const [q, setQ] = useState(quotes[0]);
-  useEffect(() => {
+  const q = useMemo(() => {
     const now = new Date();
     const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000);
-    setQ(quotes[dayOfYear % quotes.length]);
+    return quotes[dayOfYear % quotes.length];
   }, []);
   return (
     <div className="text-center py-5 opacity-40">
@@ -456,7 +456,7 @@ export default function Dashboard() {
       {showMenu && (
         <div ref={menuRef} className="absolute right-4 mt-1 z-20 bg-white rounded-xl shadow-lg border border-card-border py-1 min-w-[140px]">
           <button
-            onClick={() => { setShowMenu(false); isAdmin ? logout() : setShowPinModal(true); }}
+            onClick={() => { setShowMenu(false); if (isAdmin) { logout(); } else { setShowPinModal(true); } }}
             className="w-full px-4 py-2.5 text-left text-sm text-foreground flex items-center gap-2 hover:bg-golden-50"
           >
             {isAdmin ? <Unlock size={15} className="text-golden-600" /> : <Lock size={15} className="text-muted" />}

@@ -9,6 +9,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'lat and lng required' }, { status: 400 })
   }
 
+  const latNum = parseFloat(lat)
+  const lngNum = parseFloat(lng)
+  if (isNaN(latNum) || isNaN(lngNum) || latNum < -90 || latNum > 90 || lngNum < -180 || lngNum > 180) {
+    return NextResponse.json({ error: 'Invalid coordinates' }, { status: 400 })
+  }
+
   const apiKey = process.env.GOOGLE_PLACES_API_KEY
   if (!apiKey) {
     return NextResponse.json({ error: 'Google API key not configured' }, { status: 500 })
@@ -27,7 +33,7 @@ export async function GET(request: NextRequest) {
 
     if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
       console.error('Google Places error:', data.status, data.error_message)
-      return NextResponse.json({ error: data.error_message || data.status }, { status: 500 })
+      return NextResponse.json({ error: 'Failed to fetch nearby vets' }, { status: 500 })
     }
 
     const vets = (data.results ?? []).map((place: {

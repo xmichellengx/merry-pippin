@@ -15,6 +15,9 @@ export async function POST(request: NextRequest) {
     if (!message || typeof message !== 'string') {
       return new Response(JSON.stringify({ error: 'Message is required' }), { status: 400, headers: { 'Content-Type': 'application/json' } })
     }
+    if (message.length > 2000) {
+      return new Response(JSON.stringify({ error: 'Message too long' }), { status: 400, headers: { 'Content-Type': 'application/json' } })
+    }
     if (context && context.length > 15000) {
       return new Response(JSON.stringify({ error: 'Context too large' }), { status: 400, headers: { 'Content-Type': 'application/json' } })
     }
@@ -48,9 +51,9 @@ Guidelines:
     if (Array.isArray(history)) {
       const recentHistory = history.slice(-10)
       for (const msg of recentHistory) {
-        if (msg.role === 'user' && msg.text) {
+        if (msg.role === 'user' && typeof msg.text === 'string' && msg.text.length <= 2000) {
           messages.push({ role: 'user', content: msg.text })
-        } else if (msg.role === 'assistant' && msg.text) {
+        } else if (msg.role === 'assistant' && typeof msg.text === 'string' && msg.text.length <= 5000) {
           messages.push({ role: 'assistant', content: msg.text })
         }
       }
@@ -94,7 +97,7 @@ Guidelines:
       },
     })
   } catch (error) {
-    console.error('AI chat error:', error)
+    console.error('AI chat error:', error instanceof Error ? error.message : 'Unknown error')
     return new Response(JSON.stringify({ error: 'Failed to get AI response' }), { status: 500, headers: { 'Content-Type': 'application/json' } })
   }
 }

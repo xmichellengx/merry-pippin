@@ -7,6 +7,9 @@ export async function GET(request: NextRequest) {
   if (!query || query.length < 2) {
     return NextResponse.json({ vets: [] })
   }
+  if (query.length > 200) {
+    return NextResponse.json({ error: 'Query too long' }, { status: 400 })
+  }
 
   const apiKey = process.env.GOOGLE_PLACES_API_KEY
   if (!apiKey) {
@@ -25,7 +28,7 @@ export async function GET(request: NextRequest) {
 
     if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
       console.error('Google Places search error:', data.status, data.error_message)
-      return NextResponse.json({ error: data.error_message || data.status }, { status: 500 })
+      return NextResponse.json({ error: 'Failed to search vets' }, { status: 500 })
     }
 
     const vets = (data.results ?? []).slice(0, 8).map((place: {

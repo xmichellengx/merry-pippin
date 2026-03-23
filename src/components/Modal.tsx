@@ -18,7 +18,7 @@ export default function Modal({ open, onClose, title, children, position = "cent
   const contentRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
 
   // Keydown listener — uses ref so it never causes effect re-runs
   useEffect(() => {

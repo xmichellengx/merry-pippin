@@ -23,10 +23,10 @@ import { format, differenceInDays } from "date-fns";
 import { getHealthRecords, addHealthRecords, deleteHealthRecord, updateHealthRecord, getLitterBoxLogs } from "@/lib/data";
 import { supabase } from "@/lib/supabase";
 import { compressImage, compressImageToBlob } from "@/lib/compress-image";
-import type { Cat, HealthRecord, LitterBoxLog } from "@/lib/supabase";
+import type { HealthRecord, LitterBoxLog } from "@/lib/supabase";
 import { useAdmin } from "@/components/AdminContext";
 import { AiInsights } from "@/components/AiInsights";
-import { useToast } from "@/components/Toast";
+
 import { FilterChip, FilterChipDark } from "@/components/FilterChip";
 import { PageHeader } from "@/components/PageHeader";
 import { LoadingScreen } from "@/components/LoadingScreen";
@@ -148,14 +148,12 @@ function PhotoUpload({
 
 function RecordCard({
   record,
-  cats,
   onDelete,
   onEdit,
   onMarkDone,
   isAdmin,
 }: {
   record: HealthRecord;
-  cats: Cat[];
   onDelete: (id: string) => void;
   onEdit: (record: HealthRecord) => void;
   onMarkDone: (record: HealthRecord) => void;
@@ -266,7 +264,6 @@ export default function HealthPage() {
   const [editingRecord, setEditingRecord] = useState<HealthRecord | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const { isAdmin } = useAdmin();
-  const { showToast } = useToast();
 
   // Litter box state
   const [litterLogs, setLitterLogs] = useState<LitterBoxLog[]>([]);
@@ -291,7 +288,7 @@ export default function HealthPage() {
   const loadData = async () => {
     setLoadError(false);
     try {
-      let [h, l] = await Promise.all([getHealthRecords(), getLitterBoxLogs()]);
+      let [h, l] = await Promise.all([getHealthRecords(), getLitterBoxLogs()]);  // eslint-disable-line prefer-const
       // Supabase can silently return [] on transient errors — retry once
       if (h.length === 0) {
         await new Promise(r => setTimeout(r, 500));
@@ -660,7 +657,6 @@ Plain text only, no markdown. Jump straight into insights, no intro.`}
                   <RecordCard
                     key={record.id}
                     record={record}
-                    cats={cats}
                     onDelete={(id) => setDeleteTarget(id)}
                     onEdit={setEditingRecord}
                     onMarkDone={handleMarkDone}
@@ -703,7 +699,7 @@ Plain text only, no markdown. Jump straight into insights, no intro.`}
                             <RecordCard
                               key={record.id}
                               record={record}
-                              cats={cats}
+                    
                               onDelete={(id) => setDeleteTarget(id)}
                               onEdit={setEditingRecord}
                               onMarkDone={handleMarkDone}

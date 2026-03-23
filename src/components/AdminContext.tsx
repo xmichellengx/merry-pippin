@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, ReactNode } from "react";
 
 type AdminContextType = {
   isAdmin: boolean;
@@ -25,16 +25,10 @@ export function useAdmin() {
 const ADMIN_KEY = "paw-palace-admin";
 
 export function AdminProvider({ children }: { children: ReactNode }) {
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(() => {
+    try { return localStorage.getItem(ADMIN_KEY) === "true"; } catch { return false; }
+  });
   const [showPinModal, setShowPinModal] = useState(false);
-
-  // Restore login state from localStorage on mount
-  useEffect(() => {
-    const saved = localStorage.getItem(ADMIN_KEY);
-    if (saved === "true") {
-      setIsAdmin(true);
-    }
-  }, []);
 
   const login = useCallback(async (pin: string): Promise<boolean> => {
     try {

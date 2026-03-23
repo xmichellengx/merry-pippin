@@ -22,6 +22,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Maximum 4 photos allowed' }, { status: 400 })
     }
 
+    // Validate photo URLs — only allow Supabase storage URLs and data URIs
+    const supabaseDomain = process.env.NEXT_PUBLIC_SUPABASE_URL
+    for (const url of photoUrls) {
+      const isDataUri = url.startsWith('data:image/')
+      const isSupabaseUrl = supabaseDomain && url.startsWith(supabaseDomain)
+      if (!isDataUri && !isSupabaseUrl) {
+        return NextResponse.json({ error: 'Invalid photo URL' }, { status: 400 })
+      }
+      if (isDataUri && url.length > 7_000_000) { // ~5MB base64
+        return NextResponse.json({ error: 'Photo too large' }, { status: 400 })
+      }
+    }
+
     const client = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
     })
@@ -65,7 +78,7 @@ Keep your response to 3-4 short bullet points using dashes. Be specific about wh
     const text = response.choices[0]?.message?.content || ''
     return NextResponse.json({ analysis: text })
   } catch (error) {
-    console.error('Litter analysis error:', error)
+    console.error('Litter analysis error:', error instanceof Error ? error.message : 'Unknown error')
     return NextResponse.json({ error: 'Failed to analyze' }, { status: 500 })
   }
 }

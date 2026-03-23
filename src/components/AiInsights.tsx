@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Sparkles, Loader2, AlertCircle } from "lucide-react";
 
 function hashContext(str: string): string {
@@ -24,19 +24,19 @@ export function AiInsights({
   context: string;
   loadingText?: string;
 }) {
-  const CACHE_DATA = `ai_${cacheKey}`;
-  const CACHE_HASH = `ai_${cacheKey}_hash`;
+  const cacheDataKey = `ai_${cacheKey}`;
+  const cacheHashKey = `ai_${cacheKey}_hash`;
 
   const contextHash = hashContext(context);
 
   const cachedInsights = (() => {
     try {
-      return localStorage.getItem(CACHE_DATA) || "";
+      return localStorage.getItem(cacheDataKey) || "";
     } catch { return ""; }
   })();
   const cachedHash = (() => {
     try {
-      return localStorage.getItem(CACHE_HASH) || "";
+      return localStorage.getItem(cacheHashKey) || "";
     } catch { return ""; }
   })();
 
@@ -46,35 +46,38 @@ export function AiInsights({
   const [refreshing, setRefreshing] = useState(false);
   const fetchedHash = useRef(cachedHash === contextHash ? contextHash : "");
 
-  useEffect(() => {
-    if (!context || fetchedHash.current === contextHash) return;
-    fetchedHash.current = contextHash;
-    // Only show spinner if we have nothing cached; otherwise silently refresh
-    if (!insights) setLoading(true);
+  const fetchInsights = useCallback((ctx: string, hash: string, hasExisting: boolean) => {
+    if (!hasExisting) setLoading(true);
     setRefreshing(true);
 
     fetch("/api/ai-chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: prompt, context }),
+      body: JSON.stringify({ message: prompt, context: ctx }),
     })
       .then(async res => {
         if (!res.ok) throw new Error("AI request failed");
-        // The API returns a plain text stream — read it fully
         const text = await res.text();
         if (text) {
           setInsights(text);
           try {
-            localStorage.setItem(CACHE_DATA, text);
-            localStorage.setItem(CACHE_HASH, contextHash);
+            localStorage.setItem(cacheDataKey, text);
+            localStorage.setItem(cacheHashKey, hash);
           } catch { /* storage full */ }
         } else {
           setInsights("Could not generate insights right now.");
         }
       })
-      .catch(() => { if (!insights) setInsights("Could not connect to AI."); })
+      .catch(() => { setInsights(prev => prev || "Could not connect to AI."); })
       .finally(() => { setLoading(false); setRefreshing(false); });
-  }, [context, contextHash, prompt]);
+  }, [prompt, cacheDataKey, cacheHashKey]);
+
+  useEffect(() => {
+    if (!context || fetchedHash.current === contextHash) return;
+    fetchedHash.current = contextHash;
+    // Data fetching in response to context change — setState in callback is intentional
+    fetchInsights(context, contextHash, !!cachedInsights); // eslint-disable-line react-hooks/set-state-in-effect
+  }, [context, contextHash, fetchInsights, cachedInsights]);
 
   if (!context) return null;
 
