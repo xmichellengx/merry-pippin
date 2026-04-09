@@ -106,20 +106,38 @@ export default function WeightPage() {
   const weightContext = useMemo(() => {
     if (cats.length === 0) return "";
     const lines: string[] = [];
-    cats.forEach(cat => {
+
+    // Per-cat stats
+    const catStats = cats.map(cat => {
       const catWeights = weights.filter(w => w.cat_id === cat.id).sort((a, b) => a.recorded_at.localeCompare(b.recorded_at));
+      const first = catWeights[0];
+      const last = catWeights[catWeights.length - 1];
+      const days = first && last ? (new Date(last.recorded_at).getTime() - new Date(first.recorded_at).getTime()) / (1000 * 60 * 60 * 24) : 0;
+      const weeks = days / 7;
+      const totalGain = first && last ? last.weight_kg - first.weight_kg : 0;
+      const weeklyGain = weeks > 0 ? totalGain / weeks : 0;
+      return { cat, catWeights, first, last, days, weeks, totalGain, weeklyGain };
+    });
+
+    catStats.forEach(({ cat, catWeights, first, last, days, weeks, totalGain, weeklyGain }) => {
       lines.push(`\n${cat.name} — ${cat.breed}, DOB: ${cat.date_of_birth || "unknown"}, Gender: ${cat.gender || "unknown"}`);
       if (catWeights.length > 0) {
         lines.push(`Weight history: ${catWeights.map(w => `${w.weight_kg}kg (${w.recorded_at})${w.notes ? ` [${w.notes}]` : ""}`).join(" → ")}`);
-        const first = catWeights[0];
-        const last = catWeights[catWeights.length - 1];
-        const days = (new Date(last.recorded_at).getTime() - new Date(first.recorded_at).getTime()) / (1000 * 60 * 60 * 24);
-        const weeks = days / 7;
-        const totalGain = last.weight_kg - first.weight_kg;
-        const weeklyGain = weeks > 0 ? (totalGain / weeks) : 0;
-        lines.push(`Pre-computed stats: first=${first.weight_kg}kg on ${first.recorded_at}, latest=${last.weight_kg}kg on ${last.recorded_at}, total gain=${totalGain.toFixed(2)}kg over ${Math.round(days)} days (${weeks.toFixed(1)} weeks), average weekly gain=${(weeklyGain * 1000).toFixed(0)}g/week`);
+        lines.push(`Stats: first=${first.weight_kg}kg (${first.recorded_at}), latest=${last.weight_kg}kg (${last.recorded_at}), total gain=${totalGain.toFixed(2)}kg over ${Math.round(days)} days (${weeks.toFixed(1)} weeks), avg weekly gain=${(weeklyGain * 1000).toFixed(0)}g/week`);
       }
     });
+
+    // Explicit current weight comparison so AI cannot get it wrong
+    if (catStats.length === 2) {
+      const [a, b] = catStats;
+      if (a.last && b.last) {
+        const heavier = a.last.weight_kg >= b.last.weight_kg ? a : b;
+        const lighter = a.last.weight_kg >= b.last.weight_kg ? b : a;
+        const diff = (heavier.last.weight_kg - lighter.last.weight_kg).toFixed(2);
+        lines.push(`\nCURRENT WEIGHT COMPARISON (as of ${heavier.last.recorded_at}): ${heavier.cat.name} is heavier at ${heavier.last.weight_kg}kg vs ${lighter.cat.name} at ${lighter.last.weight_kg}kg (difference: ${diff}kg). USE THESE EXACT FIGURES.`);
+      }
+    }
+
     return lines.join("\n");
   }, [cats, weights]);
 
