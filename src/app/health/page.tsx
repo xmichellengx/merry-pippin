@@ -19,7 +19,7 @@ import {
   X,
 } from "lucide-react";
 import NextImage from "next/image";
-import { format, differenceInDays } from "date-fns";
+import { format, differenceInDays, addDays } from "date-fns";
 import { getHealthRecords, addHealthRecords, deleteHealthRecord, updateHealthRecord, getLitterBoxLogs } from "@/lib/data";
 import { supabase } from "@/lib/supabase";
 import { compressImage, compressImageToBlob } from "@/lib/compress-image";
@@ -344,6 +344,30 @@ export default function HealthPage() {
   };
 
   const handleMarkDone = async (record: HealthRecord) => {
+    const today = format(new Date(), "yyyy-MM-dd");
+
+    // Calculate the recurrence interval from the original record
+    let nextDueDate: string | undefined;
+    if (record.next_due_date && record.date) {
+      const intervalDays = differenceInDays(new Date(record.next_due_date), new Date(record.date));
+      if (intervalDays > 0) {
+        nextDueDate = format(addDays(new Date(today), intervalDays), "yyyy-MM-dd");
+      }
+    }
+
+    // Create a new record for today's completion, carrying over all relevant fields
+    await addHealthRecords([{
+      cat_id: record.cat_id,
+      record_type: record.record_type,
+      title: record.title,
+      date: today,
+      ...(nextDueDate ? { next_due_date: nextDueDate } : {}),
+      ...(record.description ? { description: record.description } : {}),
+      ...(record.vet_name ? { vet_name: record.vet_name } : {}),
+      ...(record.photo_url ? { photo_url: record.photo_url } : {}),
+    }]);
+
+    // Clear the due date on the old record so it moves to past records
     await updateHealthRecord(record.id, { next_due_date: null });
     loadData();
   };
