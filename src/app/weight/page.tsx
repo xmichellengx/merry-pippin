@@ -111,6 +111,13 @@ export default function WeightPage() {
       lines.push(`\n${cat.name} — ${cat.breed}, DOB: ${cat.date_of_birth || "unknown"}, Gender: ${cat.gender || "unknown"}`);
       if (catWeights.length > 0) {
         lines.push(`Weight history: ${catWeights.map(w => `${w.weight_kg}kg (${w.recorded_at})${w.notes ? ` [${w.notes}]` : ""}`).join(" → ")}`);
+        const first = catWeights[0];
+        const last = catWeights[catWeights.length - 1];
+        const days = (new Date(last.recorded_at).getTime() - new Date(first.recorded_at).getTime()) / (1000 * 60 * 60 * 24);
+        const weeks = days / 7;
+        const totalGain = last.weight_kg - first.weight_kg;
+        const weeklyGain = weeks > 0 ? (totalGain / weeks) : 0;
+        lines.push(`Pre-computed stats: first=${first.weight_kg}kg on ${first.recorded_at}, latest=${last.weight_kg}kg on ${last.recorded_at}, total gain=${totalGain.toFixed(2)}kg over ${Math.round(days)} days (${weeks.toFixed(1)} weeks), average weekly gain=${(weeklyGain * 1000).toFixed(0)}g/week`);
       }
     });
     return lines.join("\n");
@@ -144,13 +151,14 @@ export default function WeightPage() {
         context={weightContext}
         prompt={`You are a vet advisor for Golden British Shorthair Munchkin kittens. Analyze their weight data and give 2-3 insights as a dash-separated list.
 
+IMPORTANT: Use the pre-computed stats provided in the context for weekly gain figures — do NOT recalculate them yourself, as the numbers are already accurate.
+
 Think like a vet looking at a growth chart:
-- These kittens are weighed every few weeks. Look at the OVERALL multi-week/month trajectory, not individual weigh-ins.
+- Use the exact "average weekly gain" figure from the pre-computed stats for each cat.
 - Compare growth rate against typical BSH kitten growth curves for their age. BSH kittens typically gain ~100-150g/week in months 3-6, slowing to ~50-100g/week from 6-12 months.
-- If one cat is consistently heavier/lighter than the other, note the difference and whether it's normal variation or concerning.
-- Calculate their average monthly weight gain and comment on whether it's healthy.
+- If one cat is consistently heavier/lighter than the other, state clearly which one is heavier and by how much.
 - If growth looks on track, say so briefly. Don't manufacture concerns.
-- Be specific with numbers. No vague advice.
+- Be specific with the exact numbers from the data.
 
 Plain text only, no markdown. Jump straight into insights, no intro.`}
       />
