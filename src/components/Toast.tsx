@@ -27,11 +27,16 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 w-[90vw] max-w-sm pointer-events-none">
+      {/* Persistent live region — must exist before content changes for SR to announce */}
+      <div
+        aria-live="polite"
+        aria-atomic="true"
+        role="status"
+        className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 w-[90vw] max-w-sm pointer-events-none"
+      >
         {toasts.map(toast => (
           <div
             key={toast.id}
-            role="alert"
             className={`pointer-events-auto px-4 py-3 rounded-xl shadow-lg text-sm font-medium animate-slide-down ${
               toast.type === "error" ? "bg-[#FCEAE8] text-[#8B2E26] border border-[#E8B8B4]" : "bg-[#E8F0E4] text-[#3D6B3A] border border-[#C8DCC4]"
             }`}

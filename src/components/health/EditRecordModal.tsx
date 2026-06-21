@@ -26,18 +26,12 @@ const typeConfig: Record<string, { icon: typeof Syringe; color: string; bg: stri
 };
 
 // --- PhotoUpload (inline, used only here and in add form) ---
-import { supabase } from "@/lib/supabase";
-import { compressImage, compressImageToBlob } from "@/lib/compress-image";
+import { compressImageToBlob } from "@/lib/compress-image";
+import { uploadPhoto } from "@/lib/data";
 
 async function uploadHealthPhoto(file: File): Promise<string> {
-  const fileName = `health-${Date.now()}.jpg`;
   const compressed = await compressImageToBlob(file, 800, 0.7);
-  const { error } = await supabase.storage.from("photos").upload(fileName, compressed, { contentType: "image/jpeg" });
-  if (!error) {
-    const { data: { publicUrl } } = supabase.storage.from("photos").getPublicUrl(fileName);
-    return publicUrl;
-  }
-  return compressImage(file, 800, 0.7);
+  return uploadPhoto(compressed, "health");
 }
 
 function PhotoUpload({

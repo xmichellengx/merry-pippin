@@ -10,9 +10,8 @@ import {
 } from "lucide-react";
 import NextImage from "next/image";
 import { format } from "date-fns";
-import { addLitterBoxLog, updateLitterBoxLog, deleteLitterBoxLog } from "@/lib/data";
-import { supabase } from "@/lib/supabase";
-import { compressImage, compressImageToBlob } from "@/lib/compress-image";
+import { addLitterBoxLog, updateLitterBoxLog, deleteLitterBoxLog, uploadPhoto } from "@/lib/data";
+import { compressImageToBlob } from "@/lib/compress-image";
 import type { LitterBoxLog } from "@/lib/supabase";
 import Modal from "@/components/Modal";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -20,14 +19,8 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 // --- Photo helpers ---
 
 async function uploadHealthPhoto(file: File): Promise<string> {
-  const fileName = `health-${Date.now()}.jpg`;
   const compressed = await compressImageToBlob(file, 800, 0.7);
-  const { error } = await supabase.storage.from("photos").upload(fileName, compressed, { contentType: "image/jpeg" });
-  if (!error) {
-    const { data: { publicUrl } } = supabase.storage.from("photos").getPublicUrl(fileName);
-    return publicUrl;
-  }
-  return compressImage(file, 800, 0.7);
+  return uploadPhoto(compressed, "litter");
 }
 
 function PhotoUpload({

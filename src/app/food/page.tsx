@@ -321,23 +321,25 @@ Plain text only, no markdown. No intro.`}
 
       <Modal open={isAdmin && showAddForm} onClose={() => setShowAddForm(false)} title="Log Meal" position="bottom">
         <div>
-          <label className="text-xs text-muted block mb-1">Cat</label>
-          <select value={formCatId} onChange={e => setFormCatId(e.target.value)}>
+          <label htmlFor="food-cat" className="text-xs text-muted block mb-1">Cat</label>
+          <select id="food-cat" value={formCatId} onChange={e => setFormCatId(e.target.value)}>
             <option value="" disabled>Select cat...</option>
             {cats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </div>
         <div>
-          <label className="text-xs text-muted block mb-1">Food Name</label>
-          <input type="text" placeholder="e.g., Royal Canin British Shorthair" value={formFoodName} onChange={e => setFormFoodName(e.target.value)} />
+          <label htmlFor="food-name" className="text-xs text-muted block mb-1">Food Name</label>
+          <input id="food-name" type="text" placeholder="e.g., Royal Canin British Shorthair" value={formFoodName} onChange={e => setFormFoodName(e.target.value)} />
         </div>
         <div>
-          <label className="text-xs text-muted block mb-1">Type (tap to select, can pick multiple)</label>
-          <FoodTypeChips selected={formFoodTypes} onChange={setFormFoodTypes} />
+          <label id="food-type-label" className="text-xs text-muted block mb-1">Type (tap to select, can pick multiple)</label>
+          <div role="group" aria-labelledby="food-type-label">
+            <FoodTypeChips selected={formFoodTypes} onChange={setFormFoodTypes} />
+          </div>
         </div>
         <div>
-          <label className="text-xs text-muted block mb-1">Meal Time</label>
-          <select value={formMealTime} onChange={e => setFormMealTime(e.target.value)}>
+          <label htmlFor="food-meal-time" className="text-xs text-muted block mb-1">Meal Time</label>
+          <select id="food-meal-time" value={formMealTime} onChange={e => setFormMealTime(e.target.value)}>
             <option value="breakfast">Breakfast</option>
             <option value="lunch">Lunch</option>
             <option value="snack">Snack</option>
@@ -345,12 +347,12 @@ Plain text only, no markdown. No intro.`}
           </select>
         </div>
         <div>
-          <label className="text-xs text-muted block mb-1">Amount (grams)</label>
-          <input type="number" placeholder="e.g., 85" value={formAmount} onChange={e => setFormAmount(e.target.value)} />
+          <label htmlFor="food-amount" className="text-xs text-muted block mb-1">Amount (grams)</label>
+          <input id="food-amount" type="number" placeholder="e.g., 85" value={formAmount} onChange={e => setFormAmount(e.target.value)} />
         </div>
         <div>
-          <label className="text-xs text-muted block mb-1">Notes</label>
-          <textarea rows={2} placeholder="Optional notes..." value={formNotes} onChange={e => setFormNotes(e.target.value)} />
+          <label htmlFor="food-notes" className="text-xs text-muted block mb-1">Notes</label>
+          <textarea id="food-notes" rows={2} placeholder="Optional notes..." value={formNotes} onChange={e => setFormNotes(e.target.value)} />
         </div>
         <div className="flex gap-2">
           <button onClick={handleSave} disabled={saving || !formCatId || !formFoodName || formFoodTypes.length === 0} className="flex-1 py-2.5 rounded-xl golden-gradient text-white text-sm font-semibold shadow-md disabled:opacity-50">
@@ -362,7 +364,7 @@ Plain text only, no markdown. No intro.`}
 
       {filteredLogs.length === 0 ? (
         <div className="card p-8 text-center">
-          <Image src="/loading-food.webp" alt="No meals" width={120} height={104} className="mx-auto mb-2 opacity-70" />
+          <Image src="/loading-food.webp" alt="" width={120} height={104} className="mx-auto mb-2 opacity-70" />
           <p className="text-sm text-muted">&quot;What about second breakfast?&quot; No meals logged for this day.</p>
           {isAdmin && <button onClick={() => setShowAddForm(true)} className="mt-3 px-4 py-2 rounded-xl golden-gradient text-white text-sm font-medium shadow-md">Log First Meal</button>}
         </div>

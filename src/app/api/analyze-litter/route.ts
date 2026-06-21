@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
+import { isAdminRequest } from '@/lib/admin-auth'
 
 export const maxDuration = 30
 
 export async function POST(request: NextRequest) {
   try {
+    if (!(await isAdminRequest(request))) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await request.json()
     // Support both single photoUrl (legacy) and multiple photoUrls
     const photoUrls: string[] = body.photoUrls || (body.photoUrl ? [body.photoUrl] : [])
@@ -22,15 +27,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Maximum 4 photos allowed' }, { status: 400 })
     }
 
-    // Validate photo URLs — only allow Supabase storage URLs and data URIs
-    const supabaseDomain = process.env.NEXT_PUBLIC_SUPABASE_URL
+    // Validate photo URLs — only allow Supabase storage URLs and data URIs.
+    // Use hostname equality, not prefix match (prefix would accept attacker.com hosts).
+    const supabaseUrlEnv = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+    let supabaseHost = ''
+    try { supabaseHost = new URL(supabaseUrlEnv).hostname } catch {}
     for (const url of photoUrls) {
-      const isDataUri = url.startsWith('data:image/')
-      const isSupabaseUrl = supabaseDomain && url.startsWith(supabaseDomain)
+      const isDataUri = typeof url === 'string' && url.startsWith('data:image/')
+      let isSupabaseUrl = false
+      if (!isDataUri && typeof url === 'string') {
+        try { isSupabaseUrl = !!supabaseHost && new URL(url).hostname === supabaseHost } catch {}
+      }
       if (!isDataUri && !isSupabaseUrl) {
         return NextResponse.json({ error: 'Invalid photo URL' }, { status: 400 })
       }
-      if (isDataUri && url.length > 7_000_000) { // ~5MB base64
+      if (isDataUri && url.length > 7_000_000) {
         return NextResponse.json({ error: 'Photo too large' }, { status: 400 })
       }
     }

@@ -20,9 +20,8 @@ import {
 } from "lucide-react";
 import NextImage from "next/image";
 import { format, differenceInDays, addDays } from "date-fns";
-import { getHealthRecords, addHealthRecords, deleteHealthRecord, updateHealthRecord, getLitterBoxLogs } from "@/lib/data";
-import { supabase } from "@/lib/supabase";
-import { compressImage, compressImageToBlob } from "@/lib/compress-image";
+import { getHealthRecords, addHealthRecords, deleteHealthRecord, updateHealthRecord, getLitterBoxLogs, uploadPhoto } from "@/lib/data";
+import { compressImageToBlob } from "@/lib/compress-image";
 import type { HealthRecord, LitterBoxLog } from "@/lib/supabase";
 import { useAdmin } from "@/components/AdminContext";
 import { AiInsights } from "@/components/AiInsights";
@@ -70,17 +69,8 @@ const dewormBrands = [
 ];
 
 async function uploadHealthPhoto(file: File): Promise<string> {
-  const fileName = `health-${Date.now()}.jpg`;
   const compressed = await compressImageToBlob(file, 800, 0.7);
-
-  const { error } = await supabase.storage.from('photos').upload(fileName, compressed, { contentType: 'image/jpeg' });
-  if (!error) {
-    const { data: { publicUrl } } = supabase.storage.from('photos').getPublicUrl(fileName);
-    return publicUrl;
-  }
-
-  // Fallback to compressed data URL if storage not configured
-  return compressImage(file, 800, 0.7);
+  return uploadPhoto(compressed, 'health');
 }
 
 function PhotoUpload({

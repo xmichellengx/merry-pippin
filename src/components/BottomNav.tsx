@@ -13,7 +13,7 @@ function IconHome({ size = 24 }: { size?: number; active?: boolean }) {
   return (
     <Image
       src="/home-logo.webp"
-      alt="Home"
+      alt=""
       width={size}
       height={size}
       className="w-full h-full"
@@ -190,9 +190,11 @@ function PinModal() {
             onChange={e => { setPin(e.target.value); setError(false); }}
             onKeyDown={e => { if (e.key === "Enter") handleSubmit(); }}
             autoFocus
+            aria-invalid={error || undefined}
+            aria-describedby={error ? "pin-error" : undefined}
             className={`text-center text-lg tracking-[0.5em] ${error ? "border-red-400 focus:ring-red-400" : ""}`}
           />
-          {error && <p className="text-xs text-red-500 mt-1 text-center">Wrong PIN! Try again.</p>}
+          {error && <p id="pin-error" className="text-xs text-red-500 mt-1 text-center">Wrong PIN! Try again.</p>}
         </div>
         <button
           onClick={handleSubmit}
@@ -224,7 +226,8 @@ export default function BottomNav() {
                 key={tab.href}
                 href={tab.href}
                 aria-label={tab.label}
-                className={`flex flex-col items-center justify-center focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2 ${isHome ? "w-13 h-13 -mt-5 rounded-full shadow-lg border-2 border-white overflow-hidden" : `w-14 py-0 rounded-lg transition-colors ${isActive ? "text-golden-600" : "text-muted"}`}`}
+                aria-current={isActive ? "page" : undefined}
+                className={`flex flex-col items-center justify-center focus-visible:ring-2 focus-visible:ring-golden-400 focus-visible:ring-offset-2 ${isHome ? "w-13 h-13 -mt-5 rounded-full shadow-lg border-2 border-white overflow-hidden" : `w-14 min-h-[44px] py-0 rounded-lg transition-colors ${isActive ? "text-golden-600" : "text-muted"}`}`}
               >
                 {isHome ? (
                   <tab.Icon size={52} active={true} />

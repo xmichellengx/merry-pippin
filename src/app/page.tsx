@@ -18,12 +18,11 @@ import {
 import Link from "next/link";
 import Image from "next/image";
 import { format, differenceInDays, differenceInMonths } from "date-fns";
-import { getWeightRecords, getHealthRecords, getFoodLogs, updateCat, getGroomingLogs, getGroomingTasks } from "@/lib/data";
-import { supabase } from "@/lib/supabase";
+import { getWeightRecords, getHealthRecords, getFoodLogs, updateCat, getGroomingLogs, getGroomingTasks, uploadPhoto } from "@/lib/data";
 import type { Cat, WeightRecord, HealthRecord, FoodLog, GroomingTask, GroomingLog } from "@/lib/supabase";
 import { TwoCatsSitting } from "@/components/CatIllustrations";
 import { useAdmin } from "@/components/AdminContext";
-import { compressImage, compressImageToBlob } from "@/lib/compress-image";
+import { compressImageToBlob } from "@/lib/compress-image";
 import { useCats } from "@/hooks/useCats";
 import Modal from "@/components/Modal";
 import { LoadingScreen } from "@/components/LoadingScreen";
@@ -111,46 +110,49 @@ function AiChatCard({ context }: { context: string }) {
           <Bot size={14} className="text-purple-600" />
         </div>
         <h2 className="font-semibold text-sm">Ask AI About Your Cats</h2>
-        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-purple-50 text-purple-500 font-medium">ChatGPT</span>
+        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-800 font-semibold">ChatGPT</span>
       </div>
 
-      {messages.length === 0 ? (
-        <div className="space-y-2 mb-3">
-          <p className="text-xs text-muted">Ask me anything about cat care, nutrition, health, or your cats!</p>
-          <div className="flex flex-wrap gap-1.5">
-            {quickQuestions.map((q, i) => (
-              <button
-                key={i}
-                onClick={() => sendMessage(q)}
-                className="px-2.5 py-1.5 rounded-lg bg-purple-50 text-purple-700 text-[11px] font-medium hover:bg-purple-100 transition-colors"
-              >
-                {q}
-              </button>
-            ))}
+      {/* Persistent live region so SR announces assistant replies as they stream */}
+      <div ref={scrollRef} className="max-h-60 overflow-y-auto space-y-2.5 mb-3 scroll-smooth" aria-live="polite" role="log">
+        {messages.length === 0 ? (
+          <div className="space-y-2">
+            <p className="text-xs text-muted">Ask me anything about cat care, nutrition, health, or your cats!</p>
+            <div className="flex flex-wrap gap-1.5">
+              {quickQuestions.map((q, i) => (
+                <button
+                  key={i}
+                  onClick={() => sendMessage(q)}
+                  className="px-3 py-2 min-h-[36px] rounded-lg bg-purple-50 text-purple-800 text-[11px] font-semibold hover:bg-purple-100 transition-colors"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      ) : (
-        <div ref={scrollRef} className="max-h-60 overflow-y-auto space-y-2.5 mb-3 scroll-smooth" aria-live="polite" role="log">
-          {messages.map((msg, i) => (
-            <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-              <div className={`max-w-[85%] px-3 py-2 rounded-2xl text-xs leading-relaxed ${
-                msg.role === "user"
-                  ? "bg-golden-500 text-white rounded-br-md"
-                  : "bg-purple-50 text-foreground rounded-bl-md"
-              }`}>
-                {msg.text}
+        ) : (
+          <>
+            {messages.map((msg, i) => (
+              <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                <div className={`max-w-[85%] px-3 py-2 rounded-2xl text-xs leading-relaxed ${
+                  msg.role === "user"
+                    ? "bg-golden-500 text-white rounded-br-md"
+                    : "bg-purple-50 text-foreground rounded-bl-md"
+                }`}>
+                  {msg.text}
+                </div>
               </div>
-            </div>
-          ))}
-          {loading && (
-            <div className="flex justify-start">
-              <div className="bg-purple-50 px-3 py-2 rounded-2xl rounded-bl-md">
-                <Loader2 size={14} className="animate-spin text-purple-400" />
+            ))}
+            {loading && (
+              <div className="flex justify-start">
+                <div className="bg-purple-50 px-3 py-2 rounded-2xl rounded-bl-md">
+                  <Loader2 size={14} className="animate-spin text-purple-400" />
+                </div>
               </div>
-            </div>
-          )}
-        </div>
-      )}
+            )}
+          </>
+        )}
+      </div>
 
       <div className="flex gap-2">
         <input
@@ -190,22 +192,16 @@ function EditCatModal({ cat, onClose, onSaved }: { cat: Cat; onClose: () => void
     if (!file) return;
     setUploading(true);
 
-    const fileName = `cat-${cat.id}-${Date.now()}.jpg`;
-    const compressed = await compressImageToBlob(file);
-
-    const { error: uploadError } = await supabase.storage.from('photos').upload(fileName, compressed, { contentType: 'image/jpeg' });
-
-    if (uploadError) {
-      // Fallback to compressed data URL if storage not set up
-      const dataUrl = await compressImage(file);
-      setPhotoUrl(dataUrl);
+    try {
+      const compressed = await compressImageToBlob(file);
+      const url = await uploadPhoto(compressed, `cat-${cat.id}`);
+      setPhotoUrl(url);
+    } catch (err) {
+      console.error('photo upload failed:', err);
+      alert('Photo upload failed. Please try again.');
+    } finally {
       setUploading(false);
-      return;
     }
-
-    const { data: { publicUrl } } = supabase.storage.from('photos').getPublicUrl(fileName);
-    setPhotoUrl(publicUrl);
-    setUploading(false);
   };
 
   const handleSave = async () => {
@@ -233,7 +229,7 @@ function EditCatModal({ cat, onClose, onSaved }: { cat: Cat; onClose: () => void
         <button onClick={() => fileRef.current?.click()} aria-label="Change photo" className="relative group min-w-[44px] min-h-[44px]">
           {photoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={photoUrl} alt={name} className="w-24 h-24 rounded-full object-cover border-4 border-golden-200" />
+            <img src={photoUrl} alt="" className="w-24 h-24 rounded-full object-cover border-4 border-golden-200" />
           ) : (
             <div className="w-24 h-24 rounded-full golden-gradient flex items-center justify-center border-4 border-golden-200">
               <span className="text-white font-bold text-3xl">{name[0] || "?"}</span>
@@ -319,12 +315,12 @@ function FooterQuote() {
     return quotes[dayOfYear % quotes.length];
   }, []);
   return (
-    <div className="text-center py-5 opacity-40">
+    <div className="text-center py-5">
       <div className="lotr-divider-ornate mx-6 mb-3"><span className="text-elvish-gold text-[10px] px-2">&loz;</span></div>
-      <p className="text-[10px] text-muted italic tracking-wide leading-relaxed px-8">
+      <p className="text-[11px] text-muted italic tracking-wide leading-relaxed px-8">
         &ldquo;{q.text}&rdquo;
       </p>
-      <p className="text-[9px] text-muted mt-1 tracking-wider opacity-70">— {q.by}</p>
+      <p className="text-[10px] text-muted mt-1 tracking-wider">— {q.by}</p>
     </div>
   );
 }
@@ -440,7 +436,7 @@ export default function Dashboard() {
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-1">
             <h1 className="text-xl font-bold">Merry & Pippin</h1>
-            <Image src="/cat-face-icon.webp" alt="cat" width={75} height={75} priority />
+            <Image src="/cat-face-icon.webp" alt="" width={75} height={75} priority />
           </div>
           <p className="text-white/80 text-sm">The Fellowship of Fluff</p>
           <p className="text-white/60 text-xs mt-1">{format(new Date(), "EEEE, MMMM d, yyyy")}</p>
